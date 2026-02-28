@@ -143,7 +143,7 @@ function calcWeightedAverage(polls, partyKey, asOfDate) {
     .filter(p => p[partyKey] !== undefined && p[partyKey] !== null)
     .map(p => {
       const d = new Date(p.date);
-      const daysDiff = (now - d) / (1000 * 60 * 60 * 24);
+      const daysDiff = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
       const recency = Math.exp(-daysDiff / 30);
       const pollsterWeight = POLLSTERS[p.pollster]?.weight || 1.0;
       const sizeWeight = Math.sqrt((p.n || 1000) / 1000);
