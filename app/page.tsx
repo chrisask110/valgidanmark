@@ -125,19 +125,27 @@ const FALLBACK_POLLS = [
 
 const PARTY_KEYS = ["A", "F", "V", "I", "Æ", "C", "Ø", "B", "O", "Å", "M", "H"];
 
+// ── Types ─────────────────────────────────────────────────────────
+type Poll = {
+  date: string;
+  pollster: string;
+  n: number;
+  [key: string]: string | number;
+};
+
 // ── Danske månedsnavne ────────────────────────────────────────────
 const DA_MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
-function formatDateDa(d) {
+function formatDateDa(d: Date | string) {
   const dt = d instanceof Date ? d : new Date(d);
   return `${dt.getDate()}. ${DA_MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
 }
-function formatMonthYearDa(d) {
+function formatMonthYearDa(d: Date | string) {
   const dt = d instanceof Date ? d : new Date(d);
   return `${DA_MONTHS[dt.getMonth()]} '${String(dt.getFullYear()).slice(2)}`;
 }
 
 // ── Beregning af vægtet gennemsnit ────────────────────────────────
-function calcWeightedAverage(polls, partyKey, asOfDate) {
+function calcWeightedAverage(polls: Poll[], partyKey: string, asOfDate?: string) {
   const now = asOfDate ? new Date(asOfDate) : new Date();
   const relevant = polls
     .filter(p => p[partyKey] !== undefined && p[partyKey] !== null)
@@ -154,12 +162,12 @@ function calcWeightedAverage(polls, partyKey, asOfDate) {
   return relevant.reduce((s, r) => s + r.value * r.weight, 0) / totalWeight;
 }
 
-function generateWeightedSeries(polls, partyKey) {
-  const sorted = [...polls].sort((a, b) => new Date(a.date) - new Date(b.date));
+function generateWeightedSeries(polls: Poll[], partyKey: string) {
+  const sorted = [...polls].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const dates = [...new Set(sorted.map(p => p.date))].sort();
   return dates.map(date => ({
     date,
-    value: calcWeightedAverage(sorted.filter(p => new Date(p.date) <= new Date(date)), partyKey, date),
+    value: calcWeightedAverage(sorted.filter(p => new Date(p.date).getTime() <= new Date(date).getTime()), partyKey, date),
   })).filter(d => d.value !== null);
 }
 
@@ -167,11 +175,18 @@ function generateWeightedSeries(polls, partyKey) {
 function daysUntilElection() {
   const election = new Date("2026-03-24");
   const now = new Date();
-  return Math.max(0, Math.ceil((election - now) / (1000 * 60 * 60 * 24)));
+  return Math.max(0, Math.ceil((election.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 // ── SVG Graf-komponent ────────────────────────────────────────────
-function PollChart({ polls, selectedParties, selectedPollsters, showDots, width = 900, height = 420 }) {
+function PollChart({ polls, selectedParties, selectedPollsters, showDots, width = 900, height = 420 }: {
+  polls: Poll[];
+  selectedParties: Set<string>;
+  selectedPollsters: Set<string>;
+  showDots: boolean;
+  width?: number;
+  height?: number;
+}) {
   const svgRef = useRef(null);
   const [tooltip, setTooltip] = useState(null);
 
@@ -209,7 +224,7 @@ function PollChart({ polls, selectedParties, selectedPollsters, showDots, width 
     const date = xScale.invert(x);
     let closest = null; let minDist = Infinity;
     filteredPolls.forEach(p => {
-      const dist = Math.abs(new Date(p.date) - date);
+      const dist = Math.abs(new Date(p.date).getTime() - date.getTime());
       if (dist < minDist) { minDist = dist; closest = p; }
     });
     if (closest && minDist < 7 * 24 * 3600 * 1000) {
@@ -307,7 +322,7 @@ function PollChart({ polls, selectedParties, selectedPollsters, showDots, width 
 }
 
 // ── Institut-kort ─────────────────────────────────────────────────
-function PollsterCard({ name, data }) {
+function PollsterCard({ name, data }: { name: string; data: typeof POLLSTERS[keyof typeof POLLSTERS] }) {
   const gradeColor = { "A": "#22c55e", "A-": "#4ade80", "B+": "#facc15", "B": "#fb923c" }[data.grade] || "#94a3b8";
   return (
     <div style={{
@@ -350,8 +365,8 @@ function PollsterCard({ name, data }) {
 
 // ── Hoved-app ─────────────────────────────────────────────────────
 export default function DanskValgbarometer() {
-  const [polls, setPolls] = useState(FALLBACK_POLLS);
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState("lokal");
   const [loading, setLoading] = useState(true);
   const [selectedParties, setSelectedParties] = useState(new Set(["A", "F", "V", "I", "Æ", "C"]));
@@ -359,13 +374,13 @@ export default function DanskValgbarometer() {
   const [showDots, setShowDots] = useState(true);
   const [activeTab, setActiveTab] = useState("graf");
 
-  // ── Hent data fra persistent storage eller brug fallback ────────
+  // ── Hent data fra localStorage eller brug fallback ────────
   useEffect(() => {
     async function loadData() {
       try {
-        const result = await window.storage.get("polls-data");
-        if (result && result.value) {
-          const parsed = JSON.parse(result.value);
+        const raw = localStorage.getItem("polls-data");
+        if (raw) {
+          const parsed = JSON.parse(raw);
           if (parsed.polls && parsed.polls.length > 0) {
             setPolls(parsed.polls);
             setLastUpdated(parsed.lastUpdated || null);
@@ -404,10 +419,10 @@ export default function DanskValgbarometer() {
         seen.add(key);
         return true;
       });
-      unique.sort((a, b) => new Date(b.date) - new Date(a.date));
+      unique.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       const data = { polls: unique, lastUpdated: new Date().toISOString() };
-      await window.storage.set("polls-data", JSON.stringify(data));
+      localStorage.setItem("polls-data", JSON.stringify(data));
 
       setPolls(unique);
       setLastUpdated(data.lastUpdated);
@@ -416,13 +431,13 @@ export default function DanskValgbarometer() {
       setNewPollText("");
       setTimeout(() => setAddStatus(""), 4000);
     } catch (e) {
-      setAddStatus(`Fejl: ${e.message}`);
+      setAddStatus(`Fejl: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
   const handleResetData = async () => {
     try {
-      await window.storage.delete("polls-data");
+      localStorage.removeItem("polls-data");
       setPolls(FALLBACK_POLLS);
       setLastUpdated(null);
       setDataSource("lokal");
@@ -451,7 +466,7 @@ export default function DanskValgbarometer() {
     [currentAverages]);
 
   const latestPolls = useMemo(() =>
-    [...polls].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20),
+    [...polls].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 20),
     [polls]);
 
   const daysLeft = daysUntilElection();
