@@ -49,7 +49,7 @@ export default function Countdown() {
           color: "#64748b",
         }}
       >
-        Tid til Folketingsvalget · 24. marts 2026
+        Nedtælling til Folketingsvalget · 24. marts 2026
       </p>
 
       {timeLeft === null && timeLeft !== undefined ? (

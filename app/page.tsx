@@ -185,11 +185,12 @@ function daysUntilElection() {
 }
 
 // ── SVG Graf-komponent ────────────────────────────────────────────
-function PollChart({ polls, selectedParties, selectedPollsters, showDots, width = 900, height = 420 }: {
+function PollChart({ polls, selectedParties, selectedPollsters, showDots, fromDate, width = 900, height = 420 }: {
   polls: Poll[];
   selectedParties: string[];
   selectedPollsters: Set<string>;
   showDots: boolean;
+  fromDate?: Date | null;
   width?: number;
   height?: number;
 }) {
@@ -205,10 +206,11 @@ function PollChart({ polls, selectedParties, selectedPollsters, showDots, width 
 
   const xScale = useMemo(() => {
     const dates = filteredPolls.map(p => new Date(p.date));
+    const domainStart = fromDate || d3.min(dates) || new Date("2025-01-01");
     return d3.scaleTime()
-      .domain([d3.min(dates) || new Date("2025-01-01"), new Date("2026-03-24")])
+      .domain([domainStart, new Date("2026-03-24")])
       .range([0, innerW]);
-  }, [filteredPolls, innerW]);
+  }, [filteredPolls, innerW, fromDate]);
 
   const yScale = useMemo(() => d3.scaleLinear().domain([0, 30]).range([innerH, 0]), [innerH]);
 
@@ -263,7 +265,7 @@ function PollChart({ polls, selectedParties, selectedPollsters, showDots, width 
 
           {/* Individuelle målinger som prikker */}
           {showDots && selectedParties.map(pk =>
-            filteredPolls.filter(p => p[pk] !== undefined).map((p, i) => (
+            filteredPolls.filter(p => p[pk] !== undefined && (!fromDate || new Date(p.date) >= fromDate)).map((p, i) => (
               <circle key={`${pk}-${i}`} cx={xScale(new Date(p.date))} cy={yScale(p[pk])} r={2.5}
                 fill={PARTIES[pk].color} opacity={0.35} />
             ))
@@ -379,6 +381,7 @@ export default function DanskValgbarometer() {
   const [selectedPollsters, setSelectedPollsters] = useState(new Set(Object.keys(POLLSTERS)));
   const [showDots, setShowDots] = useState(true);
   const [activeTab, setActiveTab] = useState("graf");
+  const [timeRange, setTimeRange] = useState("all");
 
   // ── Hent data fra localStorage eller brug fallback ────────
   useEffect(() => {
@@ -475,6 +478,14 @@ export default function DanskValgbarometer() {
     [...polls].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 20),
     [polls]);
 
+  const fromDate = useMemo(() => {
+    const now = new Date();
+    if (timeRange === "3m") return new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    if (timeRange === "6m") return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    if (timeRange === "1y") return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    return null;
+  }, [timeRange]);
+
   const daysLeft = daysUntilElection();
 
   if (loading) {
@@ -529,7 +540,7 @@ export default function DanskValgbarometer() {
           {/* Navigation */}
           <div style={{ display: "flex", gap: 4, marginTop: 20, flexWrap: "wrap" }}>
             {[
-              { id: "graf", label: "Målegennemsnit" },
+              { id: "graf", label: "Meningsmålinger" },
               { id: "institutter", label: "Institutvurderinger" },
               { id: "tabel", label: "Seneste målinger" },
               { id: "data", label: "Administrér data" },
@@ -596,6 +607,23 @@ export default function DanskValgbarometer() {
                   }}>{name}</button>
                 ))}
               </div>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: "#64748b", fontFamily: "'JetBrains Mono', monospace", marginRight: 2 }}>PERIODE:</span>
+                {[
+                  { id: "3m", label: "3 mdr" },
+                  { id: "6m", label: "6 mdr" },
+                  { id: "1y", label: "1 år" },
+                  { id: "all", label: "Alt" },
+                ].map(r => (
+                  <button key={r.id} onClick={() => setTimeRange(r.id)} style={{
+                    padding: "4px 10px", fontSize: "11px", fontWeight: 600,
+                    background: timeRange === r.id ? "#1e3a5f" : "transparent",
+                    color: timeRange === r.id ? "#93c5fd" : "#475569",
+                    border: `1px solid ${timeRange === r.id ? "#3b82f6" : "#1e293b"}`,
+                    borderRadius: "6px", cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
+                  }}>{r.label}</button>
+                ))}
+              </div>
               <button onClick={() => setShowDots(!showDots)} style={{
                 padding: "4px 10px", fontSize: "11px", fontWeight: 600,
                 background: showDots ? "#1e293b" : "transparent",
@@ -606,7 +634,7 @@ export default function DanskValgbarometer() {
             </div>
 
             <div style={{ background: "#0f172a", borderRadius: "12px", border: "1px solid #1e293b", padding: "20px 16px 12px" }}>
-              <PollChart polls={polls} selectedParties={[...selectedParties]} selectedPollsters={selectedPollsters} showDots={showDots} />
+              <PollChart polls={polls} selectedParties={[...selectedParties]} selectedPollsters={selectedPollsters} showDots={showDots} fromDate={fromDate} />
             </div>
 
             {/* Parti-liste */}
