@@ -334,7 +334,7 @@ function PollsterCard({ name, data }: { name: string; data: typeof POLLSTERS[key
   const gradeColor = { "A": "#22c55e", "A-": "#4ade80", "B+": "#facc15", "B": "#fb923c" }[data.grade] || "#94a3b8";
   return (
     <div style={{
-      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", border: "1px solid #1e293b",
+      background: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
       borderRadius: "12px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -349,13 +349,13 @@ function PollsterCard({ name, data }: { name: string; data: typeof POLLSTERS[key
         }}>{data.grade}</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-        <div style={{ background: "#1e293b", borderRadius: 8, padding: "10px" }}>
+        <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px" }}>
           <div style={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Score</div>
           <div style={{ fontSize: "20px", fontWeight: 700, color: "#f8fafc", fontFamily: "'JetBrains Mono', monospace" }}>
             {data.rating}<span style={{ fontSize: 12, color: "#64748b" }}>/100</span>
           </div>
         </div>
-        <div style={{ background: "#1e293b", borderRadius: 8, padding: "10px" }}>
+        <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px" }}>
           <div style={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Gns. fejl</div>
           <div style={{ fontSize: "20px", fontWeight: 700, color: "#f8fafc", fontFamily: "'JetBrains Mono', monospace" }}>
             ±{data.avgError}<span style={{ fontSize: 12, color: "#64748b" }}>pp</span>
@@ -364,8 +364,8 @@ function PollsterCard({ name, data }: { name: string; data: typeof POLLSTERS[key
       </div>
       <div style={{ fontSize: "12px", color: "#94a3b8", lineHeight: 1.5 }}>{data.desc}</div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 10, background: "#1e293b", color: "#94a3b8", padding: "3px 8px", borderRadius: 4 }}>{data.methodology}</span>
-        <span style={{ fontSize: 10, background: "#1e293b", color: "#94a3b8", padding: "3px 8px", borderRadius: 4 }}>n ≈ {data.sampleSize}</span>
+        <span style={{ fontSize: 10, background: "rgba(255,255,255,0.07)", color: "#94a3b8", padding: "3px 8px", borderRadius: 4 }}>{data.methodology}</span>
+        <span style={{ fontSize: 10, background: "rgba(255,255,255,0.07)", color: "#94a3b8", padding: "3px 8px", borderRadius: 4 }}>n ≈ {data.sampleSize}</span>
       </div>
     </div>
   );
@@ -404,58 +404,6 @@ export default function DanskValgbarometer() {
     loadData();
   }, []);
 
-  // ── Tilføj nye målinger manuelt ─────────────────────────────────
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newPollText, setNewPollText] = useState("");
-  const [addStatus, setAddStatus] = useState("");
-
-  const handleAddPolls = async () => {
-    try {
-      const lines = newPollText.trim().split("\n").filter(l => l.trim());
-      const newPolls = lines.map(line => {
-        const obj = JSON.parse(line);
-        // Validér nødvendige felter
-        if (!obj.date || !obj.pollster) throw new Error("Mangler 'date' eller 'pollster'");
-        return obj;
-      });
-
-      const merged = [...newPolls, ...polls];
-      // Fjern dubletter (samme dato + institut)
-      const seen = new Set();
-      const unique = merged.filter(p => {
-        const key = `${p.date}|${p.pollster}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      unique.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-      const data = { polls: unique, lastUpdated: new Date().toISOString() };
-      localStorage.setItem("polls-data", JSON.stringify(data));
-
-      setPolls(unique);
-      setLastUpdated(data.lastUpdated);
-      setDataSource("gemt");
-      setAddStatus(`${newPolls.length} måling(er) tilføjet.`);
-      setNewPollText("");
-      setTimeout(() => setAddStatus(""), 4000);
-    } catch (e) {
-      setAddStatus(`Fejl: ${e instanceof Error ? e.message : String(e)}`);
-    }
-  };
-
-  const handleResetData = async () => {
-    try {
-      localStorage.removeItem("polls-data");
-      setPolls(FALLBACK_POLLS);
-      setLastUpdated(null);
-      setDataSource("lokal");
-      setAddStatus("Data nulstillet til standardværdier.");
-      setTimeout(() => setAddStatus(""), 4000);
-    } catch (e) {
-      setAddStatus("Kunne ikke nulstille.");
-    }
-  };
 
   const toggleParty = (pk) => {
     setSelectedParties(prev => { const n = new Set(prev); n.has(pk) ? n.delete(pk) : n.add(pk); return n; });
@@ -500,11 +448,11 @@ export default function DanskValgbarometer() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#020617", color: "#e2e8f0", fontFamily: "'Space Grotesk', -apple-system, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at 20% 10%, rgba(37,75,142,0.22) 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(200,16,46,0.1) 0%, transparent 55%), #040b24", color: "#e2e8f0", fontFamily: "'Space Grotesk', -apple-system, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* ── Header ──────────────────────────────────────────────── */}
-      <div style={{ borderBottom: "1px solid #1e293b", background: "linear-gradient(180deg, #0f172a 0%, #020617 100%)" }}>
+      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "linear-gradient(160deg, #0d1f5c 0%, #0a1840 45%, #060e2c 100%)" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 24px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{
@@ -521,7 +469,7 @@ export default function DanskValgbarometer() {
               }}>{daysLeft} dage til valg</span>
             )}
           </div>
-          <h1 style={{ fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 700, margin: 0, letterSpacing: "-0.03em", lineHeight: 1.1, color: "#f8fafc" }}>
+          <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 800, margin: 0, letterSpacing: "-0.04em", lineHeight: 1.05, background: "linear-gradient(135deg, #ffffff 0%, #93c5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
             Dansk Valgbarometer
           </h1>
           <p style={{ fontSize: "15px", color: "#64748b", marginTop: 8, maxWidth: 650, lineHeight: 1.5 }}>
@@ -543,13 +491,12 @@ export default function DanskValgbarometer() {
               { id: "graf", label: "Meningsmålinger" },
               { id: "institutter", label: "Institutvurderinger" },
               { id: "tabel", label: "Seneste målinger" },
-              { id: "data", label: "Administrér data" },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
                 padding: "8px 18px",
-                background: activeTab === tab.id ? "#1e293b" : "transparent",
-                color: activeTab === tab.id ? "#f8fafc" : "#64748b",
-                border: activeTab === tab.id ? "1px solid #334155" : "1px solid transparent",
+                background: activeTab === tab.id ? "rgba(59,130,246,0.18)" : "transparent",
+                color: activeTab === tab.id ? "#93c5fd" : "#5a7490",
+                border: activeTab === tab.id ? "1px solid rgba(59,130,246,0.45)" : "1px solid transparent",
                 borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer",
                 fontFamily: "'Space Grotesk', sans-serif", transition: "all 0.15s ease",
               }}>{tab.label}</button>
@@ -563,7 +510,7 @@ export default function DanskValgbarometer() {
         {/* ── Aktuel gennemsnit-bar ──────────────────────────────── */}
         <div style={{
           display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: 24, padding: "16px",
-          background: "#0f172a", borderRadius: "12px", border: "1px solid #1e293b",
+          background: "rgba(255,255,255,0.04)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
         }}>
           <div style={{ width: "100%", fontSize: 10, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
             Aktuelt vægtet gennemsnit
@@ -600,9 +547,9 @@ export default function DanskValgbarometer() {
                 {Object.keys(POLLSTERS).map(name => (
                   <button key={name} onClick={() => togglePollster(name)} style={{
                     padding: "4px 10px", fontSize: "11px", fontWeight: 600,
-                    background: selectedPollsters.has(name) ? "#1e293b" : "transparent",
-                    color: selectedPollsters.has(name) ? "#f8fafc" : "#475569",
-                    border: `1px solid ${selectedPollsters.has(name) ? "#334155" : "#1e293b"}`,
+                    background: selectedPollsters.has(name) ? "rgba(255,255,255,0.1)" : "transparent",
+                    color: selectedPollsters.has(name) ? "#e2e8f0" : "#475569",
+                    border: `1px solid ${selectedPollsters.has(name) ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)"}`,
                     borderRadius: "6px", cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
                   }}>{name}</button>
                 ))}
@@ -626,14 +573,14 @@ export default function DanskValgbarometer() {
               </div>
               <button onClick={() => setShowDots(!showDots)} style={{
                 padding: "4px 10px", fontSize: "11px", fontWeight: 600,
-                background: showDots ? "#1e293b" : "transparent",
-                color: showDots ? "#f8fafc" : "#475569",
-                border: `1px solid ${showDots ? "#334155" : "#1e293b"}`,
+                background: showDots ? "rgba(255,255,255,0.1)" : "transparent",
+                color: showDots ? "#e2e8f0" : "#475569",
+                border: `1px solid ${showDots ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)"}`,
                 borderRadius: "6px", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
               }}>{showDots ? "● PRIKKER TIL" : "○ PRIKKER FRA"}</button>
             </div>
 
-            <div style={{ background: "#0f172a", borderRadius: "12px", border: "1px solid #1e293b", padding: "20px 16px 12px" }}>
+            <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.07)", padding: "20px 16px 12px", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 8px 40px rgba(0,0,0,0.4)" }}>
               <PollChart polls={polls} selectedParties={[...selectedParties]} selectedPollsters={selectedPollsters} showDots={showDots} fromDate={fromDate} />
             </div>
 
@@ -646,8 +593,8 @@ export default function DanskValgbarometer() {
                 return (
                   <div key={pk} onClick={() => toggleParty(pk)} style={{
                     display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-                    background: selectedParties.has(pk) ? "#0f172a" : "#020617",
-                    border: `1px solid ${selectedParties.has(pk) ? PARTIES[pk].color + "60" : "#1e293b"}`,
+                    background: selectedParties.has(pk) ? `${PARTIES[pk].color}14` : "rgba(255,255,255,0.02)",
+                    border: `1px solid ${selectedParties.has(pk) ? PARTIES[pk].color + "65" : "rgba(255,255,255,0.07)"}`,
                     borderRadius: "8px", cursor: "pointer", opacity: selectedParties.has(pk) ? 1 : 0.4,
                     transition: "all 0.15s ease",
                   }}>
@@ -684,7 +631,7 @@ export default function DanskValgbarometer() {
                 const seats = Math.round(total * 175 / 100);
                 return (
                   <div key={bloc.label} style={{
-                    background: "#0f172a", border: `1px solid ${bloc.color}30`, borderRadius: "12px", padding: "16px", textAlign: "center",
+                    background: `linear-gradient(135deg, ${bloc.color}14 0%, rgba(255,255,255,0.02) 100%)`, border: `1px solid ${bloc.color}40`, borderRadius: "14px", padding: "20px 16px", textAlign: "center", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: `0 4px 24px ${bloc.color}10`,
                   }}>
                     <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace" }}>
                       {bloc.label}
@@ -705,7 +652,7 @@ export default function DanskValgbarometer() {
         {/* ── INSTITUT-fane ──────────────────────────────────────── */}
         {activeTab === "institutter" && (
           <div>
-            <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: 20 }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "12px", padding: "20px", marginBottom: 20 }}>
               <h3 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>
                 Sådan vurderer vi institutter
               </h3>
@@ -723,7 +670,7 @@ export default function DanskValgbarometer() {
               ))}
             </div>
 
-            <div style={{ marginTop: 20, background: "#0f172a", border: "1px solid #1e293b", borderRadius: "12px", padding: "20px" }}>
+            <div style={{ marginTop: 20, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "12px", padding: "20px" }}>
               <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>Vægtningsmetode</h3>
               <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7 }}>
                 <p style={{ margin: "0 0 10px" }}>Vores vægtede målegennemsnit bruger tre faktorer for hver måling:</p>
@@ -743,7 +690,7 @@ export default function DanskValgbarometer() {
 
         {/* ── TABEL-fane ─────────────────────────────────────────── */}
         {activeTab === "tabel" && (
-          <div style={{ background: "#0f172a", borderRadius: "12px", border: "1px solid #1e293b", overflow: "hidden" }}>
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.09)", overflow: "hidden", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>
                 <thead>
@@ -759,8 +706,8 @@ export default function DanskValgbarometer() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr style={{ background: "#1e293b", borderBottom: "2px solid #334155" }}>
-                    <td style={{ padding: "10px", fontWeight: 700, color: "#f8fafc", position: "sticky", left: 0, background: "#1e293b" }}>GNS</td>
+                  <tr style={{ background: "rgba(255,255,255,0.07)", borderBottom: "2px solid #334155" }}>
+                    <td style={{ padding: "10px", fontWeight: 700, color: "#f8fafc", position: "sticky", left: 0, background: "rgba(255,255,255,0.07)" }}>GNS</td>
                     <td style={{ padding: "10px", color: "#94a3b8", fontWeight: 600 }}>Vægtet</td>
                     <td style={{ padding: "10px", textAlign: "center", color: "#64748b" }}>—</td>
                     {sortedParties.filter(pk => currentAverages[pk] > 1).map(pk => (
@@ -795,135 +742,11 @@ export default function DanskValgbarometer() {
           </div>
         )}
 
-        {/* ── DATA-fane ──────────────────────────────────────────── */}
-        {activeTab === "data" && (
-          <div>
-            {/* Datakilder */}
-            <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: 20 }}>
-              <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>📡 Datakilder</h3>
-              <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7 }}>
-                <p style={{ margin: "0 0 10px" }}>Meningsmålingerne indsamles fra følgende offentlige kilder:</p>
-                {[
-                  { name: "Wikipedia (DK)", url: "da.wikipedia.org/wiki/Meningsmålinger_forud_for_næste_folketingsvalg", freq: "Opdateres løbende" },
-                  { name: "Wikipedia (EN)", url: "en.wikipedia.org/wiki/Opinion_polling_for_the_2026_Danish_general_election", freq: "Opdateres løbende" },
-                  { name: "PolitPro", url: "politpro.eu/en/denmark", freq: "Dagligt" },
-                  { name: "Europe Elects", url: "europeelects.eu/denmark/", freq: "Ugentligt" },
-                  { name: "DR Meningsmålinger", url: "dr.dk/nyheder/politik/meningsmaalinger", freq: "Månedligt (Epinion)" },
-                  { name: "Voxmeter", url: "voxmeter.dk", freq: "Ugentligt (mandage)" },
-                  { name: "Verian Politisk Indeks", url: "veriangroup.com/da/insights/thought-leadership/verian-politisk-indeks", freq: "Månedligt" },
-                  { name: "Megafon / TV 2", url: "survey.megafon.dk/politiskindex/index.php/", freq: "Ca. månedligt" },
-                ].map(src => (
-                  <div key={src.name} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px",
-                    background: "#1e293b", borderRadius: 8, marginBottom: 6,
-                  }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f8fafc" }}>{src.name}</div>
-                      <div style={{ fontSize: 11, color: "#60a5fa", fontFamily: "'JetBrains Mono', monospace" }}>{src.url}</div>
-                    </div>
-                    <span style={{ fontSize: 10, color: "#64748b", whiteSpace: "nowrap" }}>{src.freq}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Tilføj data manuelt */}
-            <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "12px", padding: "20px", marginBottom: 20 }}>
-              <h3 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>✏️ Tilføj nye målinger</h3>
-              <p style={{ margin: "0 0 12px", fontSize: 13, color: "#94a3b8", lineHeight: 1.5 }}>
-                Indsæt én måling per linje i JSON-format. Data gemmes i din browser og bliver husket mellem sessioner.
-              </p>
-              <div style={{
-                background: "#1e293b", borderRadius: 8, padding: "12px", marginBottom: 10,
-                fontSize: 11, color: "#64748b", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.6,
-              }}>
-                Eksempel:<br />
-                {`{"date":"2026-03-01","pollster":"Voxmeter","n":1005,"A":22.0,"F":13.5,"V":11.0,"I":10.0,"Æ":9.0,"C":6.5,"Ø":6.5,"B":4.5,"O":6.5,"Å":2.0,"M":6.0,"H":2.0}`}
-              </div>
-              <textarea
-                value={newPollText}
-                onChange={e => setNewPollText(e.target.value)}
-                placeholder={'Indsæt JSON-linje(r) her...'}
-                rows={4}
-                style={{
-                  width: "100%", boxSizing: "border-box", padding: "10px 12px",
-                  background: "#020617", border: "1px solid #334155", borderRadius: 8,
-                  color: "#e2e8f0", fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-                  resize: "vertical",
-                }}
-              />
-              <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
-                <button onClick={handleAddPolls} style={{
-                  padding: "8px 20px", background: "#22c55e", color: "#020617", border: "none",
-                  borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
-                }}>Tilføj målinger</button>
-                <button onClick={handleResetData} style={{
-                  padding: "8px 20px", background: "transparent", color: "#ef4444", border: "1px solid #ef444440",
-                  borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
-                }}>Nulstil til standard</button>
-                {addStatus && <span style={{ fontSize: 12, color: addStatus.startsWith("Fejl") ? "#ef4444" : "#22c55e" }}>{addStatus}</span>}
-              </div>
-            </div>
-
-            {/* Automationsguide */}
-            <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "12px", padding: "20px" }}>
-              <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>🔄 Automatisk opdatering</h3>
-              <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7 }}>
-                <p style={{ margin: "0 0 10px" }}>
-                  For at holde dashboardet automatisk opdateret anbefaler vi følgende pipeline:
-                </p>
-                <p style={{ margin: "0 0 6px" }}>
-                  <strong style={{ color: "#60a5fa" }}>1. Scraper</strong> — Et Python-script der henter den seneste data fra Wikipedias meningsmålingside (opdateres hurtigt af redaktører) eller fra Europe Elects' åbne datasæt.
-                </p>
-                <p style={{ margin: "0 0 6px" }}>
-                  <strong style={{ color: "#60a5fa" }}>2. Daglig kørsel</strong> — Opsæt en GitHub Action der kører scraperen dagligt og committer en opdateret <code style={{ color: "#f8fafc" }}>polls.json</code> fil til dit repository.
-                </p>
-                <p style={{ margin: "0 0 6px" }}>
-                  <strong style={{ color: "#60a5fa" }}>3. Automatisk deploy</strong> — Brug Vercel eller Netlify til automatisk rebuild ved hvert push til repositoriet.
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong style={{ color: "#60a5fa" }}>4. Alternativ</strong> — Brug Supabase eller et simpelt JSON API-endpoint som din scraper skriver til, og hent data dynamisk i frontend.
-                </p>
-
-                <div style={{ marginTop: 16, padding: "14px", background: "#1e293b", borderRadius: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#f8fafc", marginBottom: 6 }}>
-                    Anbefalet GitHub Actions workflow:
-                  </div>
-                  <pre style={{
-                    fontSize: 11, color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace",
-                    whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, lineHeight: 1.5,
-                  }}>{`name: Opdater meningsmålinger
-on:
-  schedule:
-    - cron: '0 8 * * *'  # Kør dagligt kl. 08:00 UTC
-  workflow_dispatch:
-
-jobs:
-  update:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
-      - run: pip install requests beautifulsoup4
-      - run: python scraper/fetch_polls.py
-      - run: |
-          git diff --quiet public/data/polls.json || \\
-          (git config user.name "Måle-bot" && \\
-           git config user.email "bot@example.com" && \\
-           git add public/data/polls.json && \\
-           git commit -m "📊 Opdater målinger $(date +%Y-%m-%d)" && \\
-           git push)`}</pre>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ── Footer ─────────────────────────────────────────────── */}
         <div style={{
-          marginTop: 32, paddingTop: 20, borderTop: "1px solid #1e293b",
-          textAlign: "center", fontSize: "11px", color: "#475569",
+          marginTop: 32, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.06)",
+          textAlign: "center", fontSize: "11px", color: "#374868",
           fontFamily: "'JetBrains Mono', monospace", paddingBottom: 40,
         }}>
           <div>Dansk Valgbarometer · Måledata fra offentlige kilder · Ikke tilknyttet noget parti eller medie</div>

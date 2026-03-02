@@ -16,7 +16,7 @@ function getTimeLeft() {
 }
 
 export default function Countdown() {
-  const [timeLeft, setTimeLeft] = useState<ReturnType<typeof getTimeLeft>>(null);
+  const [timeLeft, setTimeLeft] = useState<ReturnType<typeof getTimeLeft> | undefined>(undefined);
 
   useEffect(() => {
     setTimeLeft(getTimeLeft());
@@ -32,77 +32,62 @@ export default function Countdown() {
   ];
 
   return (
-    <div
-      style={{
-        background: "#0a1628",
-        borderBottom: "1px solid #1e3a5f",
-        padding: "20px 16px",
-        textAlign: "center",
-      }}
-    >
-      <p
-        style={{
-          margin: "0 0 14px",
-          fontSize: "0.8rem",
-          textTransform: "uppercase",
-          letterSpacing: "0.12em",
-          color: "#64748b",
-        }}
-      >
-        Nedtælling til Folketingsvalget · 24. marts 2026
+    <div style={{
+      background: "linear-gradient(180deg, #0a1535 0%, #06102b 100%)",
+      borderBottom: "1px solid rgba(240,165,53,0.18)",
+      padding: "16px 16px",
+      textAlign: "center",
+    }}>
+      <p style={{
+        margin: "0 0 10px",
+        fontSize: "0.65rem",
+        textTransform: "uppercase",
+        letterSpacing: "0.2em",
+        color: "rgba(240,165,53,0.55)",
+        fontFamily: "'JetBrains Mono', monospace",
+      }}>
+        Nedtælling til Folketingsvalget &nbsp;·&nbsp; 24. marts 2026
       </p>
 
-      {timeLeft === null && timeLeft !== undefined ? (
-        <p style={{ fontSize: "1.8rem", fontWeight: 700, color: "#60a5fa", margin: 0 }}>
+      {timeLeft === undefined ? null : timeLeft === null ? (
+        <p style={{ fontSize: "1.6rem", fontWeight: 700, color: "#f0a535", margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
           Valget er i gang!
         </p>
       ) : (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "2px" }}>
           {units.map(({ value, label }, i) => (
-            <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "80px" }}>
-                <span
-                  style={{
-                    fontSize: "3.5rem",
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    color: "#e2e8f0",
-                    fontVariantNumeric: "tabular-nums",
-                    fontFamily: "monospace",
-                  }}
-                >
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "72px" }}>
+                <span style={{
+                  fontSize: "2.8rem",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  color: "#f0a535",
+                  fontVariantNumeric: "tabular-nums",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  textShadow: "0 0 28px rgba(240,165,53,0.35)",
+                }}>
                   {value !== undefined ? String(value).padStart(2, "0") : "--"}
                 </span>
-                <span
-                  style={{
-                    fontSize: "0.65rem",
-                    color: "#475569",
-                    marginTop: "5px",
-                    letterSpacing: "0.1em",
-                  }}
-                >
+                <span style={{
+                  fontSize: "0.55rem",
+                  color: "rgba(240,165,53,0.4)",
+                  marginTop: "4px",
+                  letterSpacing: "0.14em",
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>
                   {label}
                 </span>
               </div>
               {i < units.length - 1 && (
-                <span
-                  style={{
-                    fontSize: "2.5rem",
-                    fontWeight: 700,
-                    color: "#1e3a5f",
-                    lineHeight: 1,
-                    marginBottom: "16px",
-                  }}
-                >
-                  :
-                </span>
+                <span style={{
+                  fontSize: "2rem",
+                  fontWeight: 300,
+                  color: "rgba(240,165,53,0.2)",
+                  lineHeight: 1,
+                  marginBottom: "12px",
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>:</span>
               )}
             </div>
           ))}
