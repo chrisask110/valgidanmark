@@ -33,7 +33,7 @@ export default function Countdown() {
 
   return (
     <div style={{
-      background: "linear-gradient(180deg, #0a1535 0%, #06102b 100%)",
+      background: "linear-gradient(180deg, #122050 0%, #0c1a3e 100%)",
       borderBottom: "1px solid rgba(240,165,53,0.18)",
       padding: "16px 16px",
       textAlign: "center",

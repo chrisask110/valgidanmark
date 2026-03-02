@@ -228,7 +228,8 @@ function PollChart({ polls, selectedParties, selectedPollsters, showDots, fromDa
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    const x = e.clientX - rect.left - margin.left;
+    const scaleX = width / rect.width;
+    const x = (e.clientX - rect.left) * scaleX - margin.left;
     const date = xScale.invert(x);
     let closest = null; let minDist = Infinity;
     filteredPolls.forEach(p => {
@@ -349,13 +350,13 @@ function PollsterCard({ name, data }: { name: string; data: typeof POLLSTERS[key
         }}>{data.grade}</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-        <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px" }}>
+        <div style={{ background: "rgba(255,255,255,0.09)", borderRadius: 8, padding: "10px" }}>
           <div style={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Score</div>
           <div style={{ fontSize: "20px", fontWeight: 700, color: "#f8fafc", fontFamily: "'JetBrains Mono', monospace" }}>
             {data.rating}<span style={{ fontSize: 12, color: "#64748b" }}>/100</span>
           </div>
         </div>
-        <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px" }}>
+        <div style={{ background: "rgba(255,255,255,0.09)", borderRadius: 8, padding: "10px" }}>
           <div style={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Gns. fejl</div>
           <div style={{ fontSize: "20px", fontWeight: 700, color: "#f8fafc", fontFamily: "'JetBrains Mono', monospace" }}>
             ±{data.avgError}<span style={{ fontSize: 12, color: "#64748b" }}>pp</span>
@@ -364,8 +365,8 @@ function PollsterCard({ name, data }: { name: string; data: typeof POLLSTERS[key
       </div>
       <div style={{ fontSize: "12px", color: "#94a3b8", lineHeight: 1.5 }}>{data.desc}</div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 10, background: "rgba(255,255,255,0.07)", color: "#94a3b8", padding: "3px 8px", borderRadius: 4 }}>{data.methodology}</span>
-        <span style={{ fontSize: 10, background: "rgba(255,255,255,0.07)", color: "#94a3b8", padding: "3px 8px", borderRadius: 4 }}>n ≈ {data.sampleSize}</span>
+        <span style={{ fontSize: 10, background: "rgba(255,255,255,0.09)", color: "#94a3b8", padding: "3px 8px", borderRadius: 4 }}>{data.methodology}</span>
+        <span style={{ fontSize: 10, background: "rgba(255,255,255,0.09)", color: "#94a3b8", padding: "3px 8px", borderRadius: 4 }}>n ≈ {data.sampleSize}</span>
       </div>
     </div>
   );
@@ -380,7 +381,6 @@ export default function DanskValgbarometer() {
   const [selectedParties, setSelectedParties] = useState(new Set(["A", "F", "V", "I", "Æ", "C"]));
   const [selectedPollsters, setSelectedPollsters] = useState(new Set(Object.keys(POLLSTERS)));
   const [showDots, setShowDots] = useState(true);
-  const [activeTab, setActiveTab] = useState("graf");
   const [timeRange, setTimeRange] = useState("all");
 
   // ── Hent data fra localStorage eller brug fallback ────────
@@ -438,7 +438,7 @@ export default function DanskValgbarometer() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#020617", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontFamily: "'Space Grotesk', sans-serif" }}>
+      <div style={{ minHeight: "100vh", background: "#0c1a3e", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontFamily: "'Space Grotesk', sans-serif" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🗳️</div>
           <div>Indlæser måledata...</div>
@@ -448,11 +448,11 @@ export default function DanskValgbarometer() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at 20% 10%, rgba(37,75,142,0.22) 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(200,16,46,0.1) 0%, transparent 55%), #040b24", color: "#e2e8f0", fontFamily: "'Space Grotesk', -apple-system, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at 20% 10%, rgba(50,100,200,0.28) 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(200,16,46,0.12) 0%, transparent 55%), #0c1a3e", color: "#e2e8f0", fontFamily: "'Space Grotesk', -apple-system, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* ── Header ──────────────────────────────────────────────── */}
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "linear-gradient(160deg, #0d1f5c 0%, #0a1840 45%, #060e2c 100%)" }}>
+      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", background: "linear-gradient(160deg, #1a3070 0%, #132256 45%, #0c1a3e 100%)" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 24px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{
@@ -485,23 +485,6 @@ export default function DanskValgbarometer() {
             </span>
           </div>
 
-          {/* Navigation */}
-          <div style={{ display: "flex", gap: 4, marginTop: 20, flexWrap: "wrap" }}>
-            {[
-              { id: "graf", label: "Meningsmålinger" },
-              { id: "institutter", label: "Institutvurderinger" },
-              { id: "tabel", label: "Seneste målinger" },
-            ].map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-                padding: "8px 18px",
-                background: activeTab === tab.id ? "rgba(59,130,246,0.18)" : "transparent",
-                color: activeTab === tab.id ? "#93c5fd" : "#5a7490",
-                border: activeTab === tab.id ? "1px solid rgba(59,130,246,0.45)" : "1px solid transparent",
-                borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer",
-                fontFamily: "'Space Grotesk', sans-serif", transition: "all 0.15s ease",
-              }}>{tab.label}</button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -510,7 +493,7 @@ export default function DanskValgbarometer() {
         {/* ── Aktuel gennemsnit-bar ──────────────────────────────── */}
         <div style={{
           display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: 24, padding: "16px",
-          background: "rgba(255,255,255,0.04)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
+          background: "rgba(255,255,255,0.09)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
         }}>
           <div style={{ width: "100%", fontSize: 10, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
             Aktuelt vægtet gennemsnit
@@ -538,9 +521,8 @@ export default function DanskValgbarometer() {
           })}
         </div>
 
-        {/* ── GRAF-fane ──────────────────────────────────────────── */}
-        {activeTab === "graf" && (
-          <div>
+        {/* ── Meningsmålinger ────────────────────────────────────── */}
+        <div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 16, alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                 <span style={{ fontSize: 11, color: "#64748b", fontFamily: "'JetBrains Mono', monospace", marginRight: 4 }}>INSTITUTTER:</span>
@@ -549,7 +531,7 @@ export default function DanskValgbarometer() {
                     padding: "4px 10px", fontSize: "11px", fontWeight: 600,
                     background: selectedPollsters.has(name) ? "rgba(255,255,255,0.1)" : "transparent",
                     color: selectedPollsters.has(name) ? "#e2e8f0" : "#475569",
-                    border: `1px solid ${selectedPollsters.has(name) ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)"}`,
+                    border: `1px solid ${selectedPollsters.has(name) ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.09)"}`,
                     borderRadius: "6px", cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
                   }}>{name}</button>
                 ))}
@@ -575,12 +557,12 @@ export default function DanskValgbarometer() {
                 padding: "4px 10px", fontSize: "11px", fontWeight: 600,
                 background: showDots ? "rgba(255,255,255,0.1)" : "transparent",
                 color: showDots ? "#e2e8f0" : "#475569",
-                border: `1px solid ${showDots ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.07)"}`,
+                border: `1px solid ${showDots ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.09)"}`,
                 borderRadius: "6px", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
               }}>{showDots ? "● PRIKKER TIL" : "○ PRIKKER FRA"}</button>
             </div>
 
-            <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.07)", padding: "20px 16px 12px", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 8px 40px rgba(0,0,0,0.4)" }}>
+            <div style={{ background: "rgba(0,0,0,0.35)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.09)", padding: "20px 16px 12px", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 8px 40px rgba(0,0,0,0.4)" }}>
               <PollChart polls={polls} selectedParties={[...selectedParties]} selectedPollsters={selectedPollsters} showDots={showDots} fromDate={fromDate} />
             </div>
 
@@ -594,7 +576,7 @@ export default function DanskValgbarometer() {
                   <div key={pk} onClick={() => toggleParty(pk)} style={{
                     display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
                     background: selectedParties.has(pk) ? `${PARTIES[pk].color}14` : "rgba(255,255,255,0.02)",
-                    border: `1px solid ${selectedParties.has(pk) ? PARTIES[pk].color + "65" : "rgba(255,255,255,0.07)"}`,
+                    border: `1px solid ${selectedParties.has(pk) ? PARTIES[pk].color + "65" : "rgba(255,255,255,0.09)"}`,
                     borderRadius: "8px", cursor: "pointer", opacity: selectedParties.has(pk) ? 1 : 0.4,
                     transition: "all 0.15s ease",
                   }}>
@@ -646,13 +628,14 @@ export default function DanskValgbarometer() {
                 );
               })}
             </div>
-          </div>
-        )}
+        </div>
 
-        {/* ── INSTITUT-fane ──────────────────────────────────────── */}
-        {activeTab === "institutter" && (
-          <div>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "12px", padding: "20px", marginBottom: 20 }}>
+        {/* ── Institutvurderinger ────────────────────────────────── */}
+        <div style={{ marginTop: 40, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 32 }}>
+          <h2 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: 700, color: "#93c5fd", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "0.02em" }}>
+            Institutvurderinger
+          </h2>
+            <div style={{ background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "12px", padding: "20px", marginBottom: 20 }}>
               <h3 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>
                 Sådan vurderer vi institutter
               </h3>
@@ -670,7 +653,7 @@ export default function DanskValgbarometer() {
               ))}
             </div>
 
-            <div style={{ marginTop: 20, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "12px", padding: "20px" }}>
+            <div style={{ marginTop: 20, background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "12px", padding: "20px" }}>
               <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "#f8fafc" }}>Vægtningsmetode</h3>
               <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7 }}>
                 <p style={{ margin: "0 0 10px" }}>Vores vægtede målegennemsnit bruger tre faktorer for hver måling:</p>
@@ -685,12 +668,14 @@ export default function DanskValgbarometer() {
                 </p>
               </div>
             </div>
-          </div>
-        )}
+        </div>
 
-        {/* ── TABEL-fane ─────────────────────────────────────────── */}
-        {activeTab === "tabel" && (
-          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.09)", overflow: "hidden", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+        {/* ── Seneste målinger ───────────────────────────────────── */}
+        <div style={{ marginTop: 40, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 32 }}>
+          <h2 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: 700, color: "#93c5fd", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "0.02em" }}>
+            Seneste målinger
+          </h2>
+          <div style={{ background: "rgba(255,255,255,0.09)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.09)", overflow: "hidden", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>
                 <thead>
@@ -706,8 +691,8 @@ export default function DanskValgbarometer() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr style={{ background: "rgba(255,255,255,0.07)", borderBottom: "2px solid #334155" }}>
-                    <td style={{ padding: "10px", fontWeight: 700, color: "#f8fafc", position: "sticky", left: 0, background: "rgba(255,255,255,0.07)" }}>GNS</td>
+                  <tr style={{ background: "rgba(255,255,255,0.09)", borderBottom: "2px solid #334155" }}>
+                    <td style={{ padding: "10px", fontWeight: 700, color: "#f8fafc", position: "sticky", left: 0, background: "rgba(255,255,255,0.09)" }}>GNS</td>
                     <td style={{ padding: "10px", color: "#94a3b8", fontWeight: 600 }}>Vægtet</td>
                     <td style={{ padding: "10px", textAlign: "center", color: "#64748b" }}>—</td>
                     {sortedParties.filter(pk => currentAverages[pk] > 1).map(pk => (
@@ -740,7 +725,7 @@ export default function DanskValgbarometer() {
               </table>
             </div>
           </div>
-        )}
+        </div>
 
 
         {/* ── Footer ─────────────────────────────────────────────── */}
