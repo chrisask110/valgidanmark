@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Countdown from './Countdown';
 
 export const metadata: Metadata = {
   title: 'Valg i Danmark 2026 – Dansk Valgbarometer',
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="da">
       <body style={{ margin: 0, padding: 0, background: '#020617', color: '#e2e8f0' }}>
+        <Countdown />
         {children}
       </body>
     </html>
