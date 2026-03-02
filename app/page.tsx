@@ -458,6 +458,25 @@ export default function DanskValgbarometer() {
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px" }}>
 
+        {/* ── Statsminister-simulator link ───────────────────────── */}
+        <a href="/statsminister" style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "14px 20px", marginBottom: 20,
+          background: "linear-gradient(135deg, rgba(147,197,253,0.08) 0%, rgba(59,130,246,0.04) 100%)",
+          border: "1px solid rgba(147,197,253,0.22)", borderRadius: "12px",
+          textDecoration: "none", transition: "all 0.2s",
+        }}>
+          <div>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: "#93c5fd", fontFamily: "'Space Grotesk', sans-serif" }}>
+              Statsminister-simulator
+            </span>
+            <span style={{ fontSize: "12px", color: "#475569", marginLeft: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+              Byg din egen regering og se om du kan danne flertal
+            </span>
+          </div>
+          <span style={{ color: "#64748b", fontSize: "14px" }}>→</span>
+        </a>
+
         {/* ── Aktuel gennemsnit-bar ──────────────────────────────── */}
         <div style={{
           display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: 24, padding: "16px",
