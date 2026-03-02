@@ -241,7 +241,12 @@ function PollChart({ polls, selectedParties, selectedPollsters, showDots, fromDa
     } else { setTooltip(null); }
   }, [filteredPolls, xScale, margin.left]);
 
-  const xTicks = xScale.ticks(8);
+  const xTicks = useMemo(() => {
+    const [start, end] = xScale.domain();
+    const months = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30);
+    const step = Math.max(1, Math.round(months / 6));
+    return xScale.ticks(d3.timeMonth.every(step));
+  }, [xScale]);
   const yTicks = yScale.ticks(6);
 
   return (
@@ -451,43 +456,6 @@ export default function DanskValgbarometer() {
     <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at 20% 10%, rgba(50,100,200,0.28) 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(200,16,46,0.12) 0%, transparent 55%), #0c1a3e", color: "#e2e8f0", fontFamily: "'Space Grotesk', -apple-system, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", background: "linear-gradient(160deg, #1a3070 0%, #132256 45%, #0c1a3e 100%)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 24px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{
-              fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: "#C8102E",
-              background: "#C8102E18", padding: "3px 8px", borderRadius: 4, letterSpacing: "0.08em", textTransform: "uppercase",
-            }}>BETA</span>
-            <span style={{ fontSize: "11px", color: "#64748b", fontFamily: "'JetBrains Mono', monospace" }}>
-              Folketingsvalg 24. marts 2026
-            </span>
-            {daysLeft > 0 && (
-              <span style={{
-                fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: "#facc15",
-                background: "#facc1510", padding: "3px 8px", borderRadius: 4,
-              }}>{daysLeft} dage til valg</span>
-            )}
-          </div>
-          <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 800, margin: 0, letterSpacing: "-0.04em", lineHeight: 1.05, background: "linear-gradient(135deg, #ffffff 0%, #93c5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            Dansk Valgbarometer
-          </h1>
-          <p style={{ fontSize: "15px", color: "#64748b", marginTop: 8, maxWidth: 650, lineHeight: 1.5 }}>
-            Vægtede meningsmålingsgennemsnit for det danske folketingsvalg.
-            Institutvurderinger baseret på historisk præcision.
-          </p>
-
-          {/* Status */}
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 10, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 11, color: "#475569", fontFamily: "'JetBrains Mono', monospace" }}>
-              📊 {polls.length} målinger · {dataSource === "gemt" ? "Fra gemt data" : "Standarddata"} 
-              {lastUpdated && ` · Opdateret ${formatDateDa(lastUpdated)}`}
-            </span>
-          </div>
-
-        </div>
-      </div>
-
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px" }}>
 
         {/* ── Aktuel gennemsnit-bar ──────────────────────────────── */}
@@ -495,7 +463,7 @@ export default function DanskValgbarometer() {
           display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: 24, padding: "16px",
           background: "rgba(255,255,255,0.09)", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.09)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
         }}>
-          <div style={{ width: "100%", fontSize: 10, color: "#475569", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
+          <div style={{ width: "100%", fontSize: 10, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
             Aktuelt vægtet gennemsnit
           </div>
           {sortedParties.map(pk => {
