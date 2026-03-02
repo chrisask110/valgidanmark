@@ -144,20 +144,26 @@ function formatMonthYearDa(d: Date | string) {
   return `${DA_MONTHS[dt.getMonth()]} '${String(dt.getFullYear()).slice(2)}`;
 }
 
-// ── Beregning af vægtet gennemsnit ────────────────────────────────
+// ── Beregning af vægtet gennemsnit (538-style with recency + pollster + sample weight) ────────────────────────────────
 function calcWeightedAverage(polls: Poll[], partyKey: string, asOfDate?: string) {
   const now = asOfDate ? new Date(asOfDate) : new Date();
   const relevant = polls
-    .filter(p => p[partyKey] !== undefined && p[partyKey] !== null)
+    .filter(p => p[partyKey] !== undefined && p[partyKey] !== null && p[partyKey] !== "")
     .map(p => {
       const d = new Date(p.date);
       const daysDiff = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
-      const recency = Math.exp(-daysDiff / 30);
+      const recency = Math.exp(-daysDiff / 30);                    // 30-day half-life, same idea as 538
       const pollsterWeight = POLLSTERS[p.pollster]?.weight || 1.0;
       const sizeWeight = Math.sqrt((p.n || 1000) / 1000);
-      return { value: p[partyKey], weight: recency * pollsterWeight * sizeWeight };
+
+      return {
+        value: Number(p[partyKey]),   // ← THIS IS THE FIX (forces number, handles both 21.6 and "21.6")
+        weight: recency * pollsterWeight * sizeWeight,
+      };
     });
+
   if (relevant.length === 0) return null;
+
   const totalWeight = relevant.reduce((s, r) => s + r.weight, 0);
   return relevant.reduce((s, r) => s + r.value * r.weight, 0) / totalWeight;
 }
