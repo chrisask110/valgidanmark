@@ -24,8 +24,8 @@ const PARTY_LEADERS: Record<string, string> = {
   V: "Troels Lund Poulsen",
   I: "Alex Vanopslagh",
   Æ: "Inger Støjberg",
-  C: "Rasmus Jarlov",
-  Ø: "Pernille Skipper",
+  C: "Mona Jull",
+  Ø: "Pelle Dragsted",
   B: "Martin Lidegaard",
   O: "Morten Messerschmidt",
   Å: "Franciska Rosenkilde",
@@ -112,9 +112,16 @@ export default function StatsministerPage() {
     return Object.fromEntries(PARTY_KEYS.map(pk => [pk, Number(latest?.[pk]) || 0]));
   }, [polls, dataSource]);
 
-  const partySeats = useMemo((): Record<string, number> =>
-    Object.fromEntries(PARTY_KEYS.map(pk => [pk, Math.round((partyPct[pk] || 0) * 175 / 100)])),
-    [partyPct]);
+  const partySeats = useMemo((): Record<string, number> => {
+    const qualifying = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 2);
+    const totalQualifyingPct = qualifying.reduce((s, pk) => s + (partyPct[pk] || 0), 0);
+    const seats: Record<string, number> = {};
+    PARTY_KEYS.forEach(pk => {
+      if ((partyPct[pk] || 0) < 2) { seats[pk] = 0; return; }
+      seats[pk] = Math.round((partyPct[pk] / totalQualifyingPct) * 175);
+    });
+    return seats;
+  }, [partyPct]);
 
   const coalitionSeats = useMemo(() =>
     PARTY_KEYS
