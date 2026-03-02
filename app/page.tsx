@@ -187,14 +187,14 @@ function daysUntilElection() {
 // ── SVG Graf-komponent ────────────────────────────────────────────
 function PollChart({ polls, selectedParties, selectedPollsters, showDots, width = 900, height = 420 }: {
   polls: Poll[];
-  selectedParties: Set<string>;
+  selectedParties: string[];
   selectedPollsters: Set<string>;
   showDots: boolean;
   width?: number;
   height?: number;
 }) {
   const svgRef = useRef(null);
-  const [tooltip, setTooltip] = useState(null);
+  const [tooltip, setTooltip] = useState<{x: number, y: number, poll: Poll} | null>(null);
 
   const margin = { top: 20, right: 30, bottom: 50, left: 45 };
   const innerW = width - margin.left - margin.right;
