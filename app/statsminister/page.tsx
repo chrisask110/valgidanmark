@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 
 const PARTIES: Record<string, { name: string; short: string; color: string }> = {
@@ -24,13 +24,13 @@ const PARTY_LEADERS: Record<string, string> = {
   V: "Troels Lund Poulsen",
   I: "Alex Vanopslagh",
   Æ: "Inger Støjberg",
-  C: "Mona Jull",
+  C: "Mona Juul",
   Ø: "Pelle Dragsted",
   B: "Martin Lidegaard",
   O: "Morten Messerschmidt",
   Å: "Franciska Rosenkilde",
   M: "Lars Løkke Rasmussen",
-  H: "—",
+  H: "Lars Boje Mathiesen",
 };
 
 const POLLSTERS: Record<string, { weight: number }> = {
@@ -85,6 +85,23 @@ const CAT_CONFIG: Record<Category, { label: string; color: string; bg: string; b
   opposition: { label: "Oppositionen",  color: "#64748b", bg: "rgba(100,116,139,0.08)", border: "rgba(100,116,139,0.22)" },
 };
 
+function LeaderPhoto({ pk, size, border }: { pk: string; size: number; border?: string }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", overflow: "hidden", flexShrink: 0,
+      border: border || "none",
+      background: PARTIES[pk].color,
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <img
+        src={`/leaders/${pk}.jpg`}
+        alt={PARTY_LEADERS[pk]}
+        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
+      />
+    </div>
+  );
+}
+
 export default function StatsministerPage() {
   const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
   const [dataSource, setDataSource] = useState<"model" | "latest">("model");
@@ -93,6 +110,8 @@ export default function StatsministerPage() {
   );
   const [selectedPM, setSelectedPM] = useState<string | null>(null);
   const [predictionExpanded, setPredictionExpanded] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const predictionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
@@ -171,6 +190,33 @@ export default function StatsministerPage() {
     return parts.join(" ");
   }, [selectedPM, govParties, supportParties, coalitionSeats, hasMajority]);
 
+  const sharePrediction = async () => {
+    if (!predictionRef.current) return;
+    setSharing(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(predictionRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#0c1a3e",
+      });
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], "min-forudsigelse.png", { type: "image/png" });
+      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Min valgforudsigelse – valgidanmark.dk" });
+      } else {
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = "min-forudsigelse.png";
+        a.click();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at 20% 10%, rgba(50,100,200,0.28) 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(200,16,46,0.12) 0%, transparent 55%), #0c1a3e", color: "#e2e8f0", fontFamily: "'Space Grotesk', -apple-system, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -226,9 +272,7 @@ export default function StatsministerPage() {
                   boxShadow: isSel ? `0 0 20px ${PARTIES[pk].color}30` : "none",
                   transition: "all 0.2s",
                 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: PARTIES[pk].color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
-                    {PARTIES[pk].short}
-                  </div>
+                  <LeaderPhoto pk={pk} size={40} border={`2px solid ${isSel ? PARTIES[pk].color : "rgba(255,255,255,0.15)"}`} />
                   <div>
                     <div style={{ fontSize: "13px", fontWeight: 700, color: isSel ? "#f8fafc" : "#94a3b8" }}>
                       {PARTY_LEADERS[pk]}{isSel ? " 👑" : ""}
@@ -266,9 +310,7 @@ export default function StatsministerPage() {
                   userSelect: "none",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <span style={{ width: 28, height: 28, borderRadius: "50%", background: PARTIES[pk].color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
-                      {PARTIES[pk].short}
-                    </span>
+                    <LeaderPhoto pk={pk} size={32} border={`2px solid ${PARTIES[pk].color}60`} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: "12px", fontWeight: 600, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {isPM ? `${PARTY_LEADERS[pk]} 👑` : PARTIES[pk].name.split("–")[0].trim()}
@@ -303,7 +345,6 @@ export default function StatsministerPage() {
               <div style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 10 }}>
                 Parlamentarisk grundlag
               </div>
-              {/* Progress bar with 90-seat marker */}
               <div style={{ position: "relative", height: 10, background: "rgba(255,255,255,0.08)", borderRadius: 5, overflow: "visible", marginBottom: 8 }}>
                 <div style={{
                   height: "100%", borderRadius: 5,
@@ -311,7 +352,6 @@ export default function StatsministerPage() {
                   background: hasMajority ? "linear-gradient(90deg, #22c55e, #4ade80)" : "linear-gradient(90deg, #3b82f6, #60a5fa)",
                   transition: "width 0.4s ease",
                 }} />
-                {/* 90-seat marker line */}
                 <div style={{ position: "absolute", top: -3, left: `${(90 / 179) * 100}%`, width: 2, height: 16, background: "rgba(255,255,255,0.4)", borderRadius: 1 }} />
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", color: "#64748b" }}>
@@ -341,35 +381,97 @@ export default function StatsministerPage() {
         {/* Prediction button + reveal */}
         {selectedPM && (
           predictionExpanded ? (
-            <div style={{
-              background: "linear-gradient(135deg, rgba(147,197,253,0.1) 0%, rgba(59,130,246,0.05) 100%)",
-              border: "1.5px solid rgba(147,197,253,0.3)", borderRadius: "14px", padding: "24px",
-            }}>
-              <div style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.14em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12 }}>
-                Min forudsigelse
-              </div>
-              <p style={{ fontSize: "16px", color: "#e2e8f0", lineHeight: 1.75, margin: "0 0 18px", fontWeight: 500 }}>
-                {predictionText}
-              </p>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-                {govParties.map(pk => (
-                  <span key={pk} style={{ padding: "4px 10px", background: `${PARTIES[pk].color}20`, border: `1px solid ${PARTIES[pk].color}70`, borderRadius: 6, fontSize: "12px", color: PARTIES[pk].color, fontFamily: "'JetBrains Mono', monospace" }}>
-                    {PARTIES[pk].short} · Reg.
-                  </span>
-                ))}
-                {supportParties.map(pk => (
-                  <span key={pk} style={{ padding: "4px 10px", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.4)", borderRadius: 6, fontSize: "12px", color: "#4ade80", fontFamily: "'JetBrains Mono', monospace" }}>
-                    {PARTIES[pk].short} · Støt.
-                  </span>
-                ))}
-              </div>
-              <button onClick={() => setPredictionExpanded(false)} style={{
-                padding: "6px 14px", fontSize: "12px", cursor: "pointer",
-                background: "transparent", color: "#64748b",
-                border: "1px solid #334155", borderRadius: 6, fontFamily: "'Space Grotesk', sans-serif",
+            <div>
+              {/* Shareable card — this is what gets captured as an image */}
+              <div ref={predictionRef} style={{
+                background: "linear-gradient(135deg, #0d1f4a 0%, #122050 100%)",
+                border: "1.5px solid rgba(147,197,253,0.3)", borderRadius: "14px", padding: "24px",
+                marginBottom: 12,
               }}>
-                Rediger forudsigelse
-              </button>
+                {/* PM header with photo */}
+                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+                  <div style={{ width: 72, height: 72, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `3px solid ${PARTIES[selectedPM].color}` }}>
+                    <img
+                      src={`/leaders/${selectedPM}.jpg`}
+                      alt={PARTY_LEADERS[selectedPM]}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.14em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
+                      Min forudsigelse
+                    </div>
+                    <div style={{ fontSize: "20px", fontWeight: 800, color: "#f8fafc", lineHeight: 1.2 }}>
+                      {PARTY_LEADERS[selectedPM]} 👑
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: 2 }}>
+                      {PARTIES[selectedPM].name}
+                    </div>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: "15px", color: "#e2e8f0", lineHeight: 1.75, margin: "0 0 18px", fontWeight: 500 }}>
+                  {predictionText}
+                </p>
+
+                {/* Coalition party pills with photos */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+                  {govParties.map(pk => (
+                    <div key={pk} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px 5px 5px", background: `${PARTIES[pk].color}20`, border: `1px solid ${PARTIES[pk].color}70`, borderRadius: 20 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+                        <img src={`/leaders/${pk}.jpg`} alt={PARTY_LEADERS[pk]} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
+                      </div>
+                      <span style={{ fontSize: "11px", color: PARTIES[pk].color, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
+                        {PARTIES[pk].short} · Reg.
+                      </span>
+                    </div>
+                  ))}
+                  {supportParties.map(pk => (
+                    <div key={pk} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px 5px 5px", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.4)", borderRadius: 20 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+                        <img src={`/leaders/${pk}.jpg`} alt={PARTY_LEADERS[pk]} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
+                      </div>
+                      <span style={{ fontSize: "11px", color: "#4ade80", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
+                        {PARTIES[pk].short} · Støt.
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Seat count footer */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: hasMajority ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)", borderRadius: 8, border: `1px solid ${hasMajority ? "rgba(74,222,128,0.25)" : "rgba(255,255,255,0.08)"}` }}>
+                  <span style={{ fontSize: "22px", fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: hasMajority ? "#4ade80" : "#f8fafc" }}>
+                    {coalitionSeats}
+                  </span>
+                  <span style={{ fontSize: "12px", color: hasMajority ? "#4ade80" : "#64748b" }}>
+                    {hasMajority ? "mandater — flertal opnået ✓" : `mandater — mangler ${90 - coalitionSeats}`}
+                  </span>
+                  <span style={{ marginLeft: "auto", fontSize: "10px", color: "#334155", fontFamily: "'JetBrains Mono', monospace" }}>
+                    valgidanmark.dk
+                  </span>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button onClick={sharePrediction} disabled={sharing} style={{
+                  flex: 1, minWidth: 160, padding: "12px 20px", fontSize: "14px", fontWeight: 700,
+                  cursor: sharing ? "default" : "pointer",
+                  background: "linear-gradient(135deg, rgba(147,197,253,0.15) 0%, rgba(59,130,246,0.08) 100%)",
+                  color: sharing ? "#475569" : "#93c5fd",
+                  border: `1.5px solid ${sharing ? "rgba(255,255,255,0.08)" : "rgba(147,197,253,0.4)"}`,
+                  borderRadius: "10px", fontFamily: "'Space Grotesk', sans-serif", transition: "all 0.2s",
+                }}>
+                  {sharing ? "Gemmer..." : "Del forudsigelse →"}
+                </button>
+                <button onClick={() => setPredictionExpanded(false)} style={{
+                  padding: "12px 18px", fontSize: "13px", cursor: "pointer",
+                  background: "transparent", color: "#64748b",
+                  border: "1px solid #334155", borderRadius: "10px", fontFamily: "'Space Grotesk', sans-serif",
+                }}>
+                  Rediger
+                </button>
+              </div>
             </div>
           ) : (
             <button onClick={() => setPredictionExpanded(true)} style={{
