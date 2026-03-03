@@ -15,16 +15,6 @@
       "static/css/9ddc92a6ca30c2e7.css",
       "static/chunks/app/layout-132526f9df024008.js"
     ],
-    "/page": [
-      "static/chunks/webpack-58e29b9d41ae6652.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/619-f072ac750404f9da.js",
-      "static/chunks/465-d80d7c53dc861efb.js",
-      "static/chunks/639-ad50d4aaed783920.js",
-      "static/chunks/app/page-7720d5f82480a7da.js"
-    ],
     "/statsminister/page": [
       "static/chunks/webpack-58e29b9d41ae6652.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
@@ -33,6 +23,16 @@
       "static/chunks/619-f072ac750404f9da.js",
       "static/chunks/639-ad50d4aaed783920.js",
       "static/chunks/app/statsminister/page-50f98dbfc35c5455.js"
+    ],
+    "/page": [
+      "static/chunks/webpack-58e29b9d41ae6652.js",
+      "static/chunks/4bd1b696-409494caf8c83275.js",
+      "static/chunks/255-091853b4155593e2.js",
+      "static/chunks/main-app-188b1035816cb0e1.js",
+      "static/chunks/619-f072ac750404f9da.js",
+      "static/chunks/465-d80d7c53dc861efb.js",
+      "static/chunks/639-ad50d4aaed783920.js",
+      "static/chunks/app/page-deb1b4f4c382e24b.js"
     ]
   }
 }
