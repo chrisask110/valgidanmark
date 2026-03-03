@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import {
-  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ReferenceLine, ResponsiveContainer, Legend,
+  ComposedChart, Area, Line, Scatter,
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, ReferenceLine, ResponsiveContainer,
 } from "recharts";
 import { PARTIES, POLLSTERS, PARTY_KEYS, calcWeightedAverage, type Poll } from "@/app/lib/data";
 import { Button } from "@/components/ui/button";
@@ -21,11 +22,10 @@ function fmtFull(ts: number) {
   return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-// Weekly bucket timestamps for the chart x-axis
 function weekBuckets(from: Date, to: Date): number[] {
   const buckets: number[] = [];
   const cur = new Date(from);
-  cur.setDate(cur.getDate() - cur.getDay()); // align to Sunday
+  cur.setDate(cur.getDate() - cur.getDay());
   while (cur <= to) {
     buckets.push(cur.getTime());
     cur.setDate(cur.getDate() + 7);
@@ -33,8 +33,7 @@ function weekBuckets(from: Date, to: Date): number[] {
   return buckets;
 }
 
-// Confidence band: mean ± 1.96*std of polls within ±21 days of a date
-function confBand(polls: Poll[], pk: string, ts: number): { lower: number; upper: number; avg: number } | null {
+function confBand(polls: Poll[], pk: string, ts: number): { lower: number; upper: number } | null {
   const windowMs = 21 * 86400000;
   const near = polls.filter(p => Math.abs(new Date(p.date).getTime() - ts) <= windowMs && p[pk] != null);
   if (near.length < 2) return null;
@@ -42,12 +41,19 @@ function confBand(polls: Poll[], pk: string, ts: number): { lower: number; upper
   const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
   const variance = vals.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / vals.length;
   const std = Math.sqrt(variance);
-  return { lower: Math.max(0, avg - 1.96 * std), upper: avg + 1.96 * std, avg };
+  return { lower: Math.max(0, avg - 1.96 * std), upper: avg + 1.96 * std };
 }
 
 interface ChartDataPoint {
   ts: number;
   [key: string]: number | null;
+}
+
+interface RawDot {
+  ts: number;
+  val: number;
+  pollster: string;
+  n: number;
 }
 
 interface PollChartProps {
@@ -58,32 +64,63 @@ interface PollChartProps {
 
 const ELECTION_TS = new Date("2026-03-24").getTime();
 
-// Custom tooltip
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const ts = label as number;
-  // Collect party values from payload
-  const partyVals: { pk: string; avg: number | null }[] = [];
+
+  const avgVals: { pk: string; avg: number }[] = [];
+  const dotVals: { pk: string; val: number; pollster: string; n: number }[] = [];
+
   for (const entry of payload) {
     const key = entry.dataKey as string;
     if (key.endsWith("_avg") && entry.value != null) {
-      const pk = key.replace("_avg", "");
-      partyVals.push({ pk, avg: entry.value });
+      avgVals.push({ pk: key.replace("_avg", ""), avg: entry.value });
+    } else if (key === "val" && entry.value != null && entry.payload?.pollster) {
+      dotVals.push({
+        pk: entry.name as string,
+        val: entry.value,
+        pollster: entry.payload.pollster,
+        n: entry.payload.n,
+      });
     }
   }
-  partyVals.sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0));
+  avgVals.sort((a, b) => b.avg - a.avg);
+  dotVals.sort((a, b) => b.val - a.val);
+  if (!avgVals.length && !dotVals.length) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-card/95 backdrop-blur-sm p-3 shadow-xl text-xs font-mono min-w-[170px]">
+    <div className="rounded-lg border border-border bg-card/95 backdrop-blur-sm p-3 shadow-xl text-xs font-mono min-w-[190px]">
       <div className="text-muted-foreground mb-2">{fmtFull(ts)}</div>
-      {partyVals.map(({ pk, avg }) => (
-        <div key={pk} className="flex justify-between gap-4 py-0.5">
-          <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
-            {PARTIES[pk]?.short} {PARTIES[pk]?.name.split("–")[0].trim()}
-          </span>
-          <span className="text-foreground">{avg?.toFixed(1)}%</span>
+
+      {dotVals.length > 0 && (
+        <div className="mb-2 pb-2 border-b border-border">
+          <div className="text-muted-foreground text-[10px] mb-1">
+            {dotVals[0].pollster} · n={dotVals[0].n}
+          </div>
+          {dotVals.map(({ pk, val }) => (
+            <div key={pk} className="flex justify-between gap-4 py-0.5">
+              <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
+                {PARTIES[pk]?.short} {PARTIES[pk]?.name.split("–")[0].trim()}
+              </span>
+              <span className="text-foreground">{val.toFixed(1)}%</span>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+
+      {avgVals.length > 0 && (
+        <>
+          <div className="text-muted-foreground text-[10px] mb-1">Vægtet gns.</div>
+          {avgVals.map(({ pk, avg }) => (
+            <div key={pk} className="flex justify-between gap-4 py-0.5">
+              <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
+                {PARTIES[pk]?.short} {PARTIES[pk]?.name.split("–")[0].trim()}
+              </span>
+              <span className="text-foreground">{avg.toFixed(1)}%</span>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -121,19 +158,16 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
 
   const toDate = new Date("2026-03-24");
 
+  // Weekly-bucketed data: weighted average lines + confidence bands
   const chartData: ChartDataPoint[] = useMemo(() => {
     const buckets = weekBuckets(fromDate, toDate);
     const rangePolls = filteredPolls.filter(p => new Date(p.date) >= fromDate);
-
     return buckets.map(ts => {
       const asOf = new Date(ts).toISOString().slice(0, 10);
       const pollsUpTo = rangePolls.filter(p => new Date(p.date).getTime() <= ts);
       const point: ChartDataPoint = { ts };
-
       for (const pk of selectedParties) {
-        const avg = pollsUpTo.length > 0
-          ? calcWeightedAverage(pollsUpTo, pk, asOf)
-          : null;
+        const avg = pollsUpTo.length > 0 ? calcWeightedAverage(pollsUpTo, pk, asOf) : null;
         const band = confBand(rangePolls, pk, ts);
         point[`${pk}_avg`] = avg;
         point[`${pk}_lower`] = band?.lower ?? null;
@@ -141,6 +175,22 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
       }
       return point;
     });
+  }, [filteredPolls, selectedParties, fromDate]);
+
+  // Raw individual poll dots per party (separate data, not bucketed)
+  const rawDotData = useMemo(() => {
+    const result: Record<string, RawDot[]> = {};
+    for (const pk of selectedParties) {
+      result[pk] = filteredPolls
+        .filter(p => p[pk] != null && new Date(p.date) >= fromDate)
+        .map(p => ({
+          ts: new Date(p.date).getTime(),
+          val: Number(p[pk]),
+          pollster: p.pollster as string,
+          n: Number(p.n),
+        }));
+    }
+    return result;
   }, [filteredPolls, selectedParties, fromDate]);
 
   const xDomain = [fromDate.getTime(), toDate.getTime()];
@@ -156,7 +206,6 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
     <div className="space-y-3">
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Time range */}
         <div className="flex gap-1">
           {RANGES.map(([id, label]) => (
             <Button
@@ -171,7 +220,6 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
           ))}
         </div>
 
-        {/* Pollster filters */}
         <div className="flex gap-2 flex-wrap">
           {Object.entries(POLLSTERS).map(([name, info]) => (
             <button
@@ -219,11 +267,7 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
       <div className="h-[380px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 10, right: 12, bottom: 20, left: 0 }}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="hsl(var(--border))"
-              vertical={false}
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
               dataKey="ts"
               type="number"
@@ -246,7 +290,7 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
             />
             <Tooltip content={<CustomTooltip />} />
 
-            {/* 2% threshold */}
+            {/* Reference lines */}
             <ReferenceLine
               y={2}
               stroke="hsl(var(--muted-foreground))"
@@ -260,8 +304,6 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
                 fill: "hsl(var(--muted-foreground))",
               }}
             />
-
-            {/* Election date */}
             <ReferenceLine
               x={ELECTION_TS}
               stroke="#ef4444"
@@ -276,36 +318,54 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
               }}
             />
 
-            {/* Per-party: confidence band + average line */}
-            {selectedParties.map(pk => {
+            {/*
+              Render order = z-order in Recharts.
+              PASS 1 — confidence bands (behind everything)
+              PASS 2 — weighted average lines (on top of bands)
+              PASS 3 — raw poll dots (topmost layer)
+            */}
+
+            {/* PASS 1: All confidence bands */}
+            {selectedParties.flatMap(pk => {
               const color = PARTIES[pk].color;
               return [
-                // Confidence band (lower to upper)
+                // Upper bound — filled with party colour
                 <Area
-                  key={`${pk}_band`}
+                  key={`${pk}_upper`}
                   dataKey={`${pk}_upper`}
                   data={chartData}
                   type="monotone"
                   fill={color}
-                  fillOpacity={0.08}
-                  stroke="none"
+                  fillOpacity={0.16}
+                  stroke={color}
+                  strokeOpacity={0.28}
+                  strokeWidth={0.5}
                   legendType="none"
-                  name={`${pk}_band_upper`}
+                  name={`${pk}_upper`}
                   isAnimationActive={false}
                 />,
+                // Lower bound — erase fill below it using card background
                 <Area
                   key={`${pk}_lower`}
                   dataKey={`${pk}_lower`}
                   data={chartData}
                   type="monotone"
-                  fill="hsl(var(--background))"
+                  fill="hsl(var(--card))"
                   fillOpacity={1}
-                  stroke="none"
+                  stroke={color}
+                  strokeOpacity={0.28}
+                  strokeWidth={0.5}
                   legendType="none"
-                  name={`${pk}_band_lower`}
+                  name={`${pk}_lower`}
                   isAnimationActive={false}
                 />,
-                // Weighted average line
+              ];
+            })}
+
+            {/* PASS 2: All weighted average lines */}
+            {selectedParties.map(pk => {
+              const color = PARTIES[pk].color;
+              return (
                 <Line
                   key={`${pk}_avg`}
                   dataKey={`${pk}_avg`}
@@ -314,12 +374,42 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
                   stroke={color}
                   strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 5, fill: color, stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: color, stroke: "hsl(var(--card))", strokeWidth: 2 }}
                   name={PARTIES[pk].short}
                   connectNulls
                   isAnimationActive={false}
-                />,
-              ];
+                />
+              );
+            })}
+
+            {/* PASS 3: Raw individual poll dots */}
+            {selectedParties.map(pk => {
+              const color = PARTIES[pk].color;
+              return (
+                <Scatter
+                  key={`${pk}_dots`}
+                  name={pk}
+                  data={rawDotData[pk]}
+                  dataKey="val"
+                  legendType="none"
+                  isAnimationActive={false}
+                  shape={(props: any) => {
+                    const { cx, cy } = props;
+                    if (cx == null || cy == null) return null;
+                    return (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={2.2}
+                        fill={color}
+                        fillOpacity={0.62}
+                        stroke="hsl(var(--card))"
+                        strokeWidth={0.8}
+                      />
+                    );
+                  }}
+                />
+              );
             })}
           </ComposedChart>
         </ResponsiveContainer>
