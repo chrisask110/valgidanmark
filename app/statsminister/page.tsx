@@ -2,21 +2,10 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
-
-const PARTIES: Record<string, { name: string; short: string; color: string }> = {
-  A: { name: "Socialdemokraterne", short: "A", color: "#C8102E" },
-  F: { name: "SF – Socialistisk Folkeparti", short: "F", color: "#E4007C" },
-  V: { name: "Venstre", short: "V", color: "#254B8E" },
-  I: { name: "Liberal Alliance", short: "I", color: "#00B0CA" },
-  Æ: { name: "Danmarksdemokraterne", short: "Æ", color: "#005F6B" },
-  C: { name: "Det Konservative Folkeparti", short: "C", color: "#00583C" },
-  Ø: { name: "Enhedslisten", short: "Ø", color: "#991B1E" },
-  B: { name: "Radikale Venstre", short: "B", color: "#733280" },
-  O: { name: "Dansk Folkeparti", short: "O", color: "#E4B828" },
-  Å: { name: "Alternativet", short: "Å", color: "#2ECC71" },
-  M: { name: "Moderaterne", short: "M", color: "#8B5CF6" },
-  H: { name: "Borgernes Parti", short: "H", color: "#F97316" },
-};
+import {
+  PARTIES, PARTY_KEYS, FALLBACK_POLLS,
+  calcWeightedAverage, calcPartySeats, type Poll,
+} from "@/app/lib/data";
 
 const PARTY_LEADERS: Record<string, string> = {
   A: "Mette Frederiksen",
@@ -33,51 +22,7 @@ const PARTY_LEADERS: Record<string, string> = {
   H: "Lars Boje Mathiesen",
 };
 
-const POLLSTERS: Record<string, { weight: number }> = {
-  "Verian": { weight: 1.35 },
-  "Epinion": { weight: 1.20 },
-  "Megafon": { weight: 1.10 },
-  "Voxmeter": { weight: 0.90 },
-};
-
-const PARTY_KEYS = ["A", "F", "V", "I", "Æ", "C", "Ø", "B", "O", "Å", "M", "H"];
-
-type Poll = { date: string; pollster: string; n: number; [k: string]: string | number };
 type Category = "government" | "support" | "opposition";
-
-const FALLBACK_POLLS: Poll[] = [
-  { date: "2026-02-27", pollster: "Epinion", n: 2034, A: 21.6, V: 10.8, M: 5.8, F: 13.5, Æ: 8.5, I: 10.0, C: 6.8, Ø: 6.8, B: 4.8, Å: 2.2, O: 6.9, H: 1.8 },
-  { date: "2026-02-27", pollster: "Megafon", n: 1012, A: 22.0, V: 10.5, M: 6.2, F: 13.2, Æ: 8.7, I: 10.2, C: 6.5, Ø: 6.5, B: 4.5, Å: 2.0, O: 7.2, H: 1.9 },
-  { date: "2026-02-22", pollster: "Voxmeter", n: 1005, A: 21.5, V: 11.0, M: 6.4, F: 13.5, Æ: 9.2, I: 10.0, C: 6.8, Ø: 6.2, B: 4.3, Å: 2.1, O: 6.5, H: 2.1 },
-  { date: "2026-02-15", pollster: "Voxmeter", n: 1005, A: 21.2, V: 11.5, M: 6.7, F: 13.8, Æ: 9.7, I: 9.6, C: 6.6, Ø: 6.1, B: 4.1, Å: 1.9, O: 5.7, H: 2.3 },
-  { date: "2026-02-08", pollster: "Voxmeter", n: 1003, A: 22.5, V: 11.2, M: 6.3, F: 13.0, Æ: 9.0, I: 10.1, C: 6.5, Ø: 6.3, B: 4.5, Å: 2.0, O: 6.0, H: 2.0 },
-  { date: "2026-02-04", pollster: "Megafon", n: 1008, A: 22.7, V: 10.8, M: 5.9, F: 13.4, Æ: 8.3, I: 10.5, C: 7.0, Ø: 6.4, B: 4.3, Å: 1.9, O: 6.8, H: 1.5 },
-  { date: "2026-01-29", pollster: "Verian", n: 1700, A: 21.6, V: 10.6, M: 6.1, F: 13.3, Æ: 8.9, I: 10.3, C: 6.6, Ø: 6.6, B: 4.4, Å: 2.2, O: 6.5, H: 2.1 },
-  { date: "2026-01-22", pollster: "Epinion", n: 2034, A: 21.6, V: 10.5, M: 4.6, F: 14.2, Æ: 9.2, I: 10.8, C: 7.0, Ø: 6.5, B: 4.5, Å: 2.0, O: 7.0, H: 1.8 },
-  { date: "2026-01-18", pollster: "Voxmeter", n: 1005, A: 22.0, V: 11.0, M: 5.5, F: 13.5, Æ: 9.0, I: 10.5, C: 6.8, Ø: 6.5, B: 4.5, Å: 2.0, O: 6.2, H: 2.0 },
-  { date: "2025-12-21", pollster: "Voxmeter", n: 1005, A: 18.9, V: 12.2, M: 2.8, F: 13.9, Æ: 10.0, I: 11.2, C: 7.9, Ø: 6.1, B: 5.4, Å: 2.1, O: 6.8, H: 2.3 },
-  { date: "2025-12-11", pollster: "Epinion", n: 2034, A: 16.5, V: 11.6, M: 1.5, F: 16.0, Æ: 9.9, I: 10.4, C: 8.5, Ø: 6.8, B: 5.1, Å: 1.7, O: 9.3, H: 2.2 },
-  { date: "2025-12-04", pollster: "Megafon", n: 1008, A: 17.7, V: 12.7, M: 2.2, F: 14.8, Æ: 8.4, I: 11.9, C: 8.6, Ø: 7.3, B: 4.7, Å: 1.7, O: 7.9, H: 1.1 },
-  { date: "2025-12-02", pollster: "Verian", n: 1672, A: 19.5, V: 11.3, M: 3.3, F: 15.7, Æ: 9.6, I: 11.0, C: 7.3, Ø: 5.7, B: 4.8, Å: 1.7, O: 8.7, H: 1.0 },
-  { date: "2025-11-06", pollster: "Megafon", n: 1006, A: 19.8, V: 11.2, M: 2.8, F: 16.2, Æ: 8.0, I: 10.9, C: 7.0, Ø: 7.2, B: 4.4, Å: 1.9, O: 9.4, H: 0.4 },
-  { date: "2025-11-04", pollster: "Verian", n: 1784, A: 22.8, V: 10.5, M: 3.3, F: 12.5, Æ: 7.6, I: 10.5, C: 7.9, Ø: 7.3, B: 3.8, Å: 1.3, O: 10.1, H: 0.9 },
-];
-
-function calcWeightedAverage(polls: Poll[], partyKey: string): number | null {
-  const now = new Date();
-  const relevant = polls
-    .filter(p => p[partyKey] !== undefined && p[partyKey] !== null)
-    .map(p => {
-      const daysDiff = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
-      const recency = Math.exp(-daysDiff / 30);
-      const pollsterWeight = POLLSTERS[p.pollster]?.weight || 1.0;
-      const sizeWeight = Math.sqrt((p.n || 1000) / 1000);
-      return { value: Number(p[partyKey]), weight: recency * pollsterWeight * sizeWeight };
-    });
-  if (relevant.length === 0) return null;
-  const totalWeight = relevant.reduce((s, r) => s + r.weight, 0);
-  return relevant.reduce((s, r) => s + r.value * r.weight, 0) / totalWeight;
-}
 
 const CAT_CONFIG: Record<Category, { label: string; color: string; bg: string; border: string }> = {
   government: { label: "Regeringsparti", color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.45)" },
@@ -124,23 +69,15 @@ export default function StatsministerPage() {
   }, []);
 
   const partyPct = useMemo((): Record<string, number> => {
+    const today = new Date().toISOString().slice(0, 10);
     if (dataSource === "model") {
-      return Object.fromEntries(PARTY_KEYS.map(pk => [pk, calcWeightedAverage(polls, pk) ?? 0]));
+      return Object.fromEntries(PARTY_KEYS.map(pk => [pk, calcWeightedAverage(polls, pk, today) ?? 0]));
     }
     const latest = [...polls].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
     return Object.fromEntries(PARTY_KEYS.map(pk => [pk, Number(latest?.[pk]) || 0]));
   }, [polls, dataSource]);
 
-  const partySeats = useMemo((): Record<string, number> => {
-    const qualifying = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 2);
-    const totalQualifyingPct = qualifying.reduce((s, pk) => s + (partyPct[pk] || 0), 0);
-    const seats: Record<string, number> = {};
-    PARTY_KEYS.forEach(pk => {
-      if ((partyPct[pk] || 0) < 2) { seats[pk] = 0; return; }
-      seats[pk] = Math.round((partyPct[pk] / totalQualifyingPct) * 175);
-    });
-    return seats;
-  }, [partyPct]);
+  const partySeats = useMemo(() => calcPartySeats(partyPct), [partyPct]);
 
   const coalitionSeats = useMemo(() =>
     PARTY_KEYS

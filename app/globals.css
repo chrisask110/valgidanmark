@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark theme (default) */
+    --background: 222 47% 14%;
+    --foreground: 215 28% 89%;
+    --card: 222 40% 17%;
+    --card-foreground: 215 28% 89%;
+    --border: 222 30% 22%;
+    --input: 222 30% 22%;
+    --primary: 213 97% 78%;
+    --primary-foreground: 222 47% 10%;
+    --secondary: 222 30% 22%;
+    --secondary-foreground: 215 28% 89%;
+    --muted: 222 25% 25%;
+    --muted-foreground: 215 16% 57%;
+    --accent: 213 97% 78%;
+    --accent-foreground: 222 47% 10%;
+    --ring: 213 97% 78%;
+    --radius: 0.75rem;
+  }
+
+  .light {
+    --background: 220 20% 97%;
+    --foreground: 222 47% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 14%;
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --primary: 213 90% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 222 47% 14%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 213 90% 48%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 213 90% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Party color utilities */
+.party-A { color: #C8102E; }
+.party-F { color: #E4007C; }
+.party-V { color: #254B8E; }
+.party-I { color: #00B0CA; }
+.party-Æ { color: #005F6B; }
+.party-C { color: #00583C; }
+.party-Ø { color: #991B1E; }
+.party-B { color: #733280; }
+.party-O { color: #E4B828; }
+.party-Å { color: #2ECC71; }
+.party-M { color: #8B5CF6; }
+.party-H { color: #F97316; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: hsl(var(--muted)); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
