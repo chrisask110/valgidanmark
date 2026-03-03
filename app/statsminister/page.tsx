@@ -151,7 +151,7 @@ export default function StatsministerPage() {
   const hasMajority = coalitionSeats >= 90;
 
   const visibleParties = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 0.5);
-  const pmCandidates = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 0.5);
+  const pmCandidates = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 2);
 
   const selectPM = (pk: string) => {
     const next = selectedPM === pk ? null : pk;

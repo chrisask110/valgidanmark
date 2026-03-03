@@ -16,7 +16,7 @@ const PARTIES = {
   O: { name: "Dansk Folkeparti", short: "O", color: "#E4B828", bloc: "blue", result2022: 2.6 },
   Å: { name: "Alternativet", short: "Å", color: "#2ECC71", bloc: "red", result2022: 3.3 },
   M: { name: "Moderaterne", short: "M", color: "#8B5CF6", bloc: "neutral", result2022: 9.3 },
-  H: { name: "Borgerne", short: "H", color: "#F97316", bloc: "blue", result2022: 0.0 },
+  H: { name: "Borgernes Parti", short: "H", color: "#F97316", bloc: "blue", result2022: 0.0 },
 };
 
 // ── Institut-vurderinger ────────────────────────────────────────────
