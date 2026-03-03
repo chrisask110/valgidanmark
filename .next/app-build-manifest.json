@@ -1,32 +1,32 @@
 {
   "pages": {
     "/_not-found/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/webpack-58e29b9d41ae6652.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/app/_not-found/page-ccc1ecbeb92b8de7.js"
     ],
     "/layout": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/webpack-58e29b9d41ae6652.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/css/974c811665a92673.css",
-      "static/chunks/app/layout-ca92e8f479f7ef7e.js"
+      "static/css/9ddc92a6ca30c2e7.css",
+      "static/chunks/app/layout-132526f9df024008.js"
     ],
     "/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/webpack-58e29b9d41ae6652.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/619-f072ac750404f9da.js",
-      "static/chunks/885-5a2504324946a8a8.js",
+      "static/chunks/465-d80d7c53dc861efb.js",
       "static/chunks/639-ad50d4aaed783920.js",
-      "static/chunks/app/page-0e7b8006f5203a38.js"
+      "static/chunks/app/page-fec7289fba7fc3a9.js"
     ],
     "/statsminister/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/webpack-58e29b9d41ae6652.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
