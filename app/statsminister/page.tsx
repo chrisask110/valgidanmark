@@ -15,7 +15,7 @@ const PARTIES: Record<string, { name: string; short: string; color: string }> = 
   O: { name: "Dansk Folkeparti", short: "O", color: "#E4B828" },
   Å: { name: "Alternativet", short: "Å", color: "#2ECC71" },
   M: { name: "Moderaterne", short: "M", color: "#8B5CF6" },
-  H: { name: "Borgerne", short: "H", color: "#F97316" },
+  H: { name: "Borgernes Parti", short: "H", color: "#F97316" },
 };
 
 const PARTY_LEADERS: Record<string, string> = {
@@ -151,7 +151,7 @@ export default function StatsministerPage() {
   const hasMajority = coalitionSeats >= 90;
 
   const visibleParties = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 0.5);
-  const pmCandidates = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 2);
+  const pmCandidates = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 0.5);
 
   const selectPM = (pk: string) => {
     const next = selectedPM === pk ? null : pk;
