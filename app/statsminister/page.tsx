@@ -94,7 +94,7 @@ function LeaderPhoto({ pk, size, border }: { pk: string; size: number; border?: 
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
       <img
-        src={`/leaders/${pk}.jpg`}
+        src={`/Leaders/${pk}.jpg`}
         alt={PARTY_LEADERS[pk]}
         style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
       />
@@ -310,7 +310,9 @@ export default function StatsministerPage() {
                   userSelect: "none",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <LeaderPhoto pk={pk} size={32} border={`2px solid ${PARTIES[pk].color}60`} />
+                    <span style={{ width: 28, height: 28, borderRadius: "50%", background: PARTIES[pk].color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
+                      {PARTIES[pk].short}
+                    </span>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: "12px", fontWeight: 600, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {isPM ? `${PARTY_LEADERS[pk]} 👑` : PARTIES[pk].name.split("–")[0].trim()}
@@ -392,7 +394,7 @@ export default function StatsministerPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
                   <div style={{ width: 72, height: 72, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `3px solid ${PARTIES[selectedPM].color}` }}>
                     <img
-                      src={`/leaders/${selectedPM}.jpg`}
+                      src={`/Leaders/${selectedPM}.jpg`}
                       alt={PARTY_LEADERS[selectedPM]}
                       style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }}
                     />
@@ -414,25 +416,25 @@ export default function StatsministerPage() {
                   {predictionText}
                 </p>
 
-                {/* Coalition party pills with photos */}
+                {/* Coalition party pills with letter badges */}
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
                   {govParties.map(pk => (
-                    <div key={pk} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px 5px 5px", background: `${PARTIES[pk].color}20`, border: `1px solid ${PARTIES[pk].color}70`, borderRadius: 20 }}>
-                      <div style={{ width: 22, height: 22, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-                        <img src={`/leaders/${pk}.jpg`} alt={PARTY_LEADERS[pk]} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
-                      </div>
+                    <div key={pk} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px 5px 6px", background: `${PARTIES[pk].color}20`, border: `1px solid ${PARTIES[pk].color}70`, borderRadius: 20 }}>
+                      <span style={{ width: 20, height: 20, borderRadius: "50%", background: PARTIES[pk].color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
+                        {PARTIES[pk].short}
+                      </span>
                       <span style={{ fontSize: "11px", color: PARTIES[pk].color, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
-                        {PARTIES[pk].short} · Reg.
+                        Reg.
                       </span>
                     </div>
                   ))}
                   {supportParties.map(pk => (
-                    <div key={pk} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px 5px 5px", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.4)", borderRadius: 20 }}>
-                      <div style={{ width: 22, height: 22, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-                        <img src={`/leaders/${pk}.jpg`} alt={PARTY_LEADERS[pk]} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
-                      </div>
+                    <div key={pk} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px 5px 6px", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.4)", borderRadius: 20 }}>
+                      <span style={{ width: 20, height: 20, borderRadius: "50%", background: PARTIES[pk].color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
+                        {PARTIES[pk].short}
+                      </span>
                       <span style={{ fontSize: "11px", color: "#4ade80", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
-                        {PARTIES[pk].short} · Støt.
+                        Støt.
                       </span>
                     </div>
                   ))}
