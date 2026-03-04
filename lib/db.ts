@@ -1,15 +1,14 @@
 /**
- * Vercel Postgres helpers.
+ * Neon Postgres helpers.
  *
- * Requires env vars set automatically when you link a Vercel Postgres database:
- *   POSTGRES_URL, POSTGRES_URL_NON_POOLING, POSTGRES_USER,
- *   POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_DATABASE
- *
- * Run lib/schema.sql once in the Vercel dashboard to create the table.
+ * Requires DATABASE_URL set automatically when you link a Neon database in Vercel.
+ * Run lib/schema.sql once in the Neon dashboard to create the table.
  */
 
-import { sql } from "@vercel/postgres";
+import { neon } from "@neondatabase/serverless";
 import { FALLBACK_POLLS, type Poll } from "@/app/lib/data";
+
+const sql = neon(process.env.DATABASE_URL!);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,7 +39,7 @@ function rowToPoll(row: any): Poll {
 /** Fetch all polls from the DB, newest first.  Falls back to FALLBACK_POLLS. */
 export async function getPolls(): Promise<Poll[]> {
   try {
-    const { rows } = await sql`
+    const rows = await sql`
       SELECT date, pollster, n, parties
       FROM polls
       ORDER BY date DESC
@@ -57,7 +56,7 @@ export async function getPolls(): Promise<Poll[]> {
 /** Return true if a poll with this date + pollster already exists. */
 export async function pollExists(date: string, pollster: string): Promise<boolean> {
   try {
-    const { rows } = await sql`
+    const rows = await sql`
       SELECT 1 FROM polls WHERE date = ${date} AND pollster = ${pollster} LIMIT 1
     `;
     return rows.length > 0;
@@ -85,7 +84,7 @@ export async function insertPoll(poll: Poll, sourceUrl?: string): Promise<void> 
 /** Return the count of poll rows. */
 export async function getPollCount(): Promise<number> {
   try {
-    const { rows } = await sql`SELECT COUNT(*)::int AS c FROM polls`;
+    const rows = await sql`SELECT COUNT(*)::int AS c FROM polls`;
     return rows[0]?.c ?? 0;
   } catch {
     return 0;
