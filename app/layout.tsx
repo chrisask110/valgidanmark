@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/next";
 import { LanguageProvider } from "./components/LanguageContext";
 import { SiteHeader } from "./components/SiteHeader";
 import Countdown from "./Countdown";
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Countdown />
             {children}
             <Toaster richColors position="bottom-center" />
+            <Analytics />
           </LanguageProvider>
         </ThemeProvider>
       </body>
