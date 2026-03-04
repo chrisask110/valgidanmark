@@ -2,9 +2,11 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import {
-  PARTIES, PARTY_KEYS, FALLBACK_POLLS,
+  PARTIES, PARTY_KEYS, FO_GL_SEATS, FALLBACK_POLLS,
   calcWeightedAverage, calcPartySeats, type Poll,
 } from "@/app/lib/data";
+
+const FO_GL_KEYS = Object.keys(FO_GL_SEATS);
 import { ShareBar } from "@/app/components/ShareBar";
 
 const PARTY_LEADERS: Record<string, string> = {
@@ -35,7 +37,9 @@ export default function StatsministerPage() {
   const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
   const [dataSource, setDataSource] = useState<DataSource>("model");
   const [categories, setCategories] = useState<Record<string, Category>>(
-    () => Object.fromEntries(PARTY_KEYS.map(pk => [pk, "opposition" as Category]))
+    () => Object.fromEntries(
+      [...PARTY_KEYS, ...FO_GL_KEYS].map(pk => [pk, "opposition" as Category])
+    )
   );
   const [selectedPM, setSelectedPM] = useState<string | null>(null);
   const [predictionExpanded, setPredictionExpanded] = useState(false);
@@ -66,9 +70,9 @@ export default function StatsministerPage() {
   const partySeats = useMemo(() => calcPartySeats(partyPct), [partyPct]);
 
   const coalitionSeats = useMemo(() =>
-    PARTY_KEYS
+    [...PARTY_KEYS, ...FO_GL_KEYS]
       .filter(pk => categories[pk] !== "opposition")
-      .reduce((sum, pk) => sum + (partySeats[pk] || 0), 0),
+      .reduce((sum, pk) => sum + (partySeats[pk] || FO_GL_SEATS[pk] || 0), 0),
     [categories, partySeats]
   );
 
@@ -93,10 +97,10 @@ export default function StatsministerPage() {
     setPredictionExpanded(false);
   };
 
-  const govParties     = visibleParties.filter(pk => categories[pk] === "government");
-  const supportParties = visibleParties.filter(pk => categories[pk] === "support");
-  const govSeats       = govParties.reduce((s, pk) => s + partySeats[pk], 0);
-  const supportSeats   = supportParties.reduce((s, pk) => s + partySeats[pk], 0);
+  const govParties     = [...visibleParties, ...FO_GL_KEYS].filter(pk => categories[pk] === "government");
+  const supportParties = [...visibleParties, ...FO_GL_KEYS].filter(pk => categories[pk] === "support");
+  const govSeats       = govParties.reduce((s, pk) => s + (partySeats[pk] || FO_GL_SEATS[pk] || 0), 0);
+  const supportSeats   = supportParties.reduce((s, pk) => s + (partySeats[pk] || FO_GL_SEATS[pk] || 0), 0);
 
   const predictionText = useMemo(() => {
     if (!selectedPM) return "";
@@ -265,6 +269,48 @@ export default function StatsministerPage() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* FO + GL — fixed constituency seats */}
+            <div className="mt-1">
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">
+                Færøerne & Grønland · Faste mandater · ingen valgmåling
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {FO_GL_KEYS.map(pk => {
+                  const cat = categories[pk];
+                  const cfg = CAT_CONFIG[cat];
+                  return (
+                    <div
+                      key={pk}
+                      onClick={() => cycleCategory(pk)}
+                      className="flex items-center justify-between gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all"
+                      style={{ borderColor: cfg.border, background: cfg.bg }}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                          style={{ background: PARTIES[pk].color }}
+                        >
+                          {PARTIES[pk].short}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium truncate">{PARTIES[pk].name}</div>
+                          <div className="text-[11px] font-mono text-muted-foreground">
+                            {FO_GL_SEATS[pk]} mand. (fast)
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className="flex-shrink-0 text-[10px] font-bold font-mono uppercase tracking-wider"
+                        style={{ color: cfg.color }}
+                      >
+                        {cfg.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </section>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { PARTIES } from "@/app/lib/data";
 import { useLanguage } from "./LanguageContext";
 
 interface ForecastBannerProps {
@@ -8,6 +8,7 @@ interface ForecastBannerProps {
   blaaBlokChance: number;
   rodMedianSeats: number;
   blaaMedianSeats: number;
+  seats: Record<string, number>;
 }
 
 function BlokCard({
@@ -94,13 +95,19 @@ function BlokCard({
   );
 }
 
+const CURRENT_GOV = ["A", "V", "M"] as const;
+
 export function ForecastBanner({
   rodBlokChance,
   blaaBlokChance,
   rodMedianSeats,
   blaaMedianSeats,
+  seats,
 }: ForecastBannerProps) {
   const { t } = useLanguage();
+
+  const govTotal = CURRENT_GOV.reduce((s, pk) => s + (seats[pk] || 0), 0);
+  const govHasMajority = govTotal >= 90;
 
   return (
     <div className="flex gap-4 flex-wrap mb-6">
@@ -122,23 +129,62 @@ export function ForecastBanner({
         borderColor="rgba(96,165,250,0.25)"
         t={t}
       />
-      <div className="rounded-xl p-5 flex-1 min-w-[200px] bg-muted/30 border border-border flex flex-col justify-between">
-        <span className="text-xs font-mono font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-          {t("forecast.model")}
-        </span>
-        <div className="space-y-2 text-sm text-muted-foreground font-mono">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-            {t("forecast.runs")}
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-            {t("forecast.majority")}
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-            Opdateret live
-          </div>
+
+      {/* 3rd card: Nuværende regering (A + V + M) */}
+      <div
+        className="rounded-xl p-5 flex-1 min-w-[200px]"
+        style={{
+          background: "rgba(255,255,255,0.03)",
+          border: `1.5px solid ${govHasMajority ? "rgba(74,222,128,0.35)" : "hsl(var(--border))"}`,
+        }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-mono font-semibold uppercase tracking-widest text-muted-foreground">
+            Nuværende regering
+          </span>
+          <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+            A · V · M
+          </span>
+        </div>
+
+        {/* Party rows */}
+        <div className="space-y-1.5 mb-4">
+          {CURRENT_GOV.map(pk => (
+            <div key={pk} className="flex items-center justify-between text-xs font-mono">
+              <span style={{ color: PARTIES[pk].color }} className="font-semibold">
+                {PARTIES[pk].short} {PARTIES[pk].name.split(" ")[0]}
+              </span>
+              <span className="tabular-nums text-foreground">{seats[pk] ?? 0} mand.</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Total bar */}
+        <div className="flex justify-between text-xs font-mono mb-1.5">
+          <span className="text-muted-foreground">Total</span>
+          <span style={{ color: govHasMajority ? "#4ade80" : undefined }}>
+            {govTotal} / 90
+          </span>
+        </div>
+        <div className="h-2 rounded-full bg-muted relative overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${Math.min(100, (govTotal / 179) * 100)}%`,
+              background: govHasMajority
+                ? "linear-gradient(90deg,#22c55e,#4ade80)"
+                : `linear-gradient(90deg, ${PARTIES.A.color}, ${PARTIES.V.color}, ${PARTIES.M.color})`,
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-white/40"
+            style={{ left: `${(90 / 179) * 100}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-xs font-mono mt-1 text-muted-foreground">
+          <span>0</span>
+          <span>↑ 90 {t("forecast.seats")}</span>
+          <span>179</span>
         </div>
       </div>
     </div>

@@ -68,10 +68,11 @@ export default function Page() {
         {/* Forecast Banner */}
         <section>
           <ForecastBanner
-            rodChance={forecast.rodBlokChance}
-            blaaChance={forecast.blaaBlokChance}
-            rodSeats={forecast.rodMedianSeats}
-            blaaSeats={forecast.blaaMedianSeats}
+            rodBlokChance={forecast.rodBlokChance}
+            blaaBlokChance={forecast.blaaBlokChance}
+            rodMedianSeats={forecast.rodMedianSeats}
+            blaaMedianSeats={forecast.blaaMedianSeats}
+            seats={seats}
           />
         </section>
 
