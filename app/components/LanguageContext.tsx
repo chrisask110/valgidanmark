@@ -77,7 +77,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "map.desc": { da: "Interaktivt storkredskort med lokale resultater er under udvikling.", en: "Interactive constituency map with local results is under development." },
 
   // Prediction Markets
-  "pm.title": { da: "Forudsigelsesmarkeder", en: "Prediction Markets" },
+  "pm.title": { da: "Prediction market", en: "Prediction market" },
   "pm.subtitle": { da: "Næste statsminister — Polymarket", en: "Next PM — Polymarket" },
   "pm.implied": { da: "Implicit sandsynlighed", en: "Implied probability" },
   "pm.source": { da: "Kilde: Polymarket", en: "Source: Polymarket" },

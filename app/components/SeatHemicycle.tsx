@@ -60,8 +60,10 @@ export function SeatHemicycle({ seats }: SeatHemicycleProps) {
     .filter(pk => !FO_GL_SEATS[pk])
     .reduce((s, pk) => s + (seats[pk] || 0), 0);
 
-  // All parties shown in legend (DK + FO/GL)
-  const partyTotals = ORDERED.filter(pk => (FO_GL_SEATS[pk] ?? seats[pk] ?? 0) > 0);
+  // Legend: sorted by seat count descending
+  const partyTotals = ORDERED
+    .filter(pk => (FO_GL_SEATS[pk] ?? seats[pk] ?? 0) > 0)
+    .sort((a, b) => (FO_GL_SEATS[b] ?? seats[b] ?? 0) - (FO_GL_SEATS[a] ?? seats[a] ?? 0));
 
   return (
     <div className="w-full">

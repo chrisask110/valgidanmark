@@ -17,8 +17,10 @@ const CANDIDATE_COLORS: Record<string, string> = {
   "Mette Frederiksen": "#E3515A",    // A – Socialdemokratiet
   "Troels Lund Poulsen": "#003F87",  // V – Venstre
   "Lars Løkke Rasmussen": "#7B3FA0", // M – Moderaterne
+  "Alex Vanopslagh": "#00AAFF",      // I – Liberal Alliance
   "Jakob Ellemann-Jensen": "#003F87",
   "Søren Pape Poulsen": "#E5851B",   // C
+  "Inger Støjberg": "#C0392B",       // Æ – Danmarksdemokraterne
 };
 
 function getColor(candidate: string): string {
