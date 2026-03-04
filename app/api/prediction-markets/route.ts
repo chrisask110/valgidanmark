@@ -6,9 +6,26 @@ const POLYMARKET_EVENT_URL = `https://polymarket.com/event/${POLYMARKET_EVENT_SL
 
 export interface PredictionMarketEntry {
   candidate: string;
+  partyKey: string | null;
   probability: number;
   url: string;
 }
+
+// Maps candidate full name → party key (for photo + color lookup)
+const CANDIDATE_TO_PARTY: Record<string, string> = {
+  "Mette Frederiksen":     "A",
+  "Troels Lund Poulsen":   "V",
+  "Alex Vanopslagh":       "I",
+  "Lars Løkke Rasmussen":  "M",
+  "Inger Støjberg":        "Æ",
+  "Mona Juul":             "C",
+  "Pelle Dragsted":        "Ø",
+  "Martin Lidegaard":      "B",
+  "Morten Messerschmidt":  "O",
+  "Franciska Rosenkilde":  "Å",
+  "Pia Olsen Dyhr":        "F",
+  "Lars Boje Mathiesen":   "H",
+};
 
 function extractCandidate(question: string): string {
   const m = question.match(/^Will (.+?) be the next/i);
@@ -16,7 +33,6 @@ function extractCandidate(question: string): string {
 }
 
 function parseOutcomePrice(outcomePrices: string | string[] | undefined): number {
-  // The API returns outcomePrices as a JSON-encoded string, e.g. '["0.765","0.235"]'
   if (!outcomePrices) return 0;
   const arr: string[] = typeof outcomePrices === "string"
     ? JSON.parse(outcomePrices)
@@ -50,14 +66,18 @@ export async function GET() {
 
     const markets: PredictionMarketEntry[] = event.markets
       .filter((m: { outcomePrices?: string | string[] }) => !!m.outcomePrices)
-      .map((m: { question: string; outcomePrices?: string | string[] }) => ({
-        candidate: extractCandidate(m.question),
-        probability: parseOutcomePrice(m.outcomePrices),
-        url: POLYMARKET_EVENT_URL,
-      }))
+      .map((m: { question: string; outcomePrices?: string | string[] }) => {
+        const candidate = extractCandidate(m.question);
+        return {
+          candidate,
+          partyKey: CANDIDATE_TO_PARTY[candidate] ?? null,
+          probability: parseOutcomePrice(m.outcomePrices),
+          url: POLYMARKET_EVENT_URL,
+        };
+      })
       .filter((m: PredictionMarketEntry) => m.probability > 0.001)
       .sort((a: PredictionMarketEntry, b: PredictionMarketEntry) => b.probability - a.probability)
-      .slice(0, 3);
+      .slice(0, 4);
 
     return NextResponse.json(
       { markets },

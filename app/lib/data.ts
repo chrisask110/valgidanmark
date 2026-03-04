@@ -12,7 +12,7 @@ export const PARTIES: Record<string, { name: string; short: string; color: strin
   O: { name: "Dansk Folkeparti",             short: "O", color: "#E4B828", bloc: "blue",    result2022: 2.6  },
   Å: { name: "Alternativet",                 short: "Å", color: "#2ECC71", bloc: "red",     result2022: 3.3  },
   M: { name: "Moderaterne",                  short: "M", color: "#8B5CF6", bloc: "neutral", result2022: 9.3  },
-  H: { name: "Borgernes Parti",              short: "H", color: "#F97316", bloc: "blue",    result2022: 0.0  },
+  H: { name: "Borgernes Parti",              short: "H", color: "#0084FF", bloc: "blue",    result2022: 0.0  },
   // Fixed constituency seats — not polled
   FO: { name: "Færøerne",  short: "FO", color: "#003F87", bloc: "neutral", result2022: 0 },
   GL: { name: "Grønland",  short: "GL", color: "#009A44", bloc: "neutral", result2022: 0 },

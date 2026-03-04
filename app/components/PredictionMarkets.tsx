@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PARTIES } from "@/app/lib/data";
 import { useLanguage } from "./LanguageContext";
 
 interface MarketEntry {
   candidate: string;
+  partyKey: string | null;
   probability: number;
   url: string;
 }
@@ -12,24 +14,49 @@ interface MarketEntry {
 const POLYMARKET_EVENT_URL =
   "https://polymarket.com/event/next-prime-minister-of-denmark-after-parliamentary-election";
 
-// Known candidate → approximate party color mapping
-const CANDIDATE_COLORS: Record<string, string> = {
-  "Mette Frederiksen": "#E3515A",    // A – Socialdemokratiet
-  "Troels Lund Poulsen": "#003F87",  // V – Venstre
-  "Lars Løkke Rasmussen": "#7B3FA0", // M – Moderaterne
-  "Alex Vanopslagh": "#00AAFF",      // I – Liberal Alliance
-  "Jakob Ellemann-Jensen": "#003F87",
-  "Søren Pape Poulsen": "#E5851B",   // C
-  "Inger Støjberg": "#C0392B",       // Æ – Danmarksdemokraterne
-};
+function getColor(partyKey: string | null, fallback = "#64748b"): string {
+  if (partyKey && PARTIES[partyKey]) return PARTIES[partyKey].color;
+  return fallback;
+}
 
-function getColor(candidate: string): string {
-  for (const [name, color] of Object.entries(CANDIDATE_COLORS)) {
-    if (candidate.toLowerCase().includes(name.toLowerCase().split(" ")[0].toLowerCase())) {
-      return color;
-    }
+function CandidatePhoto({
+  partyKey,
+  candidate,
+  size,
+  color,
+}: {
+  partyKey: string | null;
+  candidate: string;
+  size: number;
+  color: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const initials = candidate.split(" ").map(w => w[0]).slice(0, 2).join("");
+
+  if (!partyKey || failed) {
+    return (
+      <div
+        className="rounded-full flex items-center justify-center flex-shrink-0 font-mono font-bold text-white"
+        style={{ width: size, height: size, background: color, fontSize: size * 0.32 }}
+      >
+        {initials}
+      </div>
+    );
   }
-  return "#64748b";
+
+  return (
+    <div
+      className="rounded-full overflow-hidden flex-shrink-0"
+      style={{ width: size, height: size, border: `2px solid ${color}55`, background: color }}
+    >
+      <img
+        src={`/Leaders/${partyKey}.jpg`}
+        alt={candidate}
+        className="w-full h-full object-cover object-top"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
 }
 
 export function PredictionMarkets() {
@@ -49,6 +76,8 @@ export function PredictionMarkets() {
       })
       .catch(() => setError(true));
   }, []);
+
+  const [top, ...rest] = markets ?? [];
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 flex flex-col min-h-[260px]">
@@ -72,82 +101,119 @@ export function PredictionMarkets() {
         </a>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 flex flex-col justify-center">
-        {!markets && !error && (
-          <p className="text-sm font-mono text-muted-foreground text-center">
-            {t("pm.loading")}
-          </p>
-        )}
+      {/* Loading / error */}
+      {!markets && !error && (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm font-mono text-muted-foreground">{t("pm.loading")}</p>
+        </div>
+      )}
+      {error && (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm font-mono text-muted-foreground">{t("pm.error")}</p>
+        </div>
+      )}
 
-        {error && (
-          <p className="text-sm font-mono text-muted-foreground text-center">
-            {t("pm.error")}
-          </p>
-        )}
+      {markets && (
+        <div className="flex-1 flex flex-col gap-3">
+          {/* Hero — #1 candidate */}
+          {top && (() => {
+            const color = getColor(top.partyKey);
+            const pct = Math.round(top.probability * 100);
+            return (
+              <a
+                href={POLYMARKET_EVENT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-lg p-3 group transition-colors"
+                style={{ background: `${color}10`, border: `1px solid ${color}30` }}
+              >
+                <CandidatePhoto
+                  partyKey={top.partyKey}
+                  candidate={top.candidate}
+                  size={52}
+                  color={color}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2 mb-1">
+                    <span className="text-sm font-semibold font-mono truncate group-hover:underline">
+                      {top.candidate}
+                    </span>
+                    <span
+                      className="text-xl font-black font-mono tabular-nums flex-shrink-0"
+                      style={{ color }}
+                    >
+                      {pct}%
+                    </span>
+                  </div>
+                  {top.partyKey && (
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      {PARTIES[top.partyKey]?.short} · {PARTIES[top.partyKey]?.name.split("–")[0].trim()}
+                    </span>
+                  )}
+                  <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden mt-1.5">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${pct}%`,
+                        background: `linear-gradient(90deg, ${color}88, ${color})`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </a>
+            );
+          })()}
 
-        {markets && (
-          <div className="space-y-4">
-            {markets.map((m, i) => {
+          {/* Compact rows — #2–4 */}
+          <div className="space-y-2">
+            {rest.map((m, i) => {
+              const color = getColor(m.partyKey);
               const pct = Math.round(m.probability * 100);
-              const color = getColor(m.candidate);
-              const isTop = i === 0;
               return (
                 <a
                   key={m.candidate}
                   href={POLYMARKET_EVENT_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block group"
+                  className="flex items-center gap-2.5 group"
                 >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      {/* Rank badge */}
-                      <span
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0"
-                        style={{
-                          background: isTop ? `${color}22` : "transparent",
-                          color: isTop ? color : "var(--muted-foreground)",
-                          border: `1px solid ${isTop ? color + "44" : "transparent"}`,
-                        }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span
-                        className="text-sm font-mono font-semibold group-hover:underline transition-colors"
-                        style={{ color: isTop ? color : undefined }}
-                      >
+                  <span className="text-[10px] font-mono text-muted-foreground/60 w-3 flex-shrink-0 text-right">
+                    {i + 2}
+                  </span>
+                  <CandidatePhoto
+                    partyKey={m.partyKey}
+                    candidate={m.candidate}
+                    size={32}
+                    color={color}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                      <span className="text-xs font-mono truncate text-foreground group-hover:underline">
                         {m.candidate}
                       </span>
+                      <span
+                        className="text-xs font-bold font-mono tabular-nums flex-shrink-0"
+                        style={{ color }}
+                      >
+                        {pct}%
+                      </span>
                     </div>
-                    <span
-                      className="text-sm font-mono font-bold tabular-nums"
-                      style={{ color }}
-                    >
-                      {pct}%
-                    </span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${pct}%`,
-                        background: isTop
-                          ? `linear-gradient(90deg, ${color}88, ${color})`
-                          : `${color}88`,
-                      }}
-                    />
+                    <div className="h-1 rounded-full bg-muted/60 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${pct}%`, background: `${color}99` }}
+                      />
+                    </div>
                   </div>
                 </a>
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Footer */}
-      <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+      <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between">
         <span className="text-[10px] font-mono text-muted-foreground/60">
           {t("pm.source")}
         </span>
