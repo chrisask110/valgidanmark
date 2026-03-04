@@ -42,14 +42,14 @@ export default function StatsministerPage() {
   const [sharing, setSharing] = useState(false);
   const predictionRef = useRef<HTMLDivElement>(null);
 
+  // Fetch live polls from DB on mount; fall back silently to FALLBACK_POLLS
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("polls-data");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.polls?.length > 0) setPolls(parsed.polls);
-      }
-    } catch {}
+    fetch("/api/polls")
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.polls) && data.polls.length > 0) setPolls(data.polls);
+      })
+      .catch(() => {});
   }, []);
 
   const partyPct = useMemo((): Record<string, number> => {

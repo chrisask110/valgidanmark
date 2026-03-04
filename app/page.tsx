@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "./components/LanguageContext";
 import { ForecastBanner } from "./components/ForecastBanner";
@@ -10,7 +10,7 @@ import { HemicycleCard } from "./components/HemicycleCard";
 import { LatestPollsTable } from "./components/LatestPollsTable";
 import {
   PARTIES, POLLSTERS, PARTY_KEYS, ROD_BLOK, BLAA_BLOK,
-  FALLBACK_POLLS, calcWeightedAverage, calcPartySeats,
+  FALLBACK_POLLS, calcWeightedAverage, calcPartySeats, type Poll,
 } from "./lib/data";
 import { runMonteCarlo } from "./lib/monte-carlo";
 
@@ -26,7 +26,17 @@ export default function Page() {
     );
   };
 
-  const polls = FALLBACK_POLLS;
+  const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
+
+  // Fetch live polls from DB on mount; fall back silently to FALLBACK_POLLS
+  useEffect(() => {
+    fetch("/api/polls")
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.polls) && data.polls.length > 0) setPolls(data.polls);
+      })
+      .catch(() => {});
+  }, []);
 
   // Current weighted averages
   const partyPct = useMemo(() => {
@@ -92,7 +102,7 @@ export default function Page() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Seat Hemicycle */}
-          <HemicycleCard />
+          <HemicycleCard polls={polls} />
 
           {/* Map placeholder */}
           <div className="rounded-xl border border-border bg-card p-4 flex flex-col items-center justify-center min-h-[260px] gap-3">

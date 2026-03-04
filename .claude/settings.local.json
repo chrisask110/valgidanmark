@@ -4,7 +4,8 @@
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(node_modules/.bin/tsc --noEmit)",
       "Bash(npm install sonner)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(npm install @vercel/postgres papaparse @types/papaparse)"
     ]
   }
 }

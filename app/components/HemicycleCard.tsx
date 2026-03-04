@@ -5,6 +5,10 @@ import {
   PARTIES, POLLSTERS, PARTY_KEYS, FALLBACK_POLLS,
   calcWeightedAverage, calcPartySeats, type Poll,
 } from "@/app/lib/data";
+
+interface HemicycleCardProps {
+  polls?: Poll[];
+}
 import { SeatHemicycle } from "./SeatHemicycle";
 import { useLanguage } from "./LanguageContext";
 
@@ -24,11 +28,12 @@ const SOURCES: [HemiSource, string][] = [
   ),
 ];
 
-const polls: Poll[] = FALLBACK_POLLS;
-
-export function HemicycleCard() {
+export function HemicycleCard({ polls: pollsProp }: HemicycleCardProps) {
   const { t } = useLanguage();
   const [source, setSource] = useState<HemiSource>("model");
+
+  // Use prop polls when available (live data), fall back to static FALLBACK_POLLS
+  const polls = pollsProp && pollsProp.length > 0 ? pollsProp : FALLBACK_POLLS;
 
   const { seats, latestPoll } = useMemo(() => {
     if (source === "model") {
@@ -49,7 +54,7 @@ export function HemicycleCard() {
 
     const pct = Object.fromEntries(PARTY_KEYS.map(pk => [pk, Number(latest[pk]) || 0]));
     return { seats: calcPartySeats(pct), latestPoll: latest };
-  }, [source]);
+  }, [polls, source]);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">

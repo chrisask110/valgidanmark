@@ -33,6 +33,12 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/admin/polls",
+      "regex": "^/admin/polls(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/polls(?:/)?$"
+    },
+    {
       "page": "/statsminister",
       "regex": "^/statsminister(?:/)?$",
       "routeKeys": {},

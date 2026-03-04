@@ -1,1 +1,1 @@
-self.__RSC_SERVER_MANIFEST="{\"node\":{},\"edge\":{},\"encryptionKey\":\"process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY\"}"
+self.__RSC_SERVER_MANIFEST="{\"node\":{\"404650cdf3abec60ceb9ceb42bf2350ab897b5979a\":{\"workers\":{\"app/admin/polls/page\":{\"moduleId\":\"20892\",\"async\":false}},\"layer\":{\"app/admin/polls/page\":\"rsc\"},\"filename\":\"../C:\\\\Users\\\\45226\\\\Github\\\\valgidanmark\\\\app\\\\admin\\\\polls\\\\page.tsx\",\"exportedName\":\"$$RSC_SERVER_ACTION_0\"}},\"edge\":{},\"encryptionKey\":\"process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY\"}"

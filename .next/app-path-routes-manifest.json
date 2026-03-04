@@ -1,5 +1,9 @@
 {
   "/_not-found/page": "/_not-found",
+  "/api/polls/route": "/api/polls",
+  "/api/admin/seed/route": "/api/admin/seed",
+  "/api/cron/update-polls/route": "/api/cron/update-polls",
   "/page": "/",
-  "/statsminister/page": "/statsminister"
+  "/statsminister/page": "/statsminister",
+  "/admin/polls/page": "/admin/polls"
 }
