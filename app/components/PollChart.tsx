@@ -114,14 +114,15 @@ function CustomTooltip({ active, payload, label, polls, selectedParties }: Custo
   if (!active || label == null) return null;
   const ts = label as number;
 
-  // Find the poll closest in time within ±4 days
+  // Find all polls on the closest date within ±4 days
   const WINDOW_MS = 4 * 24 * 60 * 60 * 1000;
   const nearby = polls
     .filter(p => Math.abs(new Date(p.date).getTime() - ts) <= WINDOW_MS)
     .sort((a, b) =>
       Math.abs(new Date(a.date).getTime() - ts) - Math.abs(new Date(b.date).getTime() - ts)
     );
-  const poll = nearby[0] ?? null;
+  const closestDate = nearby[0]?.date ?? null;
+  const pollsToShow = closestDate ? nearby.filter(p => p.date === closestDate) : [];
 
   // Weighted-average values from the Line payload (used when no nearby poll)
   const avgVals = (payload ?? [])
@@ -129,56 +130,61 @@ function CustomTooltip({ active, payload, label, polls, selectedParties }: Custo
     .map(e => ({ pk: String(e.dataKey).replace("_avg", ""), avg: e.value as number }))
     .sort((a, b) => b.avg - a.avg);
 
-  if (!poll && !avgVals.length) return null;
+  if (!pollsToShow.length && !avgVals.length) return null;
 
   return (
     <div className="rounded-lg border border-border bg-card/95 backdrop-blur-sm p-3 shadow-xl text-xs font-mono min-w-[220px]">
-      {poll ? (
+      {pollsToShow.length > 0 ? (
         <>
-          {/* Header: date · pollster · n */}
-          <div className="text-muted-foreground mb-2 leading-snug">
-            {fmtFull(new Date(poll.date).getTime())}
-            {" \u00B7 "}{poll.pollster}
-            {" \u00B7 n="}{poll.n}
-          </div>
+          {pollsToShow.map((poll, idx) => (
+            <div key={`${poll.pollster}-${poll.date}-${idx}`}>
+              {idx > 0 && <div className="border-t border-border my-2" />}
+              {/* Header: date · pollster · n */}
+              <div className="text-muted-foreground mb-2 leading-snug">
+                {fmtFull(new Date(poll.date).getTime())}
+                {" \u00B7 "}{poll.pollster}
+                {" \u00B7 n="}{poll.n}
+              </div>
 
-          {/* Per-party rows — sorted desc by poll value, only visible selected parties */}
-          {selectedParties
-            .filter(pk => poll[pk] != null)
-            .sort((a, b) => Number(poll[b]) - Number(poll[a]))
-            .map(pk => {
-              const val = Number(poll[pk]);
+              {/* Per-party rows — sorted desc by poll value, only visible selected parties */}
+              {selectedParties
+                .filter(pk => poll[pk] != null)
+                .sort((a, b) => Number(poll[b]) - Number(poll[a]))
+                .map(pk => {
+                  const val = Number(poll[pk]);
 
-              // Delta vs most-recent earlier poll from the same pollster
-              const prev = polls
-                .filter(p => p.pollster === poll.pollster && p.date < poll.date && p[pk] != null)
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-              const delta = prev != null ? val - Number(prev[pk]) : null;
+                  // Delta vs most-recent earlier poll from the same pollster
+                  const prev = polls
+                    .filter(p => p.pollster === poll.pollster && p.date < poll.date && p[pk] != null)
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                  const delta = prev != null ? val - Number(prev[pk]) : null;
 
-              return (
-                <div key={pk} className="flex justify-between items-center gap-4 py-0.5">
-                  <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
-                    {PARTIES[pk]?.short} {PARTIES[pk]?.name.split("–")[0].trim()}
-                  </span>
-                  <span className="flex items-center gap-1.5 tabular-nums">
-                    <span className="text-foreground">{val.toFixed(1)}%</span>
-                    {delta != null && (
-                      <span
-                        style={{
-                          color:
-                            delta > 0.05 ? "#22c55e"
-                            : delta < -0.05 ? "#ef4444"
-                            : "#64748b",
-                          fontSize: 10,
-                        }}
-                      >
-                        {delta > 0 ? "+" : ""}{delta.toFixed(1)}
+                  return (
+                    <div key={pk} className="flex justify-between items-center gap-4 py-0.5">
+                      <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
+                        {PARTIES[pk]?.short} {PARTIES[pk]?.name.split("–")[0].trim()}
                       </span>
-                    )}
-                  </span>
-                </div>
-              );
-            })}
+                      <span className="flex items-center gap-1.5 tabular-nums">
+                        <span className="text-foreground">{val.toFixed(1)}%</span>
+                        {delta != null && (
+                          <span
+                            style={{
+                              color:
+                                delta > 0.05 ? "#22c55e"
+                                : delta < -0.05 ? "#ef4444"
+                                : "#64748b",
+                              fontSize: 10,
+                            }}
+                          >
+                            {delta > 0 ? "+" : ""}{delta.toFixed(1)}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+          ))}
         </>
       ) : (
         <>

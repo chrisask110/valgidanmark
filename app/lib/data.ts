@@ -122,12 +122,20 @@ export function calcWeightedAverage(polls: Poll[], partyKey: string, asOfDate?: 
 }
 
 export function calcPartySeats(partyPct: Record<string, number>): Record<string, number> {
+  const TOTAL = 175; // Danish mainland seats only (Faroe Islands + Greenland = 4 separate)
   const qualifying = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 2);
   const totalQualifyingPct = qualifying.reduce((s, pk) => s + (partyPct[pk] || 0), 0);
-  const seats: Record<string, number> = {};
-  PARTY_KEYS.forEach(pk => {
-    if ((partyPct[pk] || 0) < 2) { seats[pk] = 0; return; }
-    seats[pk] = Math.round((partyPct[pk] / totalQualifyingPct) * 175);
+  const seats: Record<string, number> = Object.fromEntries(PARTY_KEYS.map(pk => [pk, 0]));
+  if (!totalQualifyingPct) return seats;
+
+  // Hamilton / largest-remainder method — guarantees sum === TOTAL
+  const quotas = qualifying.map(pk => {
+    const exact = (partyPct[pk] / totalQualifyingPct) * TOTAL;
+    return { pk, floor: Math.floor(exact), rem: exact % 1 };
   });
+  let assigned = quotas.reduce((s, q) => s + q.floor, 0);
+  quotas.sort((a, b) => b.rem - a.rem);
+  for (let i = 0; i < TOTAL - assigned; i++) quotas[i].floor++;
+  quotas.forEach(q => { seats[q.pk] = q.floor; });
   return seats;
 }

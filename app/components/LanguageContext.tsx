@@ -43,7 +43,8 @@ const STRINGS: Record<string, Record<Lang, string>> = {
 
   // Hemicycle
   "hemi.title": { da: "Mandatfordeling", en: "Seat Projection" },
-  "hemi.total": { da: "af 179 mandater", en: "of 179 seats" },
+  "hemi.total": { da: "mandater (DK)", en: "seats (DK)" },
+  "hemi.undecided": { da: "· 4 uafklaret (FO/GL)", en: "· 4 undecided (FO/GL)" },
   "hemi.threshold": { da: "Partier under spærregrænsen tæller ikke med", en: "Parties below threshold excluded" },
 
   // Table

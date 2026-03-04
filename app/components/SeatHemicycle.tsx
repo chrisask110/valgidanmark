@@ -10,22 +10,21 @@ interface SeatHemicycleProps {
 
 // Build hemicycle seat positions across 4 arcs
 function buildHemicycleSeats(seatsByParty: { party: string; count: number }[]) {
-  const TOTAL = 179;
+  const TOTAL = 179; // 175 DK + 4 Faroe Islands/Greenland (shown as undecided)
   const ROW_CONFIG = [
     { r: 80,  count: 35 },
     { r: 108, count: 45 },
     { r: 136, count: 52 },
     { r: 164, count: 47 },
   ];
-  // Total capacity = 179 ✓
 
   // Flatten ordered parties into individual seat slots
   const ordered: string[] = [];
   for (const { party, count } of seatsByParty) {
     for (let i = 0; i < count; i++) ordered.push(party);
   }
-  // Pad to fill rows if rounding leaves gaps
-  while (ordered.length < TOTAL) ordered.push("__empty");
+  // Remaining slots = Faroe Islands + Greenland (undecided)
+  while (ordered.length < TOTAL) ordered.push("__undecided");
 
   const positions: { cx: number; cy: number; party: string }[] = [];
   let seatIdx = 0;
@@ -70,20 +69,23 @@ export function SeatHemicycle({ seats }: SeatHemicycleProps) {
         style={{ overflow: "visible" }}
       >
         {positions.map((pos, i) => {
-          const isEmptySeat = pos.party === "__empty";
+          const isUndecided = pos.party === "__undecided";
+          const isParty = !isUndecided;
           const isHovered = hoveredParty === pos.party;
-          const color = isEmptySeat ? "#1e293b" : PARTIES[pos.party]?.color || "#475569";
+          const color = isUndecided ? "currentColor" : PARTIES[pos.party]?.color || "#475569";
           return (
             <circle
               key={i}
               cx={pos.cx}
               cy={pos.cy}
               r={isHovered ? 6.5 : 5}
-              fill={color}
-              opacity={isEmptySeat ? 0.2 : (hoveredParty && !isHovered ? 0.4 : 1)}
-              onMouseEnter={() => !isEmptySeat && setHoveredParty(pos.party)}
+              fill={isUndecided ? "none" : color}
+              stroke={isUndecided ? "currentColor" : "none"}
+              strokeWidth={isUndecided ? 1 : 0}
+              opacity={isUndecided ? 0.25 : (hoveredParty && !isHovered ? 0.4 : 1)}
+              onMouseEnter={() => isParty && setHoveredParty(pos.party)}
               onMouseLeave={() => setHoveredParty(null)}
-              style={{ cursor: isEmptySeat ? "default" : "pointer", transition: "opacity 0.15s, r 0.1s" }}
+              style={{ cursor: isParty ? "pointer" : "default", transition: "opacity 0.15s, r 0.1s" }}
             />
           );
         })}
@@ -91,7 +93,7 @@ export function SeatHemicycle({ seats }: SeatHemicycleProps) {
         <line x1="300" y1="200" x2="300" y2="30" stroke="currentColor" strokeOpacity="0.1" strokeWidth="1" strokeDasharray="3 3" />
         {/* Majority line indicator */}
         <text x="300" y="212" textAnchor="middle" fontSize="10" fill="currentColor" opacity="0.4" fontFamily="monospace">
-          {totalSeats} {t("hemi.total")}
+          {totalSeats} {t("hemi.total")} {t("hemi.undecided")}
         </text>
       </svg>
 
