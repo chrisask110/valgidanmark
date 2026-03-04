@@ -22,6 +22,19 @@ function fmtFull(ts: number) {
   return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** One bucket per calendar day */
+function dayBuckets(from: Date, to: Date): number[] {
+  const buckets: number[] = [];
+  const cur = new Date(from);
+  cur.setHours(0, 0, 0, 0);
+  while (cur <= to) {
+    buckets.push(cur.getTime());
+    cur.setDate(cur.getDate() + 1);
+  }
+  return buckets;
+}
+
+/** One bucket per week (Sunday-aligned) */
 function weekBuckets(from: Date, to: Date): number[] {
   const buckets: number[] = [];
   const cur = new Date(from);
@@ -33,7 +46,7 @@ function weekBuckets(from: Date, to: Date): number[] {
   return buckets;
 }
 
-// Build one timestamp per calendar month between from and to
+/** One timestamp per calendar month */
 function monthTicks(from: Date, to: Date): number[] {
   const ticks: number[] = [];
   const cur = new Date(from.getFullYear(), from.getMonth(), 1);
@@ -65,7 +78,7 @@ interface PollChartProps {
 const ELECTION_TS = new Date("2026-03-24").getTime();
 const RED = "#ef4444";
 
-// Custom label for the 2% threshold — rendered inside the SVG plot area
+/** Custom label for the 2% threshold — rendered inside the SVG plot area */
 function ThresholdLabel({ viewBox }: any) {
   if (!viewBox) return null;
   const { x, y, width } = viewBox;
@@ -83,59 +96,101 @@ function ThresholdLabel({ viewBox }: any) {
   );
 }
 
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: number;
+  polls: Poll[];
+  selectedParties: string[];
+}
+
+/**
+ * Tooltip logic:
+ *  - Find the nearest poll within ±4 days of the hovered timestamp.
+ *  - If found: show exact poll values + Δ vs previous same-pollster poll.
+ *  - If not found: show weighted average from the Line payload.
+ */
+function CustomTooltip({ active, payload, label, polls, selectedParties }: CustomTooltipProps) {
+  if (!active || label == null) return null;
   const ts = label as number;
 
-  const avgVals: { pk: string; avg: number }[] = [];
-  const dotVals: { pk: string; val: number; pollster: string; n: number }[] = [];
+  // Find the poll closest in time within ±4 days
+  const WINDOW_MS = 4 * 24 * 60 * 60 * 1000;
+  const nearby = polls
+    .filter(p => Math.abs(new Date(p.date).getTime() - ts) <= WINDOW_MS)
+    .sort((a, b) =>
+      Math.abs(new Date(a.date).getTime() - ts) - Math.abs(new Date(b.date).getTime() - ts)
+    );
+  const poll = nearby[0] ?? null;
 
-  for (const entry of payload) {
-    const key = entry.dataKey as string;
-    if (key.endsWith("_avg") && entry.value != null) {
-      avgVals.push({ pk: key.replace("_avg", ""), avg: entry.value });
-    } else if (key === "val" && entry.value != null && entry.payload?.pollster) {
-      dotVals.push({
-        pk: entry.name as string,
-        val: entry.value,
-        pollster: entry.payload.pollster,
-        n: entry.payload.n,
-      });
-    }
-  }
-  avgVals.sort((a, b) => b.avg - a.avg);
-  dotVals.sort((a, b) => b.val - a.val);
-  if (!avgVals.length && !dotVals.length) return null;
+  // Weighted-average values from the Line payload (used when no nearby poll)
+  const avgVals = (payload ?? [])
+    .filter(e => String(e.dataKey).endsWith("_avg") && e.value != null)
+    .map(e => ({ pk: String(e.dataKey).replace("_avg", ""), avg: e.value as number }))
+    .sort((a, b) => b.avg - a.avg);
+
+  if (!poll && !avgVals.length) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-card/95 backdrop-blur-sm p-3 shadow-xl text-xs font-mono min-w-[190px]">
-      <div className="text-muted-foreground mb-2">{fmtFull(ts)}</div>
-
-      {dotVals.length > 0 && (
-        <div className="mb-2 pb-2 border-b border-border">
-          <div className="text-muted-foreground text-[10px] mb-1">
-            {dotVals[0].pollster} · n={dotVals[0].n}
-          </div>
-          {dotVals.map(({ pk, val }) => (
-            <div key={pk} className="flex justify-between gap-4 py-0.5">
-              <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
-                {PARTIES[pk]?.short} {PARTIES[pk]?.name.split("–")[0].trim()}
-              </span>
-              <span className="text-foreground">{val.toFixed(1)}%</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {avgVals.length > 0 && (
+    <div className="rounded-lg border border-border bg-card/95 backdrop-blur-sm p-3 shadow-xl text-xs font-mono min-w-[220px]">
+      {poll ? (
         <>
+          {/* Header: date · pollster · n */}
+          <div className="text-muted-foreground mb-2 leading-snug">
+            {fmtFull(new Date(poll.date).getTime())}
+            {" \u00B7 "}{poll.pollster}
+            {" \u00B7 n="}{poll.n}
+          </div>
+
+          {/* Per-party rows — sorted desc by poll value, only visible selected parties */}
+          {selectedParties
+            .filter(pk => poll[pk] != null)
+            .sort((a, b) => Number(poll[b]) - Number(poll[a]))
+            .map(pk => {
+              const val = Number(poll[pk]);
+
+              // Delta vs most-recent earlier poll from the same pollster
+              const prev = polls
+                .filter(p => p.pollster === poll.pollster && p.date < poll.date && p[pk] != null)
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+              const delta = prev != null ? val - Number(prev[pk]) : null;
+
+              return (
+                <div key={pk} className="flex justify-between items-center gap-4 py-0.5">
+                  <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
+                    {PARTIES[pk]?.short} {PARTIES[pk]?.name.split("–")[0].trim()}
+                  </span>
+                  <span className="flex items-center gap-1.5 tabular-nums">
+                    <span className="text-foreground">{val.toFixed(1)}%</span>
+                    {delta != null && (
+                      <span
+                        style={{
+                          color:
+                            delta > 0.05 ? "#22c55e"
+                            : delta < -0.05 ? "#ef4444"
+                            : "#64748b",
+                          fontSize: 10,
+                        }}
+                      >
+                        {delta > 0 ? "+" : ""}{delta.toFixed(1)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+        </>
+      ) : (
+        <>
+          {/* Fallback: weighted averages when hovering between polls */}
+          <div className="text-muted-foreground mb-2">{fmtFull(ts)}</div>
           <div className="text-muted-foreground text-[10px] mb-1">Vægtet gns.</div>
           {avgVals.map(({ pk, avg }) => (
             <div key={pk} className="flex justify-between gap-4 py-0.5">
               <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
                 {PARTIES[pk]?.short} {PARTIES[pk]?.name.split("–")[0].trim()}
               </span>
-              <span className="text-foreground">{avg.toFixed(1)}%</span>
+              <span className="text-foreground tabular-nums">{avg.toFixed(1)}%</span>
             </div>
           ))}
         </>
@@ -177,12 +232,17 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
 
   const toDate = new Date("2026-03-24");
 
-  // Explicit monthly tick timestamps so every month label appears
   const xTicks = useMemo(() => monthTicks(fromDate, toDate), [fromDate]);
 
-  // Weekly-bucketed weighted averages
+  /**
+   * Chart data:
+   *  - "3m" → daily buckets: the exp(-days/30) recency decay makes the average
+   *    drift smoothly every day even between polls.
+   *  - "6m" / "1y" / "all" → weekly buckets (sufficient granularity, faster).
+   */
   const chartData: ChartDataPoint[] = useMemo(() => {
-    const buckets = weekBuckets(fromDate, toDate);
+    const buckets =
+      timeRange === "3m" ? dayBuckets(fromDate, toDate) : weekBuckets(fromDate, toDate);
     const rangePolls = filteredPolls.filter(p => new Date(p.date) >= fromDate);
     return buckets.map(ts => {
       const asOf = new Date(ts).toISOString().slice(0, 10);
@@ -195,9 +255,9 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
       }
       return point;
     });
-  }, [filteredPolls, selectedParties, fromDate]);
+  }, [filteredPolls, selectedParties, fromDate, timeRange]);
 
-  // Raw individual poll dots
+  /** Raw individual poll dots */
   const rawDotData = useMemo(() => {
     const result: Record<string, RawDot[]> = {};
     for (const pk of selectedParties) {
@@ -221,6 +281,14 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
     ["1y", t("chart.range.1y")],
     ["all", t("chart.range.all")],
   ];
+
+  // Stable tooltip renderer — rebuilds only when filteredPolls / selectedParties change
+  const tooltipContent = useMemo(
+    () => (props: any) => (
+      <CustomTooltip {...props} polls={filteredPolls} selectedParties={selectedParties} />
+    ),
+    [filteredPolls, selectedParties]
+  );
 
   return (
     <div className="space-y-3">
@@ -314,7 +382,7 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
               width={38}
             />
 
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={tooltipContent} />
 
             {/* 2% spærregrænse — custom label stays inside SVG */}
             <ReferenceLine
