@@ -143,5 +143,18 @@ export function calcPartySeats(partyPct: Record<string, number>): Record<string,
   quotas.sort((a, b) => b.rem - a.rem);
   for (let i = 0; i < TOTAL - assigned; i++) quotas[i].floor++;
   quotas.forEach(q => { seats[q.pk] = q.floor; });
+
+  // Enforce minimum 4 seats for any qualifying party.
+  // If bumping a party up would push total > 175, take a seat from the largest party.
+  for (const pk of qualifying) {
+    while (seats[pk] < 4) {
+      seats[pk]++;
+      const donor = qualifying
+        .filter(p => p !== pk && seats[p] > 4)
+        .sort((a, b) => seats[b] - seats[a])[0];
+      if (donor) seats[donor]--;
+    }
+  }
+
   return seats;
 }
