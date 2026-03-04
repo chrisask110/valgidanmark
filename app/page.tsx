@@ -8,6 +8,7 @@ import { PollingAverages } from "./components/PollingAverages";
 import { PollChart } from "./components/PollChart";
 import { HemicycleCard } from "./components/HemicycleCard";
 import { LatestPollsTable } from "./components/LatestPollsTable";
+import { PredictionMarkets } from "./components/PredictionMarkets";
 import {
   PARTIES, POLLSTERS, PARTY_KEYS, ROD_BLOK, BLAA_BLOK, FO_GL_SEATS,
   FALLBACK_POLLS, calcWeightedAverage, calcPartySeats, type Poll,
@@ -105,12 +106,8 @@ export default function Page() {
           {/* Seat Hemicycle */}
           <HemicycleCard polls={polls} />
 
-          {/* Map placeholder */}
-          <div className="rounded-xl border border-border bg-card p-4 flex flex-col items-center justify-center min-h-[260px] gap-3">
-            <div className="text-5xl opacity-20">🗺</div>
-            <p className="font-mono text-sm text-muted-foreground">{t("map.soon")}</p>
-            <p className="font-mono text-xs text-muted-foreground/60 text-center max-w-[220px]">{t("map.desc")}</p>
-          </div>
+          {/* Prediction Markets */}
+          <PredictionMarkets />
 
           {/* Latest Polls Table */}
           <div className="rounded-xl border border-border bg-card p-4 overflow-hidden">

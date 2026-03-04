@@ -76,6 +76,15 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "map.soon": { da: "Kommer snart", en: "Coming soon" },
   "map.desc": { da: "Interaktivt storkredskort med lokale resultater er under udvikling.", en: "Interactive constituency map with local results is under development." },
 
+  // Prediction Markets
+  "pm.title": { da: "Forudsigelsesmarkeder", en: "Prediction Markets" },
+  "pm.subtitle": { da: "Næste statsminister — Polymarket", en: "Next PM — Polymarket" },
+  "pm.implied": { da: "Implicit sandsynlighed", en: "Implied probability" },
+  "pm.source": { da: "Kilde: Polymarket", en: "Source: Polymarket" },
+  "pm.viewall": { da: "Se alle markeder →", en: "View all markets →" },
+  "pm.loading": { da: "Henter markedsdata…", en: "Loading market data…" },
+  "pm.error": { da: "Markedsdata ikke tilgængelig", en: "Market data unavailable" },
+
   // Simulator link
   "sim.title": { da: "Statsminister-simulator", en: "PM Simulator" },
   "sim.desc": { da: "Byg din egen regering og se om du kan danne flertal", en: "Build your own government and see if you can form a majority" },

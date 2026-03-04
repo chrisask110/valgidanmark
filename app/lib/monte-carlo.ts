@@ -17,7 +17,7 @@ export interface MonteCarloResult {
 
 export function runMonteCarlo(
   partyPct: Record<string, number>,
-  simulations = 5000
+  simulations = 25000
 ): MonteCarloResult {
   let rodCount = 0;
   let blaaCount = 0;
