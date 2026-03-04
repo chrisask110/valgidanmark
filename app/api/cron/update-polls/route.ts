@@ -1,19 +1,14 @@
 /**
- * Vercel Cron Job — runs every 6 hours.
- * Fetches polls from a public CSV, inserts new rows, and revalidates pages.
+ * Vercel Cron Job — runs once per day (Hobby plan limit).
+ *
+ * Data source priority:
+ *   1. POLLS_CSV_URL env var (if set) — fetch & parse a CSV
+ *   2. Wikipedia — scrape the 2026 Danish election polling table automatically
  *
  * Required env vars:
- *   CRON_SECRET         – set automatically by Vercel for cron authentication
- *   POLLS_CSV_URL       – raw CSV URL (e.g. Erik Gahner's dataset)
- *   SLACK_WEBHOOK_URL   – (optional) Slack incoming webhook for new-poll alerts
- *
- * CSV format expected (Erik Gahner / erikgahner/polls):
- *   https://raw.githubusercontent.com/erikgahner/polls/master/polls.csv
- *   Columns: id, source, date, company, n, party_a, party_b, party_c, party_d,
- *            party_f, party_i, party_k, party_m, party_o, party_oe, party_v,
- *            party_aa, party_ae, ...
- *
- * Adjust PARTY_MAP below if the CSV uses different column names.
+ *   CRON_SECRET        – set automatically by Vercel for cron authentication
+ *   POLLS_CSV_URL      – (optional) override CSV URL
+ *   SLACK_WEBHOOK_URL  – (optional) Slack incoming webhook for new-poll alerts
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -23,50 +18,32 @@ import { pollExists, insertPoll } from "@/lib/db";
 import type { Poll } from "@/app/lib/data";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60; // seconds — Vercel Pro allows up to 300s
+export const maxDuration = 60;
 
-// ─── CSV column name → our party key ─────────────────────────────────────────
-// Adjust to match whichever CSV source you configure in POLLS_CSV_URL.
-const PARTY_MAP: Record<string, string> = {
-  party_a:   "A",
-  party_b:   "B",
-  party_c:   "C",
-  party_f:   "F",
-  party_i:   "I",
-  party_m:   "M",
-  party_o:   "O",
-  party_oe:  "Ø",   // "oe" = Ø
-  party_v:   "V",
-  party_aa:  "Å",   // "aa" = Å
-  party_ae:  "Æ",   // "ae" = Æ
-  party_h:   "H",   // Borgernes Parti (may not be in older CSVs)
+// ─── Party / pollster maps ────────────────────────────────────────────────────
+
+const CSV_PARTY_MAP: Record<string, string> = {
+  party_a: "A", party_b: "B", party_c: "C", party_f: "F", party_i: "I",
+  party_m: "M", party_o: "O", party_oe: "Ø", party_v: "V",
+  party_aa: "Å", party_ae: "Æ", party_h: "H",
 };
 
-// ─── Pollster name normalisation ──────────────────────────────────────────────
-// Map raw CSV company names to the canonical names used in our POLLSTERS object.
 const POLLSTER_MAP: Record<string, string> = {
-  "Verian":   "Verian",
-  "Gallup":   "Verian",   // Kantar Gallup renamed to Verian
-  "Kantar":   "Verian",
-  "Epinion":  "Epinion",
-  "Megafon":  "Megafon",
-  "Voxmeter": "Voxmeter",
-  "YouGov":   "YouGov",   // keep in DB even if not in POLLSTERS
+  "Verian": "Verian", "Gallup": "Verian", "Kantar": "Verian",
+  "Epinion": "Epinion", "Megafon": "Megafon", "Voxmeter": "Voxmeter",
+  "YouGov": "YouGov",
 };
+
+// Party letters we recognise as column headers in Wikipedia tables
+const KNOWN_PARTIES = new Set(["A", "B", "C", "F", "H", "I", "M", "O", "V", "Æ", "Ø", "Å"]);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type CronResult = {
-  ok: boolean;
-  newPolls: number;
-  skipped: number;
-  errors: string[];
-};
+type CronResult = { ok: boolean; source: string; newPolls: number; skipped: number; errors: string[] };
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  // Vercel automatically sends Authorization: Bearer <CRON_SECRET>
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get("authorization");
@@ -75,99 +52,200 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  const csvUrl = process.env.POLLS_CSV_URL;
-  if (!csvUrl) {
-    console.warn("[cron] POLLS_CSV_URL is not set — nothing to do");
-    return NextResponse.json({ ok: true, message: "POLLS_CSV_URL not configured" });
-  }
-
-  const result: CronResult = { ok: true, newPolls: 0, skipped: 0, errors: [] };
+  const result: CronResult = { ok: true, source: "", newPolls: 0, skipped: 0, errors: [] };
 
   try {
-    // 1. Fetch the CSV
-    const res = await fetch(csvUrl, {
-      cache: "no-store",
-      headers: { "User-Agent": "valgidanmark-cron/1.0" },
-    });
-    if (!res.ok) throw new Error(`CSV fetch failed: HTTP ${res.status}`);
+    const polls: Poll[] = process.env.POLLS_CSV_URL
+      ? await fetchFromCsv(process.env.POLLS_CSV_URL, result)
+      : await fetchFromWikipedia(result);
 
-    const csvText = await res.text();
-
-    // 2. Parse
-    const { data, errors: parseErrors } = Papa.parse<Record<string, string>>(csvText, {
-      header: true,
-      skipEmptyLines: true,
-    });
-    if (parseErrors.length) {
-      parseErrors.slice(0, 5).forEach(e => result.errors.push(`Parse: ${e.message}`));
-    }
-
-    // 3. Process rows — newest first so we can break early
-    const sourceUrl = csvUrl;
-    for (const row of data.reverse()) {
+    for (const poll of polls) {
       try {
-        const poll = parseCsvRow(row);
-        if (!poll) { result.skipped++; continue; }
-
         const exists = await pollExists(poll.date, poll.pollster);
         if (exists) { result.skipped++; continue; }
-
-        await insertPoll(poll, sourceUrl);
+        await insertPoll(poll, result.source);
         result.newPolls++;
-
         await notifySlack(poll);
-      } catch (rowErr) {
-        result.errors.push(String(rowErr));
+      } catch (err) {
+        result.errors.push(String(err));
       }
     }
 
-    // 4. Revalidate pages if anything changed
     if (result.newPolls > 0) {
       revalidatePath("/");
       revalidatePath("/statsminister");
-      console.log(`[cron] Added ${result.newPolls} new polls → pages revalidated`);
+      console.log(`[cron] Added ${result.newPolls} new polls from ${result.source}`);
     }
-  } catch (topErr) {
+  } catch (err) {
     result.ok = false;
-    result.errors.push(String(topErr));
-    console.error("[cron] Fatal error:", topErr);
+    result.errors.push(String(err));
+    console.error("[cron] Fatal error:", err);
   }
 
   return NextResponse.json(result, { status: result.ok ? 200 : 500 });
 }
 
-// ─── CSV row parser ───────────────────────────────────────────────────────────
+// ─── CSV source ───────────────────────────────────────────────────────────────
+
+async function fetchFromCsv(csvUrl: string, result: CronResult): Promise<Poll[]> {
+  result.source = csvUrl;
+  const res = await fetch(csvUrl, { cache: "no-store", headers: { "User-Agent": "valgidanmark-cron/1.0" } });
+  if (!res.ok) throw new Error(`CSV fetch failed: HTTP ${res.status}`);
+  const { data, errors } = Papa.parse<Record<string, string>>(await res.text(), { header: true, skipEmptyLines: true });
+  errors.slice(0, 3).forEach(e => result.errors.push(`CSV parse: ${e.message}`));
+  return data.reverse().flatMap(row => parseCsvRow(row) ?? []);
+}
 
 function parseCsvRow(row: Record<string, string>): Poll | null {
-  // Date
   const date = row["date"]?.trim();
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-
-  // Only include polls from 2025 onwards
-  if (date < "2025-01-01") return null;
-
-  // Pollster
-  const rawCompany = row["company"]?.trim() ?? "";
-  const pollster = POLLSTER_MAP[rawCompany] ?? rawCompany;
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date < "2025-01-01") return null;
+  const pollster = POLLSTER_MAP[row["company"]?.trim() ?? ""] ?? row["company"]?.trim();
   if (!pollster) return null;
-
-  // Sample size
   const n = parseInt(row["n"] ?? "0") || 0;
-
-  // Party percentages
   const parties: Record<string, number> = {};
-  for (const [col, key] of Object.entries(PARTY_MAP)) {
-    const raw = row[col];
-    if (raw != null && raw !== "" && raw !== "NA") {
-      const val = parseFloat(raw);
-      if (!isNaN(val)) parties[key] = val;
+  for (const [col, key] of Object.entries(CSV_PARTY_MAP)) {
+    const val = parseFloat(row[col]);
+    if (!isNaN(val)) parties[key] = val;
+  }
+  return Object.keys(parties).length >= 5 ? { date, pollster, n, ...parties } : null;
+}
+
+// ─── Wikipedia source ─────────────────────────────────────────────────────────
+
+const WIKI_PAGE = "Opinion_polling_for_the_2026_Danish_general_election";
+
+async function fetchFromWikipedia(result: CronResult): Promise<Poll[]> {
+  result.source = `wikipedia:${WIKI_PAGE}`;
+  const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${WIKI_PAGE}&prop=revisions&rvprop=content&format=json&rvslots=main&formatversion=2`;
+  const res = await fetch(url, { cache: "no-store", headers: { "User-Agent": "valgidanmark-cron/1.0 (https://valgidanmark.dk)" } });
+  if (!res.ok) throw new Error(`Wikipedia API failed: HTTP ${res.status}`);
+  const json = await res.json();
+  const wikitext: string = json?.query?.pages?.[0]?.revisions?.[0]?.slots?.main?.content ?? "";
+  if (!wikitext) throw new Error("Wikipedia: empty wikitext");
+  const polls = parseWikiPolls(wikitext);
+  console.log(`[cron] Wikipedia: parsed ${polls.length} candidate polls`);
+  return polls;
+}
+
+// ─── Wikipedia wikitext parser ────────────────────────────────────────────────
+
+const MONTH_MAP: Record<string, string> = {
+  jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+  jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
+  january: "01", february: "02", march: "03", april: "04", june: "06",
+  july: "07", august: "08", september: "09", october: "10", november: "11", december: "12",
+};
+
+function stripWiki(s: string): string {
+  return s
+    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\{\{dts\|(\d{4})\|(\d{1,2})\|(\d{1,2})\}\}/gi, (_, y, m, d) =>
+      `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`)
+    .replace(/\{\{[^}]*\}\}/g, "")
+    .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, "$1")
+    .replace(/\[\[([^\]]+)\]\]/g, "$1")
+    .replace(/'{2,}/g, "")
+    .trim();
+}
+
+function parseEndDate(s: string): string | null {
+  // Already ISO from {{dts}} expansion
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // Find all "D Mon YYYY" patterns and take the last (= end date of fieldwork)
+  const matches = [...s.matchAll(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/g)];
+  if (matches.length) {
+    const [, d, mon, y] = matches[matches.length - 1];
+    const m = MONTH_MAP[mon.toLowerCase()];
+    if (m) return `${y}-${m}-${d.padStart(2, "0")}`;
+  }
+
+  // "D – D Mon YYYY" (only last day has month+year)
+  const m2 = s.match(/\d+\s*[–\-]\s*(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
+  if (m2) {
+    const m = MONTH_MAP[m2[2].toLowerCase()];
+    if (m) return `${m2[3]}-${m}-${m2[1].padStart(2, "0")}`;
+  }
+
+  return null;
+}
+
+function parseWikiPolls(wikitext: string): Poll[] {
+  const polls: Poll[] = [];
+
+  // Find all tables
+  const tableRegex = /\{\|[^\n]*\n([\s\S]*?)\n\|\}/g;
+  let tableMatch: RegExpExecArray | null;
+
+  while ((tableMatch = tableRegex.exec(wikitext)) !== null) {
+    const rows = tableMatch[1].split(/\n\|-/).map(r => r.trim()).filter(Boolean);
+
+    const partyColIdx: Record<number, string> = {};
+    let fieldworkIdx = -1, pollsterIdx = -1, nIdx = -1;
+    let headerFound = false;
+
+    for (const row of rows) {
+      if (row.startsWith("|+")) continue; // caption
+
+      // ── Header row ────────────────────────────────────────────────────────
+      if (!headerFound && (row.startsWith("!") || row.includes("\n!"))) {
+        const cells = row
+          .split(/!!|\n!+/)
+          .map(c => stripWiki(c.replace(/^!+/, "").replace(/^[^|]*\|/, "").trim()));
+
+        cells.forEach((cell, i) => {
+          // Exact match for single party letter
+          if (KNOWN_PARTIES.has(cell)) { partyColIdx[i] = cell; return; }
+          // Extract party letter from template like "{{party...|A|...}}"
+          const templateParty = cell.match(/\bparty[^|]*\|([A-ZÆØÅ])\|/)?.[1];
+          if (templateParty && KNOWN_PARTIES.has(templateParty)) { partyColIdx[i] = templateParty; return; }
+          if (/fieldwork|dates?/i.test(cell)) fieldworkIdx = i;
+          if (/polling\s*firm|pollster|company|institut/i.test(cell)) pollsterIdx = i;
+          if (/sample|n\s*$|\bn\b/i.test(cell)) nIdx = i;
+        });
+
+        if (Object.keys(partyColIdx).length >= 5) headerFound = true;
+        continue;
+      }
+
+      if (!headerFound) continue;
+
+      // ── Data row ──────────────────────────────────────────────────────────
+      const cells = row
+        .split(/\|\||\n\|+/)
+        .map(c => stripWiki(c.replace(/^\|+/, "").replace(/^[^|]*\|/, "").trim()));
+
+      if (cells.length < 6) continue;
+
+      // Date
+      const dateRaw = cells[fieldworkIdx >= 0 ? fieldworkIdx : 0] ?? "";
+      const date = parseEndDate(dateRaw);
+      if (!date || date < "2025-01-01") continue;
+
+      // Pollster
+      const rawPollster = (cells[pollsterIdx >= 0 ? pollsterIdx : 2] ?? "").trim();
+      if (!rawPollster || /average|election|result|valg/i.test(rawPollster)) continue;
+      const pollster = POLLSTER_MAP[rawPollster] ?? rawPollster;
+
+      // Sample size
+      const nRaw = cells[nIdx >= 0 ? nIdx : 4] ?? "";
+      const n = parseInt(nRaw.replace(/[\s,.]/g, "")) || 0;
+
+      // Party percentages
+      const parties: Record<string, number> = {};
+      for (const [idxStr, key] of Object.entries(partyColIdx)) {
+        const val = parseFloat((cells[+idxStr] ?? "").replace(",", "."));
+        if (!isNaN(val) && val > 0 && val <= 100) parties[key] = val;
+      }
+
+      if (Object.keys(parties).length < 5) continue;
+
+      polls.push({ date, pollster, n, ...parties });
     }
   }
 
-  // Need at least some party data
-  if (Object.keys(parties).length < 5) return null;
-
-  return { date, pollster, n, ...parties };
+  return polls;
 }
 
 // ─── Slack notification ───────────────────────────────────────────────────────
@@ -183,7 +261,5 @@ async function notifySlack(poll: Poll): Promise<void> {
         text: `📊 *Ny måling tilføjet*\n*${poll.pollster}* · ${poll.date} · n=${poll.n}\nA: ${poll["A"] ?? "–"}% · V: ${poll["V"] ?? "–"}% · F: ${poll["F"] ?? "–"}%`,
       }),
     });
-  } catch {
-    // Non-critical — never crash the cron for a notification failure
-  }
+  } catch { /* non-critical */ }
 }
