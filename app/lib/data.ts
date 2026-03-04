@@ -1,7 +1,7 @@
 // Shared data layer — imported by app/page.tsx and app/statsminister/page.tsx
 
 export const PARTIES: Record<string, { name: string; short: string; color: string; bloc: string; result2022: number }> = {
-  A: { name: "Socialdemokraterne",          short: "A", color: "#C8102E", bloc: "red",     result2022: 27.5 },
+  A: { name: "Socialdemokraterne",          short: "A",  color: "#C8102E", bloc: "red",     result2022: 27.5 },
   F: { name: "SF – Socialistisk Folkeparti", short: "F", color: "#E4007C", bloc: "red",     result2022: 8.3  },
   V: { name: "Venstre",                      short: "V", color: "#254B8E", bloc: "blue",    result2022: 13.3 },
   I: { name: "Liberal Alliance",             short: "I", color: "#00B0CA", bloc: "blue",    result2022: 7.9  },
@@ -13,7 +13,13 @@ export const PARTIES: Record<string, { name: string; short: string; color: strin
   Å: { name: "Alternativet",                 short: "Å", color: "#2ECC71", bloc: "red",     result2022: 3.3  },
   M: { name: "Moderaterne",                  short: "M", color: "#8B5CF6", bloc: "neutral", result2022: 9.3  },
   H: { name: "Borgernes Parti",              short: "H", color: "#F97316", bloc: "blue",    result2022: 0.0  },
+  // Fixed constituency seats — not polled
+  FO: { name: "Færøerne",  short: "FO", color: "#003F87", bloc: "neutral", result2022: 0 },
+  GL: { name: "Grønland",  short: "GL", color: "#009A44", bloc: "neutral", result2022: 0 },
 };
+
+/** Fixed seat counts for Faroe Islands and Greenland (not determined by DK polls) */
+export const FO_GL_SEATS: Record<string, number> = { FO: 2, GL: 2 };
 
 export const POLLSTERS: Record<string, { rating: number; grade: string; avgError: number; methodology: string; client: string; sampleSize: string; weight: number; desc: string }> = {
   "Verian":   { rating: 92, grade: "A",  avgError: 0.65, methodology: "Telefon + Onlinepanel",       client: "Berlingske",       sampleSize: "~1.700",       weight: 1.35, desc: "Laveste gennemsnitlige afvigelse blandt danske institutter. Tidligere Kantar Gallup." },

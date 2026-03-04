@@ -9,7 +9,7 @@ import { PollChart } from "./components/PollChart";
 import { HemicycleCard } from "./components/HemicycleCard";
 import { LatestPollsTable } from "./components/LatestPollsTable";
 import {
-  PARTIES, POLLSTERS, PARTY_KEYS, ROD_BLOK, BLAA_BLOK,
+  PARTIES, POLLSTERS, PARTY_KEYS, ROD_BLOK, BLAA_BLOK, FO_GL_SEATS,
   FALLBACK_POLLS, calcWeightedAverage, calcPartySeats, type Poll,
 } from "./lib/data";
 import { runMonteCarlo } from "./lib/monte-carlo";
@@ -178,8 +178,35 @@ export default function Page() {
                 </div>
               </div>
 
+              {/* FO + GL */}
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="font-mono text-sm font-semibold text-muted-foreground">
+                    {t("blok.fogl")}
+                  </span>
+                  <span className="font-mono text-sm tabular-nums">4 {t("blok.seats")}</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${(4 / 179) * 100}%`,
+                      background: `linear-gradient(90deg, ${PARTIES.GL.color}, ${PARTIES.FO.color})`,
+                    }}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {Object.entries(FO_GL_SEATS).map(([pk, count]) => (
+                    <span key={pk} className="text-xs font-mono px-2 py-0.5 rounded-full"
+                      style={{ background: `${PARTIES[pk].color}22`, color: PARTIES[pk].color }}>
+                      {PARTIES[pk].short} {count}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               <div className="text-xs font-mono text-muted-foreground text-center pt-2 border-t border-border">
-                {t("blok.majority")} = 90 {t("blok.seats")} &middot; 179 {t("hemi.total")}
+                {t("blok.majority")} = 90 {t("blok.seats")} &middot; 175 DK + 4 FO/GL = 179
               </div>
             </div>
           </div>

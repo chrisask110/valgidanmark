@@ -45,8 +45,15 @@ export function runMonteCarlo(
     // Calculate seats with 2% threshold
     const seats = calcPartySeats(simPct);
 
-    const rodSeats  = ROD_BLOK.reduce((s, pk)  => s + (seats[pk] || 0), 0);
-    const blaaSeats = BLAA_BLOK.reduce((s, pk) => s + (seats[pk] || 0), 0);
+    const dkRodSeats  = ROD_BLOK.reduce((s, pk)  => s + (seats[pk] || 0), 0);
+    const dkBlaaSeats = BLAA_BLOK.reduce((s, pk) => s + (seats[pk] || 0), 0);
+
+    // FO + GL: 4 swing seats, each independently 50/50
+    let foGlRed = 0;
+    for (let j = 0; j < 4; j++) if (Math.random() < 0.5) foGlRed++;
+
+    const rodSeats  = dkRodSeats  + foGlRed;
+    const blaaSeats = dkBlaaSeats + (4 - foGlRed);
 
     rodSeatsList.push(rodSeats);
     blaaSeatsList.push(blaaSeats);
