@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   PARTIES, PARTY_KEYS, FALLBACK_POLLS,
   calcWeightedAverage, calcPartySeats, type Poll,
@@ -8,8 +8,6 @@ import {
 import { ShareBar } from "@/app/components/ShareBar";
 
 // ─── FO / GL individual seat definitions ─────────────────────────────────────
-// Each constituency sends 2 MPs — treated as separate 1-seat entries so they
-// can be assigned to different blocs independently.
 const FO_GL_INDIVIDUAL = [
   { key: "FO1", name: "Færøerne – Mandat 1", short: "FO", color: PARTIES.FO.color },
   { key: "FO2", name: "Færøerne – Mandat 2", short: "FO", color: PARTIES.FO.color },
@@ -45,7 +43,225 @@ const CAT_CONFIG: Record<Category, { label: string; color: string; bg: string; b
   opposition: { label: "Opposition",    color: "#64748b", bg: "rgba(100,116,139,0.06)", border: "rgba(100,116,139,0.2)" },
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Prediction Modal ─────────────────────────────────────────────────────────
+
+function PredictionModal({
+  selectedPM,
+  predictionText,
+  govParties,
+  govFoGl,
+  supportParties,
+  supportFoGl,
+  coalitionSeats,
+  hasMajority,
+  onClose,
+}: {
+  selectedPM: string;
+  predictionText: string;
+  govParties: string[];
+  govFoGl: typeof FO_GL_INDIVIDUAL[number][];
+  supportParties: string[];
+  supportFoGl: typeof FO_GL_INDIVIDUAL[number][];
+  coalitionSeats: number;
+  hasMajority: boolean;
+  onClose: () => void;
+}) {
+  const predictionRef = useRef<HTMLDivElement>(null);
+  const [sharing, setSharing] = useState(false);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const saveAsImage = async () => {
+    if (!predictionRef.current) return;
+    setSharing(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(predictionRef.current, {
+        cacheBust: true, pixelRatio: 2, backgroundColor: "#0f172a",
+      });
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], "min-forudsigelse.png", { type: "image/png" });
+      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Min valgforudsigelse – valgidanmark.dk" });
+      } else {
+        const a = document.createElement("a");
+        a.href = dataUrl; a.download = "min-forudsigelse.png"; a.click();
+      }
+    } catch (err) { console.error(err); }
+    finally { setSharing(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal panel */}
+      <div
+        className="relative z-10 w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl"
+        style={{ background: "linear-gradient(160deg, #0d1f4a 0%, #0f172a 100%)", border: "1.5px solid rgba(147,197,253,0.2)" }}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors font-mono text-lg"
+          aria-label="Luk"
+        >
+          ×
+        </button>
+
+        {/* Prediction card (captured as image) */}
+        <div ref={predictionRef} className="p-6 space-y-5">
+          {/* PM header */}
+          <div className="flex items-center gap-4">
+            <div
+              className="flex-shrink-0 rounded-full overflow-hidden"
+              style={{ width: 72, height: 72, border: `3px solid ${PARTIES[selectedPM].color}`, background: PARTIES[selectedPM].color }}
+            >
+              <img
+                src={`/Leaders/${selectedPM}.jpg`}
+                alt={PARTY_LEADERS[selectedPM]}
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+            <div>
+              <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-1">
+                Min forudsigelse
+              </div>
+              <div className="text-xl font-bold text-white leading-tight">
+                {PARTY_LEADERS[selectedPM]} 👑
+              </div>
+              <div className="text-sm text-slate-400 mt-0.5">
+                {PARTIES[selectedPM].name}
+              </div>
+            </div>
+          </div>
+
+          <p className="text-slate-200 text-sm leading-relaxed">{predictionText}</p>
+
+          {/* Coalition pills */}
+          <div className="flex flex-wrap gap-2">
+            {govParties.map(pk => (
+              <span
+                key={pk}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold"
+                style={{ background: `${PARTIES[pk].color}22`, border: `1px solid ${PARTIES[pk].color}55`, color: PARTIES[pk].color }}
+              >
+                <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" style={{ background: PARTIES[pk].color }}>
+                  {PARTIES[pk].short}
+                </span>
+                Reg.
+              </span>
+            ))}
+            {govFoGl.map(e => (
+              <span
+                key={e.key}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold"
+                style={{ background: `${e.color}22`, border: `1px solid ${e.color}55`, color: e.color }}
+              >
+                <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" style={{ background: e.color }}>
+                  {e.short}
+                </span>
+                Reg.
+              </span>
+            ))}
+            {supportParties.map(pk => (
+              <span
+                key={pk}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold"
+                style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.35)", color: "#4ade80" }}
+              >
+                <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" style={{ background: PARTIES[pk].color }}>
+                  {PARTIES[pk].short}
+                </span>
+                Støt.
+              </span>
+            ))}
+            {supportFoGl.map(e => (
+              <span
+                key={e.key}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold"
+                style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.35)", color: "#4ade80" }}
+              >
+                <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" style={{ background: e.color }}>
+                  {e.short}
+                </span>
+                Støt.
+              </span>
+            ))}
+          </div>
+
+          {/* Seat footer */}
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-lg"
+            style={{
+              background: hasMajority ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${hasMajority ? "rgba(74,222,128,0.25)" : "rgba(255,255,255,0.08)"}`,
+            }}
+          >
+            <span className="text-2xl font-bold font-mono tabular-nums" style={{ color: hasMajority ? "#4ade80" : "#f8fafc" }}>
+              {coalitionSeats}
+            </span>
+            <span className="text-sm" style={{ color: hasMajority ? "#4ade80" : "#64748b" }}>
+              {hasMajority ? "mandater — flertal opnået ✓" : `mandater — mangler ${90 - coalitionSeats}`}
+            </span>
+            <span className="ml-auto text-[10px] font-mono text-slate-700">valgidanmark.dk</span>
+          </div>
+        </div>
+
+        {/* Share + actions — outside the captured area */}
+        <div className="px-6 pb-6 space-y-3 border-t border-white/8 pt-4">
+          <ShareBar
+            pmName={PARTY_LEADERS[selectedPM]}
+            coalitionShorts={[
+              ...govParties.map(pk => PARTIES[pk].short),
+              ...govFoGl.map(e => e.short),
+              ...supportParties.map(pk => PARTIES[pk].short),
+              ...supportFoGl.map(e => e.short),
+            ]}
+            coalitionSeats={coalitionSeats}
+          />
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={saveAsImage}
+              disabled={sharing}
+              className="flex-1 min-w-[160px] py-3 px-5 rounded-xl border font-mono text-sm font-semibold transition-all"
+              style={{
+                borderColor: sharing ? "hsl(var(--border))" : "rgba(147,197,253,0.4)",
+                background:  sharing ? "transparent"        : "rgba(147,197,253,0.08)",
+                color:       sharing ? "hsl(var(--muted-foreground))" : "#93c5fd",
+              }}
+            >
+              {sharing ? "Gemmer..." : "Gem som billede →"}
+            </button>
+            <button
+              onClick={onClose}
+              className="py-3 px-5 rounded-xl border border-white/10 font-mono text-sm text-slate-400 hover:bg-white/5 transition-colors"
+            >
+              Rediger
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function StatsministerPage() {
   const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
@@ -56,9 +272,7 @@ export default function StatsministerPage() {
     )
   );
   const [selectedPM, setSelectedPM] = useState<string | null>(null);
-  const [predictionExpanded, setPredictionExpanded] = useState(false);
-  const [sharing, setSharing] = useState(false);
-  const predictionRef = useRef<HTMLDivElement>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/polls")
@@ -85,24 +299,21 @@ export default function StatsministerPage() {
   const visibleParties = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 0.5);
   const pmCandidates   = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 2);
 
-  // DK parties by role
   const govParties     = visibleParties.filter(pk => categories[pk] === "government");
   const supportParties = visibleParties.filter(pk => categories[pk] === "support");
+  const govFoGl        = FO_GL_INDIVIDUAL.filter(e => categories[e.key] === "government");
+  const supportFoGl    = FO_GL_INDIVIDUAL.filter(e => categories[e.key] === "support");
 
-  // FO/GL individual seats by role
-  const govFoGl     = FO_GL_INDIVIDUAL.filter(e => categories[e.key] === "government");
-  const supportFoGl = FO_GL_INDIVIDUAL.filter(e => categories[e.key] === "support");
-
-  const govSeats     = govParties.reduce((s, pk) => s + (partySeats[pk] || 0), 0) + govFoGl.length;
-  const supportSeats = supportParties.reduce((s, pk) => s + (partySeats[pk] || 0), 0) + supportFoGl.length;
+  const govSeats       = govParties.reduce((s, pk) => s + (partySeats[pk] || 0), 0) + govFoGl.length;
+  const supportSeats   = supportParties.reduce((s, pk) => s + (partySeats[pk] || 0), 0) + supportFoGl.length;
   const coalitionSeats = govSeats + supportSeats;
-  const hasMajority = coalitionSeats >= 90;
+  const hasMajority    = coalitionSeats >= 90;
 
   const selectPM = (pk: string) => {
     const next = selectedPM === pk ? null : pk;
     setSelectedPM(next);
     if (next) setCategories(prev => ({ ...prev, [pk]: "government" }));
-    setPredictionExpanded(false);
+    setShowModal(false);
   };
 
   const cycleCategory = (key: string) => {
@@ -111,7 +322,6 @@ export default function StatsministerPage() {
       const next = order[(order.indexOf(prev[key]) + 1) % 3];
       return { ...prev, [key]: next };
     });
-    setPredictionExpanded(false);
   };
 
   const predictionText = useMemo(() => {
@@ -120,44 +330,38 @@ export default function StatsministerPage() {
     const govOthers = govParties.filter(pk => pk !== selectedPM);
     const parts: string[] = [];
     parts.push(`Jeg forudsiger at ${pmName} (${PARTIES[selectedPM].name}) bliver Danmarks næste statsminister.`);
-
     const govOtherParts = [
       ...govOthers.map(pk => `${PARTIES[pk].short} (${PARTIES[pk].name.split("–")[0].trim()})`),
       ...govFoGl.map(e => e.name),
     ];
     if (govOtherParts.length > 0)
       parts.push(`Regeringen dannes med ${govOtherParts.join(", ")}.`);
-
     const supportParts = [
       ...supportParties.map(pk => PARTIES[pk].short),
       ...supportFoGl.map(e => e.name),
     ];
     if (supportParts.length > 0)
       parts.push(`Parlamentarisk grundlag sikres af ${supportParts.join(", ")}.`);
-
     parts.push(`Koalitionen har ${coalitionSeats} af de nødvendige 90 mandater${hasMajority ? " — flertal opnået!" : "."}`);
     return parts.join(" ");
   }, [selectedPM, govParties, govFoGl, supportParties, supportFoGl, coalitionSeats, hasMajority]);
 
-  const saveAsImage = async () => {
-    if (!predictionRef.current) return;
-    setSharing(true);
-    try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(predictionRef.current, {
-        cacheBust: true, pixelRatio: 2, backgroundColor: "#0f172a",
-      });
-      const blob  = await (await fetch(dataUrl)).blob();
-      const file  = new File([blob], "min-forudsigelse.png", { type: "image/png" });
-      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Min valgforudsigelse – valgidanmark.dk" });
-      } else {
-        const a = document.createElement("a");
-        a.href = dataUrl; a.download = "min-forudsigelse.png"; a.click();
-      }
-    } catch (err) { console.error(err); }
-    finally { setSharing(false); }
-  };
+  const openModal = useCallback(() => {
+    if (!selectedPM) return;
+    setShowModal(true);
+    // Fire-and-forget tracking — silently ignore errors
+    fetch("/api/simulator/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pmParty:           selectedPM,
+        governmentParties: govParties,
+        supportParties:    supportParties,
+        coalitionSeats,
+        hasMajority,
+      }),
+    }).catch(() => {});
+  }, [selectedPM, govParties, supportParties, coalitionSeats, hasMajority]);
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -214,11 +418,7 @@ export default function StatsministerPage() {
               >
                 <div
                   className="flex-shrink-0 rounded-full overflow-hidden"
-                  style={{
-                    width: 48, height: 48,
-                    border:     `2.5px solid ${isSel ? PARTIES[pk].color : "hsl(var(--border))"}`,
-                    background: PARTIES[pk].color,
-                  }}
+                  style={{ width: 48, height: 48, border: `2.5px solid ${isSel ? PARTIES[pk].color : "hsl(var(--border))"}`, background: PARTIES[pk].color }}
                 >
                   <img
                     src={`/Leaders/${pk}.jpg`}
@@ -255,18 +455,15 @@ export default function StatsministerPage() {
           {/* DK parties */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {visibleParties.map(pk => {
-              const cat   = categories[pk];
-              const cfg   = CAT_CONFIG[cat];
-              const isPM  = pk === selectedPM;
+              const cat  = categories[pk];
+              const cfg  = CAT_CONFIG[cat];
+              const isPM = pk === selectedPM;
               return (
                 <div
                   key={pk}
                   onClick={() => cycleCategory(pk)}
                   className="flex items-center justify-between gap-2 p-3 rounded-xl border cursor-pointer select-none transition-all"
-                  style={{
-                    borderColor: isPM ? PARTIES[pk].color : cfg.border,
-                    background:  cfg.bg,
-                  }}
+                  style={{ borderColor: isPM ? PARTIES[pk].color : cfg.border, background: cfg.bg }}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
@@ -375,7 +572,6 @@ export default function StatsministerPage() {
                     : "linear-gradient(90deg,#3b82f6,#60a5fa)",
                 }}
               />
-              {/* 90-seat marker — uses foreground color so it's visible on both light and dark */}
               <div
                 className="absolute top-0 h-full w-px bg-foreground/40"
                 style={{ left: `${(90 / 179) * 100}%` }}
@@ -411,166 +607,38 @@ export default function StatsministerPage() {
             </div>
           </div>
 
-          {selectedPM && !predictionExpanded && (
+          {selectedPM && (
             <button
-              onClick={() => setPredictionExpanded(true)}
-              className="w-full py-3 px-4 rounded-xl border font-mono text-sm font-semibold transition-all"
+              onClick={openModal}
+              className="w-full py-3.5 px-4 rounded-xl border font-mono text-sm font-bold transition-all"
               style={{
-                borderColor: hasMajority ? "rgba(74,222,128,0.45)" : "hsl(var(--border))",
-                background:  hasMajority ? "rgba(74,222,128,0.1)"  : "hsl(var(--muted))",
-                color:       hasMajority ? "#4ade80"               : "hsl(var(--muted-foreground))",
+                borderColor: hasMajority ? "rgba(74,222,128,0.5)" : "rgba(147,197,253,0.4)",
+                background:  hasMajority ? "rgba(74,222,128,0.12)" : "rgba(147,197,253,0.08)",
+                color:       hasMajority ? "#4ade80"               : "#93c5fd",
+                boxShadow:   hasMajority
+                  ? "0 0 20px rgba(74,222,128,0.15)"
+                  : "0 0 20px rgba(147,197,253,0.1)",
               }}
             >
-              {hasMajority ? "Se min forudsigelse →" : "Gem forudsigelse →"}
+              {hasMajority ? "✓ Se min forudsigelse →" : "Se min forudsigelse →"}
             </button>
           )}
         </aside>
       </div>
 
-      {/* ── Prediction card + share ──────────────────────────────────── */}
-      {selectedPM && predictionExpanded && (
-        <section className="space-y-4 border-t border-border pt-8">
-          <div
-            ref={predictionRef}
-            className="rounded-xl p-6 space-y-5"
-            style={{
-              background: "linear-gradient(135deg,#0d1f4a 0%,#0f172a 100%)",
-              border: "1.5px solid rgba(147,197,253,0.2)",
-            }}
-          >
-            {/* PM header */}
-            <div className="flex items-center gap-4">
-              <div
-                className="flex-shrink-0 rounded-full overflow-hidden"
-                style={{
-                  width: 72, height: 72,
-                  border: `3px solid ${PARTIES[selectedPM].color}`,
-                  background: PARTIES[selectedPM].color,
-                }}
-              >
-                <img
-                  src={`/Leaders/${selectedPM}.jpg`}
-                  alt={PARTY_LEADERS[selectedPM]}
-                  className="w-full h-full object-cover object-top"
-                />
-              </div>
-              <div>
-                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-1">
-                  Min forudsigelse
-                </div>
-                <div className="text-xl font-bold text-white leading-tight">
-                  {PARTY_LEADERS[selectedPM]} 👑
-                </div>
-                <div className="text-sm text-slate-400 mt-0.5">
-                  {PARTIES[selectedPM].name}
-                </div>
-              </div>
-            </div>
-
-            <p className="text-slate-200 text-sm leading-relaxed">{predictionText}</p>
-
-            {/* Coalition pills */}
-            <div className="flex flex-wrap gap-2">
-              {govParties.map(pk => (
-                <span
-                  key={pk}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold"
-                  style={{ background: `${PARTIES[pk].color}22`, border: `1px solid ${PARTIES[pk].color}55`, color: PARTIES[pk].color }}
-                >
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" style={{ background: PARTIES[pk].color }}>
-                    {PARTIES[pk].short}
-                  </span>
-                  Reg.
-                </span>
-              ))}
-              {govFoGl.map(e => (
-                <span
-                  key={e.key}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold"
-                  style={{ background: `${e.color}22`, border: `1px solid ${e.color}55`, color: e.color }}
-                >
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" style={{ background: e.color }}>
-                    {e.short}
-                  </span>
-                  Reg.
-                </span>
-              ))}
-              {supportParties.map(pk => (
-                <span
-                  key={pk}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold"
-                  style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.35)", color: "#4ade80" }}
-                >
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" style={{ background: PARTIES[pk].color }}>
-                    {PARTIES[pk].short}
-                  </span>
-                  Støt.
-                </span>
-              ))}
-              {supportFoGl.map(e => (
-                <span
-                  key={e.key}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold"
-                  style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.35)", color: "#4ade80" }}
-                >
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0" style={{ background: e.color }}>
-                    {e.short}
-                  </span>
-                  Støt.
-                </span>
-              ))}
-            </div>
-
-            {/* Seat footer */}
-            <div
-              className="flex items-center gap-3 px-4 py-3 rounded-lg"
-              style={{
-                background: hasMajority ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${hasMajority ? "rgba(74,222,128,0.25)" : "rgba(255,255,255,0.08)"}`,
-              }}
-            >
-              <span className="text-2xl font-bold font-mono tabular-nums" style={{ color: hasMajority ? "#4ade80" : "#f8fafc" }}>
-                {coalitionSeats}
-              </span>
-              <span className="text-sm" style={{ color: hasMajority ? "#4ade80" : "#64748b" }}>
-                {hasMajority ? "mandater — flertal opnået ✓" : `mandater — mangler ${90 - coalitionSeats}`}
-              </span>
-              <span className="ml-auto text-[10px] font-mono text-slate-700">valgidanmark.dk</span>
-            </div>
-          </div>
-
-          <ShareBar
-            pmName={PARTY_LEADERS[selectedPM]}
-            coalitionShorts={[
-              ...govParties.map(pk => PARTIES[pk].short),
-              ...govFoGl.map(e => e.short),
-              ...supportParties.map(pk => PARTIES[pk].short),
-              ...supportFoGl.map(e => e.short),
-            ]}
-            coalitionSeats={coalitionSeats}
-          />
-
-          <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={saveAsImage}
-              disabled={sharing}
-              className="flex-1 min-w-[160px] py-3 px-5 rounded-xl border font-mono text-sm font-semibold transition-all"
-              style={{
-                borderColor: sharing ? "hsl(var(--border))" : "rgba(147,197,253,0.4)",
-                background:  sharing ? "transparent"        : "rgba(147,197,253,0.08)",
-                color:       sharing ? "hsl(var(--muted-foreground))" : "#93c5fd",
-              }}
-            >
-              {sharing ? "Gemmer..." : "Gem som billede →"}
-            </button>
-            <button
-              onClick={() => setPredictionExpanded(false)}
-              className="py-3 px-5 rounded-xl border border-border font-mono text-sm text-muted-foreground hover:bg-muted transition-colors"
-            >
-              Rediger
-            </button>
-          </div>
-        </section>
+      {/* ── Prediction modal ─────────────────────────────────────────── */}
+      {showModal && selectedPM && (
+        <PredictionModal
+          selectedPM={selectedPM}
+          predictionText={predictionText}
+          govParties={govParties}
+          govFoGl={[...govFoGl]}
+          supportParties={supportParties}
+          supportFoGl={[...supportFoGl]}
+          coalitionSeats={coalitionSeats}
+          hasMajority={hasMajority}
+          onClose={() => setShowModal(false)}
+        />
       )}
 
     </main>

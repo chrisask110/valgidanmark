@@ -86,6 +86,54 @@ export async function insertPoll(poll: Poll, sourceUrl?: string): Promise<void> 
   `;
 }
 
+// ─── Simulator submissions ────────────────────────────────────────────────────
+
+export interface SimulatorSubmission {
+  pmParty:            string;
+  governmentParties:  string[];
+  supportParties:     string[];
+  coalitionSeats:     number;
+  hasMajority:        boolean;
+}
+
+/** Record a simulator "Se min forudsigelse" submission. Fire-and-forget safe. */
+export async function insertSimulatorSubmission(s: SimulatorSubmission): Promise<void> {
+  await sql()`
+    INSERT INTO simulator_submissions
+      (pm_party, government_parties, support_parties, coalition_seats, has_majority)
+    VALUES (
+      ${s.pmParty},
+      ${JSON.stringify(s.governmentParties)},
+      ${JSON.stringify(s.supportParties)},
+      ${s.coalitionSeats},
+      ${s.hasMajority}
+    )
+  `;
+}
+
+/** Return aggregate statistics for the simulator dashboard. */
+export async function getSimulatorStats() {
+  const [pmCounts, totals] = await Promise.all([
+    sql()`
+      SELECT pm_party, COUNT(*)::int AS count
+      FROM simulator_submissions
+      GROUP BY pm_party
+      ORDER BY count DESC
+    `,
+    sql()`
+      SELECT
+        COUNT(*)::int           AS total,
+        SUM(CASE WHEN has_majority THEN 1 ELSE 0 END)::int AS with_majority
+      FROM simulator_submissions
+    `,
+  ]);
+  return {
+    total:        totals[0]?.total        ?? 0,
+    withMajority: totals[0]?.with_majority ?? 0,
+    byPM:         pmCounts as { pm_party: string; count: number }[],
+  };
+}
+
 /** Return the count of poll rows. */
 export async function getPollCount(): Promise<number> {
   try {
