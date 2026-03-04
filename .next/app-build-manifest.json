@@ -38,12 +38,15 @@
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/app/api/cron/update-polls/route-d1d88c430976d970.js"
     ],
-    "/admin/polls/page": [
+    "/page": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/admin/polls/page-d1d88c430976d970.js"
+      "static/chunks/112-87f0d5dbc666eb99.js",
+      "static/chunks/816-12b633cff1eed7f3.js",
+      "static/chunks/639-ad50d4aaed783920.js",
+      "static/chunks/app/page-d83c129a72767399.js"
     ],
     "/statsminister/page": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
@@ -54,15 +57,12 @@
       "static/chunks/639-ad50d4aaed783920.js",
       "static/chunks/app/statsminister/page-aedbc5a6d4d1e9f1.js"
     ],
-    "/page": [
+    "/admin/polls/page": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/112-87f0d5dbc666eb99.js",
-      "static/chunks/816-12b633cff1eed7f3.js",
-      "static/chunks/639-ad50d4aaed783920.js",
-      "static/chunks/app/page-d83c129a72767399.js"
+      "static/chunks/app/admin/polls/page-d1d88c430976d970.js"
     ]
   }
 }

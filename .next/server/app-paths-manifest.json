@@ -3,7 +3,7 @@
   "/api/admin/seed/route": "app/api/admin/seed/route.js",
   "/api/polls/route": "app/api/polls/route.js",
   "/api/cron/update-polls/route": "app/api/cron/update-polls/route.js",
-  "/admin/polls/page": "app/admin/polls/page.js",
+  "/page": "app/page.js",
   "/statsminister/page": "app/statsminister/page.js",
-  "/page": "app/page.js"
+  "/admin/polls/page": "app/admin/polls/page.js"
 }
