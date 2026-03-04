@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Copy, Check, Share2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Share2 } from "lucide-react";
+import { toast } from "sonner";
 
 function XIcon() {
   return (
@@ -34,7 +35,6 @@ interface ShareBarProps {
 }
 
 export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarProps) {
-  const [copied, setCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
   const [pageUrl, setPageUrl] = useState("https://valgidanmark.dk/statsminister");
 
@@ -50,8 +50,7 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(pageUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2200);
+      toast.success("Link kopieret!");
     } catch {}
   };
 
@@ -102,13 +101,8 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
       </a>
 
       <button onClick={copyLink} className={pill} aria-label="Kopiér link">
-        {copied
-          ? <Check size={14} className="text-green-500" />
-          : <Copy size={14} />
-        }
-        <span className="hidden sm:inline">
-          {copied ? "Kopieret!" : "Kopiér link"}
-        </span>
+        <Copy size={14} />
+        <span className="hidden sm:inline">Kopiér link</span>
       </button>
 
       {/* Native share — only visible on mobile */}

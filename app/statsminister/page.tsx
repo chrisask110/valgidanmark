@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import Link from "next/link";
 import {
   PARTIES, PARTY_KEYS, FALLBACK_POLLS,
   calcWeightedAverage, calcPartySeats, type Poll,
@@ -24,6 +23,7 @@ const PARTY_LEADERS: Record<string, string> = {
 };
 
 type Category = "government" | "support" | "opposition";
+type DataSource = "model" | "Verian" | "Epinion" | "Megafon" | "Voxmeter";
 
 const CAT_CONFIG: Record<Category, { label: string; color: string; bg: string; border: string }> = {
   government: { label: "Regeringsparti", color: "#f59e0b", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.4)"  },
@@ -33,7 +33,7 @@ const CAT_CONFIG: Record<Category, { label: string; color: string; bg: string; b
 
 export default function StatsministerPage() {
   const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
-  const [dataSource, setDataSource] = useState<"model" | "latest">("model");
+  const [dataSource, setDataSource] = useState<DataSource>("model");
   const [categories, setCategories] = useState<Record<string, Category>>(
     () => Object.fromEntries(PARTY_KEYS.map(pk => [pk, "opposition" as Category]))
   );
@@ -57,8 +57,10 @@ export default function StatsministerPage() {
     if (dataSource === "model") {
       return Object.fromEntries(PARTY_KEYS.map(pk => [pk, calcWeightedAverage(polls, pk, today) ?? 0]));
     }
-    const latest = [...polls].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-    return Object.fromEntries(PARTY_KEYS.map(pk => [pk, Number(latest?.[pk]) || 0]));
+    const latestByInstitute = [...polls]
+      .filter(p => p.pollster === dataSource)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    return Object.fromEntries(PARTY_KEYS.map(pk => [pk, Number(latestByInstitute?.[pk]) || 0]));
   }, [polls, dataSource]);
 
   const partySeats = useMemo(() => calcPartySeats(partyPct), [partyPct]);
@@ -132,23 +134,7 @@ export default function StatsministerPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background text-foreground">
-
-      {/* ── Header (matches main page) ─────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link
-            href="/"
-            className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-          >
-            ← Valg i Danmark
-          </Link>
-          <span className="text-border font-mono select-none">|</span>
-          <span className="text-sm font-mono text-foreground/60">Statsminister-simulator</span>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+    <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
         {/* ── Page title ────────────────────────────────────────────── */}
         <div className="space-y-2">
@@ -164,7 +150,7 @@ export default function StatsministerPage() {
         {/* ── Data source toggle ────────────────────────────────────── */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] font-mono text-muted-foreground tracking-widest">DATAKILDE:</span>
-          {(["model", "latest"] as const).map(id => (
+          {(["model", "Verian", "Epinion", "Megafon", "Voxmeter"] as const).map(id => (
             <button
               key={id}
               onClick={() => setDataSource(id)}
@@ -175,7 +161,7 @@ export default function StatsministerPage() {
                 color:       dataSource === id ? "hsl(var(--accent))"  : "hsl(var(--muted-foreground))",
               }}
             >
-              {id === "model" ? "Vægtet model" : "Seneste måling"}
+              {id === "model" ? "Vægtet model" : id}
             </button>
           ))}
         </div>
@@ -514,7 +500,6 @@ export default function StatsministerPage() {
           </section>
         )}
 
-      </main>
-    </div>
+    </main>
   );
 }

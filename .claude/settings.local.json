@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(node_modules/.bin/tsc --noEmit)"
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(npm install sonner)",
+      "Bash(npm run build)"
     ]
   }
 }

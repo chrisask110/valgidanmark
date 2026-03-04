@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner";
 import { LanguageProvider } from "./components/LanguageContext";
+import { SiteHeader } from "./components/SiteHeader";
+import Countdown from "./Countdown";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -26,7 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
           <LanguageProvider>
+            <SiteHeader />
+            <Countdown />
             {children}
+            <Toaster richColors position="bottom-center" />
           </LanguageProvider>
         </ThemeProvider>
       </body>

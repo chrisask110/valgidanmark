@@ -1,38 +1,40 @@
 {
   "pages": {
     "/_not-found/page": [
-      "static/chunks/webpack-58e29b9d41ae6652.js",
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/app/_not-found/page-ccc1ecbeb92b8de7.js"
     ],
     "/layout": [
-      "static/chunks/webpack-58e29b9d41ae6652.js",
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/css/dfc06109a979e56a.css",
-      "static/chunks/app/layout-132526f9df024008.js"
+      "static/css/b75cd18933cc7193.css",
+      "static/chunks/112-87f0d5dbc666eb99.js",
+      "static/chunks/230-28fbbe62cdc8ec2c.js",
+      "static/chunks/app/layout-c21fda1c1bda8ce2.js"
     ],
     "/statsminister/page": [
-      "static/chunks/webpack-58e29b9d41ae6652.js",
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/297-b5ebb2f0777c5a77.js",
+      "static/chunks/230-28fbbe62cdc8ec2c.js",
       "static/chunks/639-ad50d4aaed783920.js",
-      "static/chunks/app/statsminister/page-a902d9f9d7fc4d1c.js"
+      "static/chunks/app/statsminister/page-1f9ba8bebadeb029.js"
     ],
     "/page": [
-      "static/chunks/webpack-58e29b9d41ae6652.js",
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/297-b5ebb2f0777c5a77.js",
-      "static/chunks/465-e1c4844c08df28ca.js",
+      "static/chunks/112-87f0d5dbc666eb99.js",
+      "static/chunks/816-12b633cff1eed7f3.js",
       "static/chunks/639-ad50d4aaed783920.js",
-      "static/chunks/app/page-4f2e252a12ca7761.js"
+      "static/chunks/app/page-c79174ca454c88d0.js"
     ]
   }
 }
