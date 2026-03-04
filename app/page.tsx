@@ -28,6 +28,7 @@ export default function Page() {
   };
 
   const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
+  const [pollsReady, setPollsReady] = useState(false);
 
   // Fetch live polls from DB on mount; fall back silently to FALLBACK_POLLS
   useEffect(() => {
@@ -36,7 +37,8 @@ export default function Page() {
       .then(data => {
         if (Array.isArray(data.polls) && data.polls.length > 0) setPolls(data.polls);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setPollsReady(true));
   }, []);
 
   // Current weighted averages
@@ -74,6 +76,7 @@ export default function Page() {
             rodMedianSeats={forecast.rodMedianSeats}
             blaaMedianSeats={forecast.blaaMedianSeats}
             seats={seats}
+            ready={pollsReady}
           />
         </section>
 

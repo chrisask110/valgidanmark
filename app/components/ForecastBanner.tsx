@@ -9,6 +9,7 @@ interface ForecastBannerProps {
   rodMedianSeats: number;
   blaaMedianSeats: number;
   seats: Record<string, number>;
+  ready?: boolean;
 }
 
 function BlokCard({
@@ -103,6 +104,7 @@ export function ForecastBanner({
   rodMedianSeats,
   blaaMedianSeats,
   seats,
+  ready = true,
 }: ForecastBannerProps) {
   const { t } = useLanguage();
 
@@ -110,7 +112,10 @@ export function ForecastBanner({
   const govHasMajority = govTotal >= 90;
 
   return (
-    <div className="flex gap-4 flex-wrap mb-6">
+    <div
+      className="flex gap-4 flex-wrap mb-6 transition-opacity duration-500"
+      style={{ opacity: ready ? 1 : 0 }}
+    >
       <BlokCard
         name={t("forecast.rodblok")}
         chance={rodBlokChance}

@@ -10,12 +10,16 @@ import { PARTIES, POLLSTERS, PARTY_KEYS, calcWeightedAverage, type Poll } from "
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "./LanguageContext";
 
-type TimeRange = "3m" | "6m" | "1y" | "all";
+type TimeRange = "1m" | "3m" | "6m" | "1y" | "all";
 
 const DA_MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 function fmtMonthYear(ts: number) {
   const d = new Date(ts);
   return `${DA_MONTHS[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
+}
+function fmtDay(ts: number) {
+  const d = new Date(ts);
+  return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]}`;
 }
 function fmtFull(ts: number) {
   const d = new Date(ts);
@@ -53,6 +57,21 @@ function monthTicks(from: Date, to: Date): number[] {
   while (cur <= to) {
     ticks.push(cur.getTime());
     cur.setMonth(cur.getMonth() + 1);
+  }
+  return ticks;
+}
+
+/** One timestamp per week (Monday-aligned) for short ranges */
+function weeklyTicks(from: Date, to: Date): number[] {
+  const ticks: number[] = [];
+  const cur = new Date(from);
+  // Advance to next Monday
+  const day = cur.getDay();
+  cur.setDate(cur.getDate() + (day === 1 ? 0 : day === 0 ? 1 : 8 - day));
+  cur.setHours(0, 0, 0, 0);
+  while (cur <= to) {
+    ticks.push(cur.getTime());
+    cur.setDate(cur.getDate() + 7);
   }
   return ticks;
 }
@@ -229,7 +248,8 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
   const fromDate = useMemo(() => {
     const now = new Date();
     const d = new Date(now);
-    if (timeRange === "3m") d.setMonth(d.getMonth() - 3);
+    if (timeRange === "1m") d.setMonth(d.getMonth() - 1);
+    else if (timeRange === "3m") d.setMonth(d.getMonth() - 3);
     else if (timeRange === "6m") d.setMonth(d.getMonth() - 6);
     else if (timeRange === "1y") d.setFullYear(d.getFullYear() - 1);
     else d.setFullYear(2025, 0, 1);
@@ -238,7 +258,10 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
 
   const toDate = new Date("2026-03-24");
 
-  const xTicks = useMemo(() => monthTicks(fromDate, toDate), [fromDate]);
+  const xTicks = useMemo(
+    () => timeRange === "1m" ? weeklyTicks(fromDate, toDate) : monthTicks(fromDate, toDate),
+    [fromDate, timeRange]
+  );
 
   /**
    * Chart data:
@@ -248,7 +271,7 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
    */
   const chartData: ChartDataPoint[] = useMemo(() => {
     const buckets =
-      timeRange === "3m" ? dayBuckets(fromDate, toDate) : weekBuckets(fromDate, toDate);
+      timeRange === "1m" || timeRange === "3m" ? dayBuckets(fromDate, toDate) : weekBuckets(fromDate, toDate);
     const rangePolls = filteredPolls.filter(p => new Date(p.date) >= fromDate);
     return buckets.map(ts => {
       const asOf = new Date(ts).toISOString().slice(0, 10);
@@ -282,6 +305,7 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
   const xDomain = [fromDate.getTime(), toDate.getTime()];
 
   const RANGES: [TimeRange, string][] = [
+    ["1m", t("chart.range.1m")],
     ["3m", t("chart.range.3m")],
     ["6m", t("chart.range.6m")],
     ["1y", t("chart.range.1y")],
@@ -370,7 +394,7 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
               scale="time"
               domain={xDomain}
               ticks={xTicks}
-              tickFormatter={fmtMonthYear}
+              tickFormatter={timeRange === "1m" ? fmtDay : fmtMonthYear}
               tick={{ fontSize: 11, fontFamily: "monospace", fill: "hsl(var(--muted-foreground))" }}
               tickLine={false}
               axisLine={{ stroke: "hsl(var(--border))" }}
