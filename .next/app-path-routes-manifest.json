@@ -1,9 +1,12 @@
 {
+  "/api/prediction-markets/route": "/api/prediction-markets",
   "/_not-found/page": "/_not-found",
-  "/api/admin/seed/route": "/api/admin/seed",
+  "/api/simulator/submit/route": "/api/simulator/submit",
   "/api/polls/route": "/api/polls",
+  "/api/simulator/stats/route": "/api/simulator/stats",
+  "/api/admin/seed/route": "/api/admin/seed",
   "/api/cron/update-polls/route": "/api/cron/update-polls",
-  "/page": "/",
+  "/admin/polls/page": "/admin/polls",
   "/statsminister/page": "/statsminister",
-  "/admin/polls/page": "/admin/polls"
+  "/page": "/"
 }

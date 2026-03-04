@@ -1,9 +1,12 @@
 {
+  "/api/prediction-markets/route": "app/api/prediction-markets/route.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/api/admin/seed/route": "app/api/admin/seed/route.js",
+  "/api/simulator/submit/route": "app/api/simulator/submit/route.js",
   "/api/polls/route": "app/api/polls/route.js",
+  "/api/simulator/stats/route": "app/api/simulator/stats/route.js",
+  "/api/admin/seed/route": "app/api/admin/seed/route.js",
   "/api/cron/update-polls/route": "app/api/cron/update-polls/route.js",
-  "/page": "app/page.js",
+  "/admin/polls/page": "app/admin/polls/page.js",
   "/statsminister/page": "app/statsminister/page.js",
-  "/admin/polls/page": "app/admin/polls/page.js"
+  "/page": "app/page.js"
 }
