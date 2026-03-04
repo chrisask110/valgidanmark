@@ -133,15 +133,10 @@ function CustomTooltip({ active, payload, label, polls, selectedParties }: Custo
   if (!active || label == null) return null;
   const ts = label as number;
 
-  // Find all polls on the closest date within ±4 days
-  const WINDOW_MS = 4 * 24 * 60 * 60 * 1000;
-  const nearby = polls
-    .filter(p => Math.abs(new Date(p.date).getTime() - ts) <= WINDOW_MS)
-    .sort((a, b) =>
-      Math.abs(new Date(a.date).getTime() - ts) - Math.abs(new Date(b.date).getTime() - ts)
-    );
-  const closestDate = nearby[0]?.date ?? null;
-  const pollsToShow = closestDate ? nearby.filter(p => p.date === closestDate) : [];
+  // Only show poll details when hovering the exact poll date — no fuzzy window.
+  // This ensures days without polls show the model's weighted average instead.
+  const hoverDate = new Date(ts).toISOString().slice(0, 10);
+  const pollsToShow = polls.filter(p => p.date === hoverDate);
 
   // Weighted-average values from the Line payload (used when no nearby poll)
   const avgVals = (payload ?? [])
