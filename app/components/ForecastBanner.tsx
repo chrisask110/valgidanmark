@@ -81,7 +81,7 @@ function BlokCard({
           />
           {/* 90-seat marker */}
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-white/40"
+            className="absolute top-0 bottom-0 w-0.5 bg-foreground/40"
             style={{ left: `${(90 / 179) * 100}%` }}
           />
         </div>
@@ -177,7 +177,7 @@ export function ForecastBanner({
             }}
           />
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-white/40"
+            className="absolute top-0 bottom-0 w-0.5 bg-foreground/40"
             style={{ left: `${(90 / 179) * 100}%` }}
           />
         </div>
