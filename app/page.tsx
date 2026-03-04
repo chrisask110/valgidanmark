@@ -6,7 +6,7 @@ import { useLanguage } from "./components/LanguageContext";
 import { ForecastBanner } from "./components/ForecastBanner";
 import { PollingAverages } from "./components/PollingAverages";
 import { PollChart } from "./components/PollChart";
-import { SeatHemicycle } from "./components/SeatHemicycle";
+import { HemicycleCard } from "./components/HemicycleCard";
 import { LatestPollsTable } from "./components/LatestPollsTable";
 import {
   PARTIES, POLLSTERS, PARTY_KEYS, ROD_BLOK, BLAA_BLOK,
@@ -92,12 +92,7 @@ export default function Page() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Seat Hemicycle */}
-          <div className="rounded-xl border border-border bg-card p-4">
-            <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-wider mb-4">
-              {t("hemi.title")}
-            </h2>
-            <SeatHemicycle seats={seats} />
-          </div>
+          <HemicycleCard />
 
           {/* Map placeholder */}
           <div className="rounded-xl border border-border bg-card p-4 flex flex-col items-center justify-center min-h-[260px] gap-3">
