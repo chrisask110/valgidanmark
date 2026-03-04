@@ -8,7 +8,12 @@
 import { neon } from "@neondatabase/serverless";
 import { FALLBACK_POLLS, type Poll } from "@/app/lib/data";
 
-const sql = neon(process.env.DATABASE_URL!);
+// Lazy — created on first use so build-time evaluation doesn't throw
+let _sql: ReturnType<typeof neon> | null = null;
+function sql() {
+  if (!_sql) _sql = neon(process.env.DATABASE_URL!);
+  return _sql;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,7 +44,7 @@ function rowToPoll(row: any): Poll {
 /** Fetch all polls from the DB, newest first.  Falls back to FALLBACK_POLLS. */
 export async function getPolls(): Promise<Poll[]> {
   try {
-    const rows = await sql`
+    const rows = await sql()`
       SELECT date, pollster, n, parties
       FROM polls
       ORDER BY date DESC
@@ -56,7 +61,7 @@ export async function getPolls(): Promise<Poll[]> {
 /** Return true if a poll with this date + pollster already exists. */
 export async function pollExists(date: string, pollster: string): Promise<boolean> {
   try {
-    const rows = await sql`
+    const rows = await sql()`
       SELECT 1 FROM polls WHERE date = ${date} AND pollster = ${pollster} LIMIT 1
     `;
     return rows.length > 0;
@@ -74,7 +79,7 @@ export async function insertPoll(poll: Poll, sourceUrl?: string): Promise<void> 
     }
   }
   const partiesJson = JSON.stringify(parties);
-  await sql`
+  await sql()`
     INSERT INTO polls (date, pollster, n, parties, source_url)
     VALUES (${poll.date}, ${poll.pollster}, ${poll.n as number}, ${partiesJson}, ${sourceUrl ?? null})
     ON CONFLICT (date, pollster) DO NOTHING
@@ -84,7 +89,7 @@ export async function insertPoll(poll: Poll, sourceUrl?: string): Promise<void> 
 /** Return the count of poll rows. */
 export async function getPollCount(): Promise<number> {
   try {
-    const rows = await sql`SELECT COUNT(*)::int AS c FROM polls`;
+    const rows = await sql()`SELECT COUNT(*)::int AS c FROM polls`;
     return rows[0]?.c ?? 0;
   } catch {
     return 0;
