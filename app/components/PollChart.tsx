@@ -256,11 +256,15 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
     return d;
   }, [timeRange]);
 
-  const toDate = new Date("2026-03-24");
+  // For short ranges end at today; longer ranges extend to election day
+  const toDate = useMemo(() => {
+    if (timeRange === "1m" || timeRange === "3m") return new Date();
+    return new Date("2026-03-24");
+  }, [timeRange]);
 
   const xTicks = useMemo(
     () => timeRange === "1m" ? weeklyTicks(fromDate, toDate) : monthTicks(fromDate, toDate),
-    [fromDate, timeRange]
+    [fromDate, toDate, timeRange]
   );
 
   /**
@@ -272,10 +276,11 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
   const chartData: ChartDataPoint[] = useMemo(() => {
     const buckets =
       timeRange === "1m" || timeRange === "3m" ? dayBuckets(fromDate, toDate) : weekBuckets(fromDate, toDate);
-    const rangePolls = filteredPolls.filter(p => new Date(p.date) >= fromDate);
     return buckets.map(ts => {
       const asOf = new Date(ts).toISOString().slice(0, 10);
-      const pollsUpTo = rangePolls.filter(p => new Date(p.date).getTime() <= ts);
+      // Use ALL polls up to this date (not just those in the visible range) so the
+      // weighted average correctly reflects the full polling history at every point.
+      const pollsUpTo = filteredPolls.filter(p => new Date(p.date).getTime() <= ts);
       const point: ChartDataPoint = { ts };
       for (const pk of selectedParties) {
         point[`${pk}_avg`] = pollsUpTo.length > 0
@@ -284,7 +289,7 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
       }
       return point;
     });
-  }, [filteredPolls, selectedParties, fromDate, timeRange]);
+  }, [filteredPolls, selectedParties, fromDate, toDate, timeRange]);
 
   /** Raw individual poll dots */
   const rawDotData = useMemo(() => {
@@ -302,7 +307,7 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
     return result;
   }, [filteredPolls, selectedParties, fromDate]);
 
-  const xDomain = [fromDate.getTime(), toDate.getTime()];
+  const xDomain = useMemo(() => [fromDate.getTime(), toDate.getTime()], [fromDate, toDate]);
 
   const RANGES: [TimeRange, string][] = [
     ["1m", t("chart.range.1m")],
