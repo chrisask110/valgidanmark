@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  ComposedChart, Line, Scatter,
+  ComposedChart, Line, Area, Scatter,
   XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer,
 } from "recharts";
@@ -25,8 +25,8 @@ const SIGMA = 1.0;
 const THRESHOLD_MAX = 4.0;
 const THRESHOLD_MIN = 0.1;
 
-// Fixed chart window: 6 months before election → election day
-const FROM_DATE = new Date("2025-09-24");
+// Fixed chart window: start of Sep 2025 → election day (aligns with monthly tick labels)
+const FROM_DATE = new Date("2025-09-01");
 const TO_DATE   = new Date("2026-03-24");
 const ELECTION_TS = TO_DATE.getTime();
 
@@ -181,15 +181,37 @@ export default function SpaerregrænsenPage() {
   const xTicks = useMemo(() => monthlyTicks(FROM_DATE, TO_DATE), []);
   const xDomain = useMemo(() => [FROM_DATE.getTime(), TO_DATE.getTime()], []);
 
-  // Weighted average lines — uses filteredPolls so pollster toggle affects the model
+  // Weighted average lines + 95% CI bands — uses filteredPolls
   const chartData = useMemo(() => {
     if (trackedKeys.length === 0) return [];
+    const windowMs = 21 * 24 * 60 * 60 * 1000;
     return dayBuckets(FROM_DATE, TO_DATE).map(ts => {
       const asOf = new Date(ts).toISOString().slice(0, 10);
       const pollsUpTo = filteredPolls.filter(p => new Date(p.date).getTime() <= ts);
       const point: { ts: number; [key: string]: number | null } = { ts };
       for (const pk of trackedKeys) {
-        point[`${pk}_avg`] = pollsUpTo.length > 0 ? calcWeightedAverage(pollsUpTo, pk, asOf) : null;
+        const avg = pollsUpTo.length > 0 ? calcWeightedAverage(pollsUpTo, pk, asOf) : null;
+        point[`${pk}_avg`] = avg;
+        if (avg != null) {
+          const nearby = filteredPolls.filter(p => {
+            const pt = new Date(p.date).getTime();
+            return p[pk] != null && Math.abs(pt - ts) <= windowMs;
+          });
+          let std = 0.7; // fallback ± pp
+          if (nearby.length >= 2) {
+            const vals = nearby.map(p => Number(p[pk]));
+            const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+            std = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length);
+            if (std < 0.3) std = 0.3; // minimum band
+          }
+          const lo = Math.max(0, avg - 1.96 * std);
+          const hi = avg + 1.96 * std;
+          point[`${pk}_lo`]   = lo;
+          point[`${pk}_band`] = hi - lo; // stacked area trick: lo + band = hi
+        } else {
+          point[`${pk}_lo`]   = null;
+          point[`${pk}_band`] = null;
+        }
       }
       return point;
     });
@@ -353,6 +375,41 @@ export default function SpaerregrænsenPage() {
                   strokeWidth={2}
                   label={{ value: "2% spærregrænse", position: "insideTopLeft", fontSize: 10, fontFamily: "monospace", fill: "#facc15" }}
                 />
+
+                {/* 95% confidence bands (stacked area trick: transparent base + colored band) */}
+                {trackedKeys.map(pk => (
+                  <Area
+                    key={`${pk}_ci_base`}
+                    dataKey={`${pk}_lo`}
+                    data={chartData}
+                    type="monotone"
+                    stackId={`${pk}_ci`}
+                    fill="transparent"
+                    stroke="none"
+                    dot={false}
+                    activeDot={false}
+                    legendType="none"
+                    connectNulls
+                    isAnimationActive={false}
+                  />
+                ))}
+                {trackedKeys.map(pk => (
+                  <Area
+                    key={`${pk}_ci_band`}
+                    dataKey={`${pk}_band`}
+                    data={chartData}
+                    type="monotone"
+                    stackId={`${pk}_ci`}
+                    fill={PARTIES[pk].color}
+                    fillOpacity={0.12}
+                    stroke="none"
+                    dot={false}
+                    activeDot={false}
+                    legendType="none"
+                    connectNulls
+                    isAnimationActive={false}
+                  />
+                ))}
 
                 {/* Weighted average lines */}
                 {trackedKeys.map(pk => (
