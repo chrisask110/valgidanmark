@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { PARTIES, ROD_BLOK, BLAA_BLOK } from "@/app/lib/data";
 import { useLanguage } from "./LanguageContext";
 
@@ -53,22 +52,16 @@ function BlokCard({
         </span>
       </div>
 
-      {/* Party leader photos */}
-      <div className="flex gap-1.5 mb-3">
+      {/* Party badges */}
+      <div className="flex gap-1.5 mb-3 flex-wrap">
         {parties.map(pk => (
           <div
             key={pk}
-            className="w-8 h-8 rounded-full overflow-hidden border-2 flex-shrink-0"
-            style={{ borderColor: PARTIES[pk].color }}
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black font-mono"
+            style={{ background: PARTIES[pk].color, color: "#fff" }}
             title={PARTIES[pk].name}
           >
-            <Image
-              src={`/Leaders/${pk}.jpg`}
-              alt={PARTIES[pk].name}
-              width={32}
-              height={32}
-              className="w-full h-full object-cover object-top"
-            />
+            {PARTIES[pk].short}
           </div>
         ))}
       </div>
