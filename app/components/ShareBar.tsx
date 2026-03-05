@@ -98,7 +98,7 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
       </a>
 
       <a
-        href={`https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=291494419107518&redirect_uri=${encodedUrl}`}
+        href={`fb-messenger://share/?link=${encodedUrl}`}
         target="_blank"
         rel="noopener noreferrer"
         className={pill}
