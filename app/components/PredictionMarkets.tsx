@@ -94,12 +94,10 @@ export function PredictionMarkets() {
               target="_blank"
               rel="noopener noreferrer"
               title="Polymarket"
-              className="opacity-70 hover:opacity-100 transition-opacity"
+              className="opacity-80 hover:opacity-100 transition-opacity"
             >
-              <svg width="18" height="18" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="40" height="40" rx="8" fill="#0072F5"/>
-                <path d="M10 28V12h9.2c2.1 0 3.7.5 4.9 1.6 1.2 1 1.8 2.5 1.8 4.3 0 1.8-.6 3.2-1.8 4.3-1.2 1-2.8 1.6-4.9 1.6H14v4.2H10zm4-7.5h4.8c1 0 1.8-.3 2.3-.8.6-.5.8-1.2.8-2.1 0-.9-.3-1.6-.8-2.1-.5-.5-1.3-.8-2.3-.8H14v5.8z" fill="white"/>
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Polymarket.png" alt="Polymarket" width={18} height={18} className="rounded-sm" />
             </a>
           </div>
           <p className="text-xs font-mono text-muted-foreground/60 mt-0.5">
