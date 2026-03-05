@@ -55,10 +55,10 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
   const encodedUrl = encodeURIComponent(pageUrl);
   const encodedTweet = encodeURIComponent(`${shareText} ${pageUrl}`);
 
-  const copyLink = async () => {
+  const copyResult = async () => {
     try {
-      await navigator.clipboard.writeText(pageUrl);
-      toast.success("Link kopieret!");
+      await navigator.clipboard.writeText(`${shareText} ${pageUrl}`);
+      toast.success("Resultat kopieret!");
     } catch {}
   };
 
@@ -69,8 +69,11 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
         return;
       } catch {}
     }
-    // Fallback to deep link
-    window.open(`fb-messenger://share/?link=${encodedUrl}`, "_blank");
+    // No native share — copy text to clipboard so user can paste in Messenger
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${pageUrl}`);
+      toast.success("Tekst kopieret! Indsæt i Messenger.");
+    } catch {}
   };
 
   const encodedQuote = encodeURIComponent(shareText);
@@ -120,9 +123,9 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
         <span className="hidden sm:inline">LinkedIn</span>
       </a>
 
-      <button onClick={copyLink} className={pill} aria-label="Kopiér link">
+      <button onClick={copyResult} className={pill} aria-label="Kopiér resultat">
         <Copy size={14} />
-        <span className="hidden sm:inline">Kopiér link</span>
+        <span className="hidden sm:inline">Kopiér tekst</span>
       </button>
     </div>
   );

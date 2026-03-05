@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { PARTIES, PARTY_KEYS, calcWeightedAverage, type Poll } from "@/app/lib/data";
+import { PARTIES, PARTY_KEYS, FALLBACK_POLLS, calcWeightedAverage, type Poll } from "@/app/lib/data";
 import { useLanguage } from "@/app/components/LanguageContext";
 
 // Normal CDF via Abramowitz & Stegun approximation
@@ -49,14 +49,17 @@ interface PartyStatus {
 
 export default function SpaerregrænsenPage() {
   const { t, lang } = useLanguage();
-  const [polls, setPolls] = useState<Poll[]>([]);
+  const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/polls")
       .then(r => r.json())
-      .then((data: Poll[]) => { setPolls(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(data => {
+        if (Array.isArray(data.polls) && data.polls.length > 0) setPolls(data.polls);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
