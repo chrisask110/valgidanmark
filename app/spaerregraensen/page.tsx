@@ -7,7 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer,
 } from "recharts";
-import { PARTIES, PARTY_KEYS, FALLBACK_POLLS, calcWeightedAverage, type Poll } from "@/app/lib/data";
+import { PARTIES, PARTY_KEYS, POLLSTERS, FALLBACK_POLLS, calcWeightedAverage, type Poll } from "@/app/lib/data";
 import { useLanguage } from "@/app/components/LanguageContext";
 
 // ─── Normal CDF ──────────────────────────────────────────────────────────────
@@ -22,34 +22,24 @@ function normalCDF(z: number): number {
 }
 
 const SIGMA = 1.0;
-const THRESHOLD_MAX = 4.0; // only parties with model avg < 4%
+const THRESHOLD_MAX = 4.0;
 const THRESHOLD_MIN = 0.1;
 
-// ─── Date helpers (same as PollChart) ────────────────────────────────────────
+// Fixed chart window: 6 months before election → election day
+const FROM_DATE = new Date("2025-09-24");
+const TO_DATE   = new Date("2026-03-24");
+const ELECTION_TS = TO_DATE.getTime();
+
+// ─── Date helpers ─────────────────────────────────────────────────────────────
 const DA_MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
-function fmtDay(ts: number) {
-  const d = new Date(ts);
-  return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]}`;
-}
-function fmtMonthYear(ts: number) {
-  const d = new Date(ts);
-  return `${DA_MONTHS[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
-}
-function fmtFull(ts: number) {
-  const d = new Date(ts);
-  return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-}
+function fmtDay(ts: number)       { const d = new Date(ts); return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]}`; }
+function fmtMonthYear(ts: number) { const d = new Date(ts); return `${DA_MONTHS[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`; }
+function fmtFull(ts: number)      { const d = new Date(ts); return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
 
 function dayBuckets(from: Date, to: Date): number[] {
   const out: number[] = [];
   const cur = new Date(from); cur.setHours(0, 0, 0, 0);
   while (cur.getTime() <= to.getTime()) { out.push(cur.getTime()); cur.setDate(cur.getDate() + 1); }
-  return out;
-}
-function weekBuckets(from: Date, to: Date): number[] {
-  const out: number[] = [];
-  const cur = new Date(from); cur.setDate(cur.getDate() - cur.getDay());
-  while (cur.getTime() <= to.getTime()) { out.push(cur.getTime()); cur.setDate(cur.getDate() + 7); }
   return out;
 }
 function monthlyTicks(from: Date, to: Date): number[] {
@@ -58,23 +48,10 @@ function monthlyTicks(from: Date, to: Date): number[] {
   while (cur.getTime() <= to.getTime()) { out.push(cur.getTime()); cur.setMonth(cur.getMonth() + 1); }
   return out;
 }
-function weeklyTicks(from: Date, to: Date): number[] {
-  const out: number[] = [];
-  const cur = new Date(from);
-  const day = cur.getDay();
-  cur.setDate(cur.getDate() + (day === 1 ? 0 : day === 0 ? 1 : 8 - day));
-  cur.setHours(0, 0, 0, 0);
-  while (cur.getTime() <= to.getTime()) { out.push(cur.getTime()); cur.setDate(cur.getDate() + 7); }
-  return out;
-}
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 function ThresholdTooltip({ active, payload, label, polls, trackedKeys }: {
-  active?: boolean;
-  payload?: any[];
-  label?: number;
-  polls: Poll[];
-  trackedKeys: string[];
+  active?: boolean; payload?: any[]; label?: number; polls: Poll[]; trackedKeys: string[];
 }) {
   if (!active || label == null) return null;
   const ts = label as number;
@@ -149,14 +126,14 @@ function statusLabel(avg: number, tl: (k: string) => string) {
   return           { label: tl("threshold.danger"),            color: "#f87171", bg: "rgba(248,113,113,0.10)", border: "rgba(248,113,113,0.30)" };
 }
 
-type TimeRange = "1m" | "3m" | "6m";
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SpaerregrænsenPage() {
   const { t } = useLanguage();
   const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>("6m");
+  const [activePollsters, setActivePollsters] = useState<Set<string>>(
+    () => new Set(Object.keys(POLLSTERS))
+  );
 
   useEffect(() => {
     fetch("/api/polls")
@@ -166,10 +143,24 @@ export default function SpaerregrænsenPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const togglePollster = (name: string) => {
+    setActivePollsters(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) { if (next.size > 1) next.delete(name); }
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const filteredPolls = useMemo(
+    () => polls.filter(p => activePollsters.has(p.pollster as string)),
+    [polls, activePollsters]
+  );
+
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const oneMonthAgo = useMemo(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().slice(0, 10); }, []);
 
-  // Status cards
+  // Status cards — always use all polls (unfiltered) for the cards
   const partyStatuses = useMemo(() => {
     if (polls.length === 0) return [];
     const pollsNow = polls.filter(p => p.date <= today);
@@ -186,51 +177,39 @@ export default function SpaerregrænsenPage() {
 
   const trackedKeys = useMemo(() => partyStatuses.map(s => s.pk), [partyStatuses]);
 
-  // Date range for chart
-  const fromDate = useMemo(() => {
-    const d = new Date();
-    if (timeRange === "1m") d.setMonth(d.getMonth() - 1);
-    else if (timeRange === "3m") d.setMonth(d.getMonth() - 3);
-    else d.setMonth(d.getMonth() - 6);
-    return d;
-  }, [timeRange]);
-  const toDate = useMemo(() => new Date(), []);
+  // Daily buckets over the fixed window
+  const xTicks = useMemo(() => monthlyTicks(FROM_DATE, TO_DATE), []);
+  const xDomain = useMemo(() => [FROM_DATE.getTime(), TO_DATE.getTime()], []);
 
-  const xTicks = useMemo(
-    () => timeRange === "1m" ? weeklyTicks(fromDate, toDate) : monthlyTicks(fromDate, toDate),
-    [fromDate, toDate, timeRange]
-  );
-  const xDomain = useMemo(() => [fromDate.getTime(), toDate.getTime()], [fromDate, toDate]);
-
-  // Weighted average lines (same logic as PollChart)
+  // Weighted average lines — uses filteredPolls so pollster toggle affects the model
   const chartData = useMemo(() => {
     if (trackedKeys.length === 0) return [];
-    const buckets = timeRange === "1m" ? dayBuckets(fromDate, toDate) : weekBuckets(fromDate, toDate);
-    return buckets.map(ts => {
+    return dayBuckets(FROM_DATE, TO_DATE).map(ts => {
       const asOf = new Date(ts).toISOString().slice(0, 10);
-      const pollsUpTo = polls.filter(p => new Date(p.date).getTime() <= ts);
+      const pollsUpTo = filteredPolls.filter(p => new Date(p.date).getTime() <= ts);
       const point: { ts: number; [key: string]: number | null } = { ts };
       for (const pk of trackedKeys) {
         point[`${pk}_avg`] = pollsUpTo.length > 0 ? calcWeightedAverage(pollsUpTo, pk, asOf) : null;
       }
       return point;
     });
-  }, [polls, trackedKeys, fromDate, toDate, timeRange]);
+  }, [filteredPolls, trackedKeys]);
 
-  // Raw poll dots
+  // Raw poll dots — only from active pollsters, within chart window
   const rawDotData = useMemo(() => {
-    const result: Record<string, { ts: number; val: number; pollster: string; n: number }[]> = {};
+    const result: Record<string, { ts: number; val: number }[]> = {};
     for (const pk of trackedKeys) {
-      result[pk] = polls
-        .filter(p => p[pk] != null && new Date(p.date) >= fromDate)
-        .map(p => ({ ts: new Date(p.date).getTime(), val: Number(p[pk]), pollster: p.pollster as string, n: Number(p.n) }));
+      result[pk] = filteredPolls
+        .filter(p => p[pk] != null && new Date(p.date) >= FROM_DATE)
+        .map(p => ({ ts: new Date(p.date).getTime(), val: Number(p[pk]) }));
     }
     return result;
-  }, [polls, trackedKeys, fromDate]);
+  }, [filteredPolls, trackedKeys]);
 
+  // Tooltip uses filteredPolls for correct delta calculation
   const tooltipContent = useMemo(
-    () => (props: any) => <ThresholdTooltip {...props} polls={polls} trackedKeys={trackedKeys} />,
-    [polls, trackedKeys]
+    () => (props: any) => <ThresholdTooltip {...props} polls={filteredPolls} trackedKeys={trackedKeys} />,
+    [filteredPolls, trackedKeys]
   );
 
   const fmt = (n: number) => n.toFixed(1);
@@ -303,22 +282,24 @@ export default function SpaerregrænsenPage() {
       {/* Chart */}
       {!loading && partyStatuses.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="text-sm font-mono font-semibold text-muted-foreground uppercase tracking-widest">
               {t("threshold.chart")}
             </h2>
-            <div className="flex gap-1">
-              {(["1m", "3m", "6m"] as TimeRange[]).map(r => (
+            {/* Pollster toggles */}
+            <div className="flex gap-2 flex-wrap">
+              {Object.entries(POLLSTERS).map(([name, info]) => (
                 <button
-                  key={r}
-                  onClick={() => setTimeRange(r)}
-                  className="text-xs font-mono px-2.5 py-1 rounded-md transition-colors"
+                  key={name}
+                  onClick={() => togglePollster(name)}
+                  className="text-xs font-mono px-2 py-0.5 rounded-full border transition-all"
                   style={{
-                    background: timeRange === r ? "hsl(var(--foreground))" : "hsl(var(--muted))",
-                    color:      timeRange === r ? "hsl(var(--background))" : "hsl(var(--muted-foreground))",
+                    borderColor: activePollsters.has(name) ? "hsl(var(--accent))" : "hsl(var(--border))",
+                    color:       activePollsters.has(name) ? "hsl(var(--accent))" : "hsl(var(--muted-foreground))",
+                    background:  activePollsters.has(name) ? "hsl(var(--accent)/0.1)" : "transparent",
                   }}
                 >
-                  {r === "1m" ? "1 mdr" : r === "3m" ? "3 mdr" : "6 mdr"}
+                  {name} {info.grade}
                 </button>
               ))}
             </div>
@@ -335,7 +316,7 @@ export default function SpaerregrænsenPage() {
                   scale="time"
                   domain={xDomain}
                   ticks={xTicks}
-                  tickFormatter={timeRange === "1m" ? fmtDay : fmtMonthYear}
+                  tickFormatter={fmtMonthYear}
                   tick={{ fontSize: 11, fontFamily: "monospace", fill: "hsl(var(--muted-foreground))" }}
                   tickLine={false}
                   axisLine={{ stroke: "hsl(var(--border))" }}
@@ -354,6 +335,15 @@ export default function SpaerregrænsenPage() {
                 />
 
                 <Tooltip content={tooltipContent} />
+
+                {/* Election day */}
+                <ReferenceLine
+                  x={ELECTION_TS}
+                  stroke="#ef4444"
+                  strokeDasharray="5 3"
+                  strokeWidth={1.5}
+                  label={{ value: "Valg 24. mar", position: "insideTopRight", fontSize: 10, fontFamily: "monospace", fill: "#ef4444" }}
+                />
 
                 {/* 2% threshold */}
                 <ReferenceLine
