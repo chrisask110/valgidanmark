@@ -18,8 +18,8 @@ export default function OmMetoden() {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground font-mono">
           {da
-            ? "Sådan beregner ValgIDanmark sine prognoser og mandatfordelinger."
-            : "How ValgIDanmark computes its forecasts and seat projections."}
+            ? "Sådan beregner ValgiDanmark sine prognoser og mandatfordelinger."
+            : "How ValgiDanmark computes its forecasts and seat projections."}
         </p>
       </div>
 

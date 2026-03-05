@@ -95,6 +95,21 @@ const STRINGS: Record<string, Record<Lang, string>> = {
 
   // Nav
   "nav.statsminister": { da: "Simulator", en: "Simulator" },
+  "nav.threshold": { da: "Spærregrænsen", en: "Threshold" },
+
+  // Spærregrænsen Tracker
+  "threshold.title": { da: "Spærregrænsen Tracker", en: "Threshold Tracker" },
+  "threshold.subtitle": { da: "Partier tæt på 2 %-spærregrænsen", en: "Parties close to the 2% threshold" },
+  "threshold.current": { da: "Nuværende snit", en: "Current avg." },
+  "threshold.dist": { da: "Afstand til 2%", en: "Distance to 2%" },
+  "threshold.prob": { da: "Sandsynlighed for at passere", en: "Probability of clearing" },
+  "threshold.trend": { da: "Trend (1 mdr.)", en: "Trend (1 mo.)" },
+  "threshold.safe": { da: "Over spærregrænsen", en: "Above threshold" },
+  "threshold.danger": { da: "Under spærregrænsen", en: "Below threshold" },
+  "threshold.borderline": { da: "Tæt på grænsen", en: "Borderline" },
+  "threshold.chart": { da: "Trend for grænsepartier", en: "Trend for borderline parties" },
+  "threshold.line": { da: "Spærregrænse 2%", en: "2% threshold" },
+  "threshold.sigma": { da: "σ ≈ 1,0 % (måleusikkerhed)", en: "σ ≈ 1.0% (polling uncertainty)" },
 
   // Footer
   "footer.source": { da: "Datakilde", en: "Data source" },

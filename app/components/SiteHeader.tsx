@@ -35,6 +35,7 @@ export function SiteHeader() {
           <nav className="hidden sm:flex items-center gap-1">
             {navLink("/", t("nav.polls"))}
             {navLink("/statsminister", t("nav.statsminister"))}
+            {navLink("/spaerregraensen", t("nav.threshold"))}
           </nav>
         </div>
 

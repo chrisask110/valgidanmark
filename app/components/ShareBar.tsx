@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, Share2 } from "lucide-react";
+import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
 function XIcon() {
@@ -51,7 +51,7 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
     setCanNativeShare(!!navigator.share);
   }, []);
 
-  const shareText = `Jeg har simuleret Danmarks næste regering! ${pmName} får flertal med ${coalitionShorts.join(", ")} — ${coalitionSeats} mandater. Lav din egen på Valg i Danmark →`;
+  const shareText = `Jeg har simuleret Danmarks næste regering! ${pmName} får flertal med ${coalitionShorts.join(", ")} — ${coalitionSeats} mandater. Lav din egen på ValgiDanmark →`;
   const encodedUrl = encodeURIComponent(pageUrl);
   const encodedTweet = encodeURIComponent(`${shareText} ${pageUrl}`);
 
@@ -62,11 +62,18 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
     } catch {}
   };
 
-  const nativeShare = async () => {
-    try {
-      await navigator.share({ title: "Min valgforudsigelse – Valg i Danmark", text: shareText, url: pageUrl });
-    } catch {}
+  const messengerShare = async () => {
+    if (canNativeShare) {
+      try {
+        await navigator.share({ title: "Min valgforudsigelse – ValgiDanmark", text: shareText, url: pageUrl });
+        return;
+      } catch {}
+    }
+    // Fallback to deep link
+    window.open(`fb-messenger://share/?link=${encodedUrl}`, "_blank");
   };
+
+  const encodedQuote = encodeURIComponent(shareText);
 
   const pill =
     "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-all text-xs font-mono cursor-pointer select-none";
@@ -87,7 +94,7 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
       </a>
 
       <a
-        href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+        href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedQuote}`}
         target="_blank"
         rel="noopener noreferrer"
         className={pill}
@@ -97,16 +104,10 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
         <span className="hidden sm:inline">Facebook</span>
       </a>
 
-      <a
-        href={`fb-messenger://share/?link=${encodedUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={pill}
-        aria-label="Del på Messenger"
-      >
+      <button onClick={messengerShare} className={pill} aria-label="Del på Messenger">
         <MessengerIcon />
         <span className="hidden sm:inline">Messenger</span>
-      </a>
+      </button>
 
       <a
         href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
@@ -123,17 +124,6 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
         <Copy size={14} />
         <span className="hidden sm:inline">Kopiér link</span>
       </button>
-
-      {/* Native share — only visible on mobile */}
-      {canNativeShare && (
-        <button
-          onClick={nativeShare}
-          className={`${pill} sm:hidden`}
-          aria-label="Del"
-        >
-          <Share2 size={14} />
-        </button>
-      )}
     </div>
   );
 }

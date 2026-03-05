@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ValgIDanmark – Meningsmålinger & Prognose 2026",
+  title: "ValgiDanmark – Meningsmålinger & Prognose 2026",
   description: "Vægtet meningsmålingsgennemsnit, mandatfordeling og Monte Carlo-prognose til Folketingsvalget 24. marts 2026.",
   icons: { icon: "/favicon.svg", type: "image/svg+xml" },
 };
