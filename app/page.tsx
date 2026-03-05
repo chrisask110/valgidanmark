@@ -15,7 +15,7 @@ import {
 } from "./lib/data";
 import { runMonteCarlo } from "./lib/monte-carlo";
 
-const DEFAULT_PARTIES = ["A", "F", "V", "I", "Æ", "C", "Ø", "B", "M"];
+const DEFAULT_PARTIES = ["A", "F", "V", "I", "Æ", "C", "Ø", "B", "O", "Å", "M", "H"];
 
 export default function Page() {
   const { t } = useLanguage();

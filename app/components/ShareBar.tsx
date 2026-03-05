@@ -20,6 +20,14 @@ function FacebookIcon() {
   );
 }
 
+function MessengerIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.654V24l4.088-2.242c1.092.3 2.246.464 3.443.464 6.627 0 12-4.974 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8l3.131 3.259L19.752 8l-6.561 6.963z" />
+    </svg>
+  );
+}
+
 function LinkedInIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -87,6 +95,17 @@ export function ShareBar({ pmName, coalitionShorts, coalitionSeats }: ShareBarPr
       >
         <FacebookIcon />
         <span className="hidden sm:inline">Facebook</span>
+      </a>
+
+      <a
+        href={`https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=291494419107518&redirect_uri=${encodedUrl}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={pill}
+        aria-label="Del på Messenger"
+      >
+        <MessengerIcon />
+        <span className="hidden sm:inline">Messenger</span>
       </a>
 
       <a
