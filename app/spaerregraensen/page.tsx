@@ -3,21 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ReferenceLine,
-  ResponsiveContainer,
-  CartesianGrid,
-  Scatter,
-  ComposedChart,
+  ComposedChart, Line, Scatter,
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, ReferenceLine, ResponsiveContainer,
 } from "recharts";
-import { PARTIES, PARTY_KEYS, POLLSTERS, FALLBACK_POLLS, calcWeightedAverage, type Poll } from "@/app/lib/data";
+import { PARTIES, PARTY_KEYS, FALLBACK_POLLS, calcWeightedAverage, type Poll } from "@/app/lib/data";
 import { useLanguage } from "@/app/components/LanguageContext";
 
-// Normal CDF via Abramowitz & Stegun approximation
+// ─── Normal CDF ──────────────────────────────────────────────────────────────
 function normalCDF(z: number): number {
   if (z > 6) return 1;
   if (z < -6) return 0;
@@ -29,65 +22,163 @@ function normalCDF(z: number): number {
 }
 
 const SIGMA = 1.0;
-const THRESHOLD_MAX = 4.0; // only show parties strictly below 4%
+const THRESHOLD_MAX = 4.0; // only parties with model avg < 4%
 const THRESHOLD_MIN = 0.1;
 
-const POLLSTER_NAMES = Object.keys(POLLSTERS);
-type ViewMode = "model" | string; // "model" or a pollster name
+// ─── Date helpers (same as PollChart) ────────────────────────────────────────
+const DA_MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+function fmtDay(ts: number) {
+  const d = new Date(ts);
+  return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]}`;
+}
+function fmtMonthYear(ts: number) {
+  const d = new Date(ts);
+  return `${DA_MONTHS[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
+}
+function fmtFull(ts: number) {
+  const d = new Date(ts);
+  return `${d.getDate()}. ${DA_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
 
+function dayBuckets(from: Date, to: Date): number[] {
+  const out: number[] = [];
+  const cur = new Date(from); cur.setHours(0, 0, 0, 0);
+  while (cur.getTime() <= to.getTime()) { out.push(cur.getTime()); cur.setDate(cur.getDate() + 1); }
+  return out;
+}
+function weekBuckets(from: Date, to: Date): number[] {
+  const out: number[] = [];
+  const cur = new Date(from); cur.setDate(cur.getDate() - cur.getDay());
+  while (cur.getTime() <= to.getTime()) { out.push(cur.getTime()); cur.setDate(cur.getDate() + 7); }
+  return out;
+}
+function monthlyTicks(from: Date, to: Date): number[] {
+  const out: number[] = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  while (cur.getTime() <= to.getTime()) { out.push(cur.getTime()); cur.setMonth(cur.getMonth() + 1); }
+  return out;
+}
+function weeklyTicks(from: Date, to: Date): number[] {
+  const out: number[] = [];
+  const cur = new Date(from);
+  const day = cur.getDay();
+  cur.setDate(cur.getDate() + (day === 1 ? 0 : day === 0 ? 1 : 8 - day));
+  cur.setHours(0, 0, 0, 0);
+  while (cur.getTime() <= to.getTime()) { out.push(cur.getTime()); cur.setDate(cur.getDate() + 7); }
+  return out;
+}
+
+// ─── Tooltip ─────────────────────────────────────────────────────────────────
+function ThresholdTooltip({ active, payload, label, polls, trackedKeys }: {
+  active?: boolean;
+  payload?: any[];
+  label?: number;
+  polls: Poll[];
+  trackedKeys: string[];
+}) {
+  if (!active || label == null) return null;
+  const ts = label as number;
+  const hoverDate = new Date(ts).toISOString().slice(0, 10);
+  const pollsOnDay = polls.filter(p => p.date === hoverDate);
+
+  const avgVals = (payload ?? [])
+    .filter(e => String(e.dataKey).endsWith("_avg") && e.value != null)
+    .map(e => ({ pk: String(e.dataKey).replace("_avg", ""), avg: e.value as number }))
+    .sort((a, b) => b.avg - a.avg);
+
+  if (!pollsOnDay.length && !avgVals.length) return null;
+
+  return (
+    <div className="rounded-lg border border-border bg-card/95 backdrop-blur-sm p-3 shadow-xl text-xs font-mono min-w-[180px]">
+      {pollsOnDay.length > 0 ? (
+        pollsOnDay.map((poll, idx) => (
+          <div key={`${poll.pollster}-${idx}`}>
+            {idx > 0 && <div className="border-t border-border my-2" />}
+            <div className="text-muted-foreground mb-2">
+              {fmtFull(new Date(poll.date).getTime())} · {poll.pollster} · n={poll.n}
+            </div>
+            {trackedKeys
+              .filter(pk => poll[pk] != null)
+              .sort((a, b) => Number(poll[b]) - Number(poll[a]))
+              .map(pk => {
+                const val = Number(poll[pk]);
+                const prev = polls
+                  .filter(p => p.pollster === poll.pollster && p.date < poll.date && p[pk] != null)
+                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                const delta = prev != null ? val - Number(prev[pk]) : null;
+                return (
+                  <div key={pk} className="flex justify-between items-center gap-4 py-0.5">
+                    <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
+                      {PARTIES[pk]?.short} {PARTIES[pk]?.name.split(" ")[0]}
+                    </span>
+                    <span className="flex items-center gap-1.5 tabular-nums">
+                      <span className="text-foreground">{val.toFixed(1)}%</span>
+                      {delta != null && (
+                        <span style={{ color: delta > 0.05 ? "#22c55e" : delta < -0.05 ? "#ef4444" : "#64748b", fontSize: 10 }}>
+                          {delta > 0 ? "+" : ""}{delta.toFixed(1)}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        ))
+      ) : (
+        <>
+          <div className="text-muted-foreground mb-2">{fmtFull(ts)}</div>
+          <div className="text-muted-foreground text-[10px] mb-1">Vægtet gns.</div>
+          {avgVals.map(({ pk, avg }) => (
+            <div key={pk} className="flex justify-between gap-4 py-0.5">
+              <span style={{ color: PARTIES[pk]?.color }} className="font-semibold">
+                {PARTIES[pk]?.short} {PARTIES[pk]?.name.split(" ")[0]}
+              </span>
+              <span className="text-foreground tabular-nums">{avg.toFixed(1)}%</span>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Status card helpers ──────────────────────────────────────────────────────
 function statusLabel(avg: number, tl: (k: string) => string) {
   if (avg >= 3)   return { label: tl("threshold.safe"),       color: "#4ade80", bg: "rgba(74,222,128,0.10)",  border: "rgba(74,222,128,0.30)"  };
   if (avg >= 1.5) return { label: tl("threshold.borderline"), color: "#facc15", bg: "rgba(250,204,21,0.10)",  border: "rgba(250,204,21,0.30)"  };
   return           { label: tl("threshold.danger"),            color: "#f87171", bg: "rgba(248,113,113,0.10)", border: "rgba(248,113,113,0.30)" };
 }
 
-interface PartyStatus {
-  pk: string;
-  avg: number;
-  trend: number;
-  prob: number;
-}
+type TimeRange = "1m" | "3m" | "6m";
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SpaerregrænsenPage() {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("model");
+  const [timeRange, setTimeRange] = useState<TimeRange>("6m");
 
   useEffect(() => {
     fetch("/api/polls")
       .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data.polls) && data.polls.length > 0) setPolls(data.polls);
-      })
+      .then(data => { if (Array.isArray(data.polls) && data.polls.length > 0) setPolls(data.polls); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const oneMonthAgo = useMemo(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    return d.toISOString().slice(0, 10);
-  }, []);
+  const oneMonthAgo = useMemo(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().slice(0, 10); }, []);
 
-  // Status cards: only parties with model avg < THRESHOLD_MAX
-  const partyStatuses = useMemo((): PartyStatus[] => {
+  // Status cards
+  const partyStatuses = useMemo(() => {
     if (polls.length === 0) return [];
-    // Only use polls up to today for the current avg
     const pollsNow = polls.filter(p => p.date <= today);
-    // Only use polls from before oneMonthAgo for the historical avg
     const pollsOld = polls.filter(p => p.date <= oneMonthAgo);
-
     return PARTY_KEYS
       .map(pk => {
         const avg = calcWeightedAverage(pollsNow, pk, today) ?? 0;
-        const avgOld = pollsOld.length > 0
-          ? (calcWeightedAverage(pollsOld, pk, oneMonthAgo) ?? avg)
-          : avg;
-        const trend = avg - avgOld;
-        const prob = normalCDF((avg - 2) / SIGMA);
-        return { pk, avg, trend, prob };
+        const avgOld = pollsOld.length > 0 ? (calcWeightedAverage(pollsOld, pk, oneMonthAgo) ?? avg) : avg;
+        return { pk, avg, trend: avg - avgOld, prob: normalCDF((avg - 2) / SIGMA) };
       })
       .filter(s => s.avg >= THRESHOLD_MIN && s.avg < THRESHOLD_MAX)
       .sort((a, b) => a.avg - b.avg);
@@ -95,55 +186,55 @@ export default function SpaerregrænsenPage() {
 
   const trackedKeys = useMemo(() => partyStatuses.map(s => s.pk), [partyStatuses]);
 
-  // Model chart: weekly buckets with weighted avg
-  const modelChartData = useMemo(() => {
-    if (polls.length === 0 || trackedKeys.length === 0) return [];
-    const end = new Date();
-    const start = new Date();
-    start.setMonth(start.getMonth() - 12);
-    const buckets: { date: string; [key: string]: number | string }[] = [];
-    const cur = new Date(start);
-    while (cur.getTime() <= end.getTime()) {
-      const iso = cur.toISOString().slice(0, 10);
-      const pollsUpTo = polls.filter(p => p.date <= iso);
-      if (pollsUpTo.length > 0) {
-        const bucket: { date: string; [key: string]: number | string } = { date: iso };
-        for (const pk of trackedKeys) {
-          const val = calcWeightedAverage(pollsUpTo, pk, iso);
-          if (val !== null) bucket[pk] = Math.round(val * 10) / 10;
-        }
-        buckets.push(bucket);
+  // Date range for chart
+  const fromDate = useMemo(() => {
+    const d = new Date();
+    if (timeRange === "1m") d.setMonth(d.getMonth() - 1);
+    else if (timeRange === "3m") d.setMonth(d.getMonth() - 3);
+    else d.setMonth(d.getMonth() - 6);
+    return d;
+  }, [timeRange]);
+  const toDate = useMemo(() => new Date(), []);
+
+  const xTicks = useMemo(
+    () => timeRange === "1m" ? weeklyTicks(fromDate, toDate) : monthlyTicks(fromDate, toDate),
+    [fromDate, toDate, timeRange]
+  );
+  const xDomain = useMemo(() => [fromDate.getTime(), toDate.getTime()], [fromDate, toDate]);
+
+  // Weighted average lines (same logic as PollChart)
+  const chartData = useMemo(() => {
+    if (trackedKeys.length === 0) return [];
+    const buckets = timeRange === "1m" ? dayBuckets(fromDate, toDate) : weekBuckets(fromDate, toDate);
+    return buckets.map(ts => {
+      const asOf = new Date(ts).toISOString().slice(0, 10);
+      const pollsUpTo = polls.filter(p => new Date(p.date).getTime() <= ts);
+      const point: { ts: number; [key: string]: number | null } = { ts };
+      for (const pk of trackedKeys) {
+        point[`${pk}_avg`] = pollsUpTo.length > 0 ? calcWeightedAverage(pollsUpTo, pk, asOf) : null;
       }
-      cur.setDate(cur.getDate() + 7);
+      return point;
+    });
+  }, [polls, trackedKeys, fromDate, toDate, timeRange]);
+
+  // Raw poll dots
+  const rawDotData = useMemo(() => {
+    const result: Record<string, { ts: number; val: number; pollster: string; n: number }[]> = {};
+    for (const pk of trackedKeys) {
+      result[pk] = polls
+        .filter(p => p[pk] != null && new Date(p.date) >= fromDate)
+        .map(p => ({ ts: new Date(p.date).getTime(), val: Number(p[pk]), pollster: p.pollster as string, n: Number(p.n) }));
     }
-    return buckets;
-  }, [polls, trackedKeys]);
+    return result;
+  }, [polls, trackedKeys, fromDate]);
 
-  // Pollster chart: raw polls from selected pollster, last 12 months
-  const pollsterChartData = useMemo(() => {
-    if (viewMode === "model" || trackedKeys.length === 0) return [];
-    const cutoff = new Date();
-    cutoff.setMonth(cutoff.getMonth() - 12);
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
-    return polls
-      .filter(p => p.pollster === viewMode && p.date >= cutoffStr)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .map(p => {
-        const point: { date: string; [key: string]: number | string } = { date: p.date };
-        for (const pk of trackedKeys) {
-          const v = p[pk];
-          if (v !== undefined && v !== null && v !== "") point[pk] = Number(v);
-        }
-        return point;
-      });
-  }, [polls, viewMode, trackedKeys]);
+  const tooltipContent = useMemo(
+    () => (props: any) => <ThresholdTooltip {...props} polls={polls} trackedKeys={trackedKeys} />,
+    [polls, trackedKeys]
+  );
 
-  const chartData = viewMode === "model" ? modelChartData : pollsterChartData;
-
-  const fmt = (n: number) => n.toFixed(1).replace(".", lang === "da" ? "," : ".");
+  const fmt = (n: number) => n.toFixed(1);
   const fmtSign = (n: number) => (n >= 0 ? "+" : "") + fmt(n);
-
-  const yMax = Math.max(5, ...partyStatuses.map(s => Math.ceil(s.avg + 1)));
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-8">
@@ -156,7 +247,6 @@ export default function SpaerregrænsenPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-sans tracking-tight">{t("threshold.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground font-mono">{t("threshold.subtitle")}</p>
-        <p className="mt-1 text-xs text-muted-foreground/60 font-mono">{t("threshold.sigma")}</p>
       </div>
 
       {loading && <div className="text-sm font-mono text-muted-foreground">Henter data…</div>}
@@ -167,14 +257,10 @@ export default function SpaerregrænsenPage() {
           {partyStatuses.map(({ pk, avg, trend, prob }) => {
             const party = PARTIES[pk];
             const { label, color, bg, border } = statusLabel(avg, t);
-            const dist = avg - 2;
             return (
               <div key={pk} className="rounded-xl p-5" style={{ background: bg, border: `1.5px solid ${border}` }}>
                 <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black font-mono flex-shrink-0"
-                    style={{ background: party.color, color: "#fff" }}
-                  >
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black font-mono flex-shrink-0" style={{ background: party.color, color: "#fff" }}>
                     {party.short}
                   </div>
                   <div>
@@ -184,19 +270,15 @@ export default function SpaerregrænsenPage() {
                 </div>
 
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-4xl font-black font-mono leading-none" style={{ color }}>
-                    {fmt(avg)}%
-                  </span>
-                  <span className="text-sm font-mono ml-2" style={{ color: trend >= 0 ? "#4ade80" : "#f87171" }}>
-                    {fmtSign(trend)}
-                  </span>
+                  <span className="text-4xl font-black font-mono leading-none" style={{ color }}>{fmt(avg)}%</span>
+                  <span className="text-sm font-mono ml-2" style={{ color: trend >= 0 ? "#4ade80" : "#f87171" }}>{fmtSign(trend)}</span>
                 </div>
                 <p className="text-xs font-mono text-muted-foreground mb-4">{t("threshold.current")}</p>
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs font-mono">
                     <span className="text-muted-foreground">{t("threshold.dist")}</span>
-                    <span style={{ color: dist >= 0 ? "#4ade80" : "#f87171" }}>{fmtSign(dist)} pp</span>
+                    <span style={{ color: avg - 2 >= 0 ? "#4ade80" : "#f87171" }}>{fmtSign(avg - 2)} pp</span>
                   </div>
                   <div className="flex justify-between text-xs font-mono">
                     <span className="text-muted-foreground">{t("threshold.trend")}</span>
@@ -209,10 +291,7 @@ export default function SpaerregrænsenPage() {
                 </div>
 
                 <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden relative">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${prob * 100}%`, background: `linear-gradient(90deg, ${color}88, ${color})` }}
-                  />
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${prob * 100}%`, background: `linear-gradient(90deg, ${color}88, ${color})` }} />
                   <div className="absolute top-0 bottom-0 w-px bg-foreground/30" style={{ left: "50%" }} />
                 </div>
               </div>
@@ -224,114 +303,110 @@ export default function SpaerregrænsenPage() {
       {/* Chart */}
       {!loading && partyStatuses.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-5">
-          {/* Chart header + view toggle */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-sm font-mono font-semibold text-muted-foreground uppercase tracking-widest">
               {t("threshold.chart")}
             </h2>
-            <div className="flex flex-wrap gap-1">
-              {(["model", ...POLLSTER_NAMES] as ViewMode[]).map(mode => (
+            <div className="flex gap-1">
+              {(["1m", "3m", "6m"] as TimeRange[]).map(r => (
                 <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
+                  key={r}
+                  onClick={() => setTimeRange(r)}
                   className="text-xs font-mono px-2.5 py-1 rounded-md transition-colors"
                   style={{
-                    background: viewMode === mode ? "hsl(var(--foreground))" : "hsl(var(--muted))",
-                    color:      viewMode === mode ? "hsl(var(--background))" : "hsl(var(--muted-foreground))",
+                    background: timeRange === r ? "hsl(var(--foreground))" : "hsl(var(--muted))",
+                    color:      timeRange === r ? "hsl(var(--background))" : "hsl(var(--muted-foreground))",
                   }}
                 >
-                  {mode === "model" ? "Model" : mode}
+                  {r === "1m" ? "1 mdr" : r === "3m" ? "3 mdr" : "6 mdr"}
                 </button>
               ))}
             </div>
           </div>
 
-          {chartData.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-sm font-mono text-muted-foreground">
-              Ingen data for {viewMode}
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={320}>
-              {viewMode === "model" ? (
-                <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 10, fontFamily: "var(--font-jetbrains-mono)", fill: "hsl(var(--muted-foreground))" }}
-                    tickFormatter={(v: string) =>
-                      new Date(v).toLocaleDateString(lang === "da" ? "da-DK" : "en-GB", { month: "short", day: "numeric" })
-                    }
-                    interval="preserveStartEnd"
-                    minTickGap={60}
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={chartData} margin={{ top: 10, right: 16, bottom: 36, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+
+                <XAxis
+                  dataKey="ts"
+                  type="number"
+                  scale="time"
+                  domain={xDomain}
+                  ticks={xTicks}
+                  tickFormatter={timeRange === "1m" ? fmtDay : fmtMonthYear}
+                  tick={{ fontSize: 11, fontFamily: "monospace", fill: "hsl(var(--muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
+                  angle={-45}
+                  textAnchor="end"
+                />
+
+                <YAxis
+                  tickFormatter={v => `${v}%`}
+                  domain={[0, 5]}
+                  ticks={[0, 1, 2, 3, 4, 5]}
+                  tick={{ fontSize: 11, fontFamily: "monospace", fill: "hsl(var(--muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={36}
+                />
+
+                <Tooltip content={tooltipContent} />
+
+                {/* 2% threshold */}
+                <ReferenceLine
+                  y={2}
+                  stroke="#facc15"
+                  strokeDasharray="4 3"
+                  strokeWidth={2}
+                  label={{ value: "2% spærregrænse", position: "insideTopLeft", fontSize: 10, fontFamily: "monospace", fill: "#facc15" }}
+                />
+
+                {/* Weighted average lines */}
+                {trackedKeys.map(pk => (
+                  <Line
+                    key={`${pk}_avg`}
+                    dataKey={`${pk}_avg`}
+                    data={chartData}
+                    type="monotone"
+                    stroke={PARTIES[pk].color}
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ r: 5, fill: PARTIES[pk].color, stroke: "hsl(var(--card))", strokeWidth: 2 }}
+                    name={PARTIES[pk].short}
+                    connectNulls
+                    isAnimationActive={false}
                   />
-                  <YAxis
-                    domain={[0, yMax]}
-                    tick={{ fontSize: 10, fontFamily: "var(--font-jetbrains-mono)", fill: "hsl(var(--muted-foreground))" }}
-                    tickFormatter={(v: number) => `${v}%`}
-                    width={36}
+                ))}
+
+                {/* Raw poll dots */}
+                {trackedKeys.map(pk => (
+                  <Scatter
+                    key={`${pk}_dots`}
+                    name={pk}
+                    data={rawDotData[pk]}
+                    dataKey="val"
+                    legendType="none"
+                    isAnimationActive={false}
+                    shape={(props: any) => {
+                      const { cx, cy } = props;
+                      if (cx == null || cy == null) return null;
+                      return <circle cx={cx} cy={cy} r={1.8} fill={PARTIES[pk].color} fillOpacity={0.85} stroke="hsl(var(--card))" strokeWidth={0.5} />;
+                    }}
                   />
-                  <ReferenceLine
-                    y={2}
-                    stroke="#facc15"
-                    strokeWidth={2}
-                    strokeDasharray="6 3"
-                    label={{ value: "2%", position: "insideTopLeft", fontSize: 10, fill: "#facc15", fontFamily: "var(--font-jetbrains-mono)" }}
-                  />
-                  {trackedKeys.map(pk => (
-                    <Line key={pk} type="monotone" dataKey={pk} stroke={PARTIES[pk].color} strokeWidth={2} dot={false} connectNulls name={PARTIES[pk].name} />
-                  ))}
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: 11, fontFamily: "var(--font-jetbrains-mono)" }}
-                    labelFormatter={(label: string) => new Date(label).toLocaleDateString(lang === "da" ? "da-DK" : "en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                    formatter={(value: number, name: string) => [`${fmt(value)}%`, PARTIES[name]?.name ?? name]}
-                  />
-                </LineChart>
-              ) : (
-                <ComposedChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 10, fontFamily: "var(--font-jetbrains-mono)", fill: "hsl(var(--muted-foreground))" }}
-                    tickFormatter={(v: string) =>
-                      new Date(v).toLocaleDateString(lang === "da" ? "da-DK" : "en-GB", { month: "short", day: "numeric" })
-                    }
-                    interval="preserveStartEnd"
-                    minTickGap={60}
-                  />
-                  <YAxis
-                    domain={[0, yMax]}
-                    tick={{ fontSize: 10, fontFamily: "var(--font-jetbrains-mono)", fill: "hsl(var(--muted-foreground))" }}
-                    tickFormatter={(v: number) => `${v}%`}
-                    width={36}
-                  />
-                  <ReferenceLine
-                    y={2}
-                    stroke="#facc15"
-                    strokeWidth={2}
-                    strokeDasharray="6 3"
-                    label={{ value: "2%", position: "insideTopLeft", fontSize: 10, fill: "#facc15", fontFamily: "var(--font-jetbrains-mono)" }}
-                  />
-                  {trackedKeys.map(pk => (
-                    <Line key={pk} type="monotone" dataKey={pk} stroke={PARTIES[pk].color} strokeWidth={1.5} dot={{ r: 4, fill: PARTIES[pk].color, strokeWidth: 0 }} connectNulls name={PARTIES[pk].name} />
-                  ))}
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: 11, fontFamily: "var(--font-jetbrains-mono)" }}
-                    labelFormatter={(label: string) => new Date(label).toLocaleDateString(lang === "da" ? "da-DK" : "en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                    formatter={(value: number, name: string) => [`${fmt(value)}%`, PARTIES[name]?.name ?? name]}
-                  />
-                </ComposedChart>
-              )}
+                ))}
+              </ComposedChart>
             </ResponsiveContainer>
-          )}
+          </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-3 mt-4">
+          <div className="flex flex-wrap gap-3 mt-2">
             {trackedKeys.map(pk => (
               <div key={pk} className="flex items-center gap-1.5">
                 <div className="w-3 h-0.5 rounded" style={{ background: PARTIES[pk].color }} />
-                <span className="text-xs font-mono text-muted-foreground">
-                  {PARTIES[pk].short} – {PARTIES[pk].name.split(" ")[0]}
-                </span>
+                <span className="text-xs font-mono text-muted-foreground">{PARTIES[pk].short} – {PARTIES[pk].name.split(" ")[0]}</span>
               </div>
             ))}
             <div className="flex items-center gap-1.5">

@@ -102,7 +102,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "threshold.subtitle": { da: "Partier tæt på 2 %-spærregrænsen", en: "Parties close to the 2% threshold" },
   "threshold.current": { da: "Nuværende snit", en: "Current avg." },
   "threshold.dist": { da: "Afstand til 2%", en: "Distance to 2%" },
-  "threshold.prob": { da: "Sandsynlighed for at passere", en: "Probability of clearing" },
+  "threshold.prob": { da: "Sandsynlighed for at komme i folketinget", en: "Probability of entering parliament" },
   "threshold.trend": { da: "Trend (1 mdr.)", en: "Trend (1 mo.)" },
   "threshold.safe": { da: "Over spærregrænsen", en: "Above threshold" },
   "threshold.danger": { da: "Under spærregrænsen", en: "Below threshold" },
