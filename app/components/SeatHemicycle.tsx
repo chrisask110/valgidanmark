@@ -75,28 +75,38 @@ export function SeatHemicycle({ seats }: SeatHemicycleProps) {
       >
         {positions.map((pos, i) => {
           const isEmpty = pos.party === "__empty";
-          const isParty = !isEmpty;
           const isHovered = hoveredParty === pos.party;
           const isFoGl = !!FO_GL_SEATS[pos.party];
           const color = isEmpty ? "currentColor" : PARTIES[pos.party]?.color || "#475569";
           return (
-            <circle
-              key={i}
-              cx={pos.cx}
-              cy={pos.cy}
-              r={isHovered ? 6.5 : 5}
-              fill={isEmpty ? "none" : color}
-              stroke={isEmpty ? "currentColor" : (isFoGl ? color : "none")}
-              strokeWidth={isEmpty ? 1 : (isFoGl ? 1.5 : 0)}
-              opacity={
-                isEmpty ? 0.15
-                : isFoGl ? (hoveredParty && !isHovered ? 0.35 : 0.7)
-                : (hoveredParty && !isHovered ? 0.4 : 1)
-              }
-              onMouseEnter={() => isParty && setHoveredParty(pos.party)}
-              onMouseLeave={() => setHoveredParty(null)}
-              style={{ cursor: isParty ? "pointer" : "default", transition: "opacity 0.15s, r 0.1s" }}
-            />
+            <g key={i}>
+              <circle
+                cx={pos.cx}
+                cy={pos.cy}
+                r={5}
+                fill={isEmpty ? "none" : color}
+                stroke={isHovered ? "#fff" : (isFoGl ? color : "none")}
+                strokeWidth={isHovered ? 1.5 : (isFoGl ? 1.5 : 0)}
+                opacity={
+                  isEmpty ? 0.15
+                  : isFoGl ? (hoveredParty && !isHovered ? 0.35 : 0.7)
+                  : (hoveredParty && !isHovered ? 0.35 : 1)
+                }
+                style={{ transition: "opacity 0.12s" }}
+              />
+              {/* Transparent larger hit area to prevent jitter */}
+              {!isEmpty && (
+                <circle
+                  cx={pos.cx}
+                  cy={pos.cy}
+                  r={8}
+                  fill="transparent"
+                  style={{ cursor: "pointer" }}
+                  onMouseEnter={() => setHoveredParty(pos.party)}
+                  onMouseLeave={() => setHoveredParty(null)}
+                />
+              )}
+            </g>
           );
         })}
         {/* Center divider line */}
@@ -107,17 +117,17 @@ export function SeatHemicycle({ seats }: SeatHemicycleProps) {
         </text>
       </svg>
 
-      {/* Hover info */}
-      {hoveredParty && (
-        <div className="text-center -mt-1 mb-2">
+      {/* Hover info — always rendered to avoid layout shift */}
+      <div className="text-center -mt-1 mb-2 h-5">
+        {hoveredParty && (
           <span className="text-sm font-mono" style={{ color: PARTIES[hoveredParty]?.color }}>
             {PARTIES[hoveredParty]?.name}
             {FO_GL_SEATS[hoveredParty]
               ? ` — ${FO_GL_SEATS[hoveredParty]} mandater (fast)`
               : ` — ${seats[hoveredParty] || 0} mandater`}
           </span>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 justify-center">
