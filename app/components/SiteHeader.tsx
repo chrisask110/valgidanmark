@@ -1,11 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./ThemeToggle";
 import { useLanguage } from "./LanguageContext";
 
 export function SiteHeader() {
   const { t, lang, setLang } = useLanguage();
+  const pathname = usePathname();
+
+  const navLink = (href: string, label: string) => {
+    const active = pathname === href;
+    return (
+      <Link
+        href={href}
+        className={`text-xs font-mono px-3 py-1.5 rounded-md transition-colors ${
+          active
+            ? "bg-muted text-foreground font-semibold"
+            : "text-foreground/60 hover:bg-muted hover:text-foreground"
+        }`}
+      >
+        {label}
+      </Link>
+    );
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
@@ -15,18 +33,8 @@ export function SiteHeader() {
             Valg<span className="text-[hsl(var(--accent))]">i</span>Danmark
           </Link>
           <nav className="hidden sm:flex items-center gap-1">
-            <Link
-              href="/"
-              className="text-xs font-mono px-3 py-1.5 rounded-md hover:bg-muted transition-colors text-foreground/80"
-            >
-              {t("nav.polls")}
-            </Link>
-            <Link
-              href="/statsminister"
-              className="text-xs font-mono px-3 py-1.5 rounded-md hover:bg-muted transition-colors text-foreground/80"
-            >
-              {t("nav.statsminister")}
-            </Link>
+            {navLink("/", t("nav.polls"))}
+            {navLink("/statsminister", t("nav.statsminister"))}
           </nav>
         </div>
 

@@ -270,7 +270,10 @@ export default function Page() {
               {t("footer.updated")}: {latestDate} &middot; {t("footer.source")}: Verian, Epinion, Megafon, Voxmeter
             </div>
             <div>
-              {t("footer.method")} &middot; Valg 24. marts 2026
+              <Link href="/om-metoden" className="hover:text-foreground transition-colors">
+                {t("footer.method")}
+              </Link>
+              {" "}&middot; Valg 24. marts 2026
             </div>
           </div>
         </div>

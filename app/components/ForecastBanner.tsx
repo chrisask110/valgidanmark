@@ -1,6 +1,7 @@
 "use client";
 
-import { PARTIES } from "@/app/lib/data";
+import Image from "next/image";
+import { PARTIES, ROD_BLOK, BLAA_BLOK } from "@/app/lib/data";
 import { useLanguage } from "./LanguageContext";
 
 interface ForecastBannerProps {
@@ -19,6 +20,7 @@ function BlokCard({
   accentColor,
   bgColor,
   borderColor,
+  parties,
   t,
 }: {
   name: string;
@@ -27,6 +29,7 @@ function BlokCard({
   accentColor: string;
   bgColor: string;
   borderColor: string;
+  parties: readonly string[];
   t: (k: string) => string;
 }) {
   const pct = Math.round(chance * 100);
@@ -48,6 +51,26 @@ function BlokCard({
         >
           {t("forecast.model")}
         </span>
+      </div>
+
+      {/* Party leader photos */}
+      <div className="flex gap-1.5 mb-3">
+        {parties.map(pk => (
+          <div
+            key={pk}
+            className="w-8 h-8 rounded-full overflow-hidden border-2 flex-shrink-0"
+            style={{ borderColor: PARTIES[pk].color }}
+            title={PARTIES[pk].name}
+          >
+            <Image
+              src={`/Leaders/${pk}.jpg`}
+              alt={PARTIES[pk].name}
+              width={32}
+              height={32}
+              className="w-full h-full object-cover object-top"
+            />
+          </div>
+        ))}
       </div>
 
       {/* Big probability number */}
@@ -123,6 +146,7 @@ export function ForecastBanner({
         accentColor="#f87171"
         bgColor="rgba(248,113,113,0.06)"
         borderColor="rgba(248,113,113,0.25)"
+        parties={ROD_BLOK}
         t={t}
       />
       <BlokCard
@@ -132,6 +156,7 @@ export function ForecastBanner({
         accentColor="#60a5fa"
         bgColor="rgba(96,165,250,0.06)"
         borderColor="rgba(96,165,250,0.25)"
+        parties={BLAA_BLOK}
         t={t}
       />
 

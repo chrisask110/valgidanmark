@@ -19,9 +19,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Valg i Danmark 2026 – Dansk Valgbarometer",
-  description: "Vægtede meningsmålinger, 538-stil graf og nyheder til folketingsvalget 24. marts 2026",
-  icons: { icon: "/favicon.ico" },
+  title: "ValgIDanmark – Meningsmålinger & Prognose 2026",
+  description: "Vægtet meningsmålingsgennemsnit, mandatfordeling og Monte Carlo-prognose til Folketingsvalget 24. marts 2026.",
+  icons: { icon: "/favicon.svg", type: "image/svg+xml" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
