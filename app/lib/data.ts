@@ -113,15 +113,53 @@ export const FALLBACK_POLLS: Poll[] = [
 
 export function calcWeightedAverage(polls: Poll[], partyKey: string, asOfDate?: string): number | null {
   const now = asOfDate ? new Date(asOfDate) : new Date();
-  const relevant = polls
-    .filter(p => p[partyKey] !== undefined && p[partyKey] !== null && p[partyKey] !== "")
+
+  // Dynamic half-life: shortens as election day approaches (14 days on election day, 45 days default)
+  const daysUntilElection = ELECTION_DATE
+    ? Math.max(0, (ELECTION_DATE.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+  let halfLife = daysUntilElection != null
+    ? Math.min(45, Math.max(14, 14 + 0.1 * daysUntilElection))
+    : 45;
+
+  // Initial hard stop: polls beyond this age get zero weight
+  let hardStop = 60;
+
+  // Polls with this party key, not in the future
+  const partyPolls = polls.filter(
+    p => p[partyKey] !== undefined && p[partyKey] !== null && p[partyKey] !== ""
+  );
+  if (partyPolls.length === 0) return null;
+
+  // Minimum-polls floor: extend half-life (in 5-day steps) until ≥8 polls fall within the
+  // effective window (weight ≥ 10% of max, i.e. daysDiff ≤ halfLife × ln10), max 90 days.
+  const MIN_POLLS = 8;
+  const MAX_HALF_LIFE = 90;
+  while (halfLife < MAX_HALF_LIFE) {
+    const effectiveWindow = halfLife * Math.LN10; // exp(-window/halfLife) = 0.10
+    const inWindow = partyPolls.filter(p => {
+      const d = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
+      return d >= 0 && d <= effectiveWindow;
+    }).length;
+    if (inWindow >= MIN_POLLS) break;
+    halfLife = Math.min(halfLife + 5, MAX_HALF_LIFE);
+  }
+
+  // Hard stop extends with half-life if the floor loop pushed it above the base 60 days
+  hardStop = Math.min(MAX_HALF_LIFE, Math.max(60, Math.ceil(halfLife * Math.LN10)));
+
+  // Build weighted entries, dropping polls beyond hard stop or in the future
+  const relevant = partyPolls
     .map(p => {
       const daysDiff = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
-      const recency = Math.exp(-daysDiff / 30);
+      if (daysDiff < 0 || daysDiff > hardStop) return null;
+      const recency = Math.exp(-daysDiff / halfLife);
       const pollsterWeight = POLLSTERS[p.pollster]?.weight || 1.0;
       const sizeWeight = Math.sqrt((p.n || 1000) / 1000);
       return { value: Number(p[partyKey]), weight: recency * pollsterWeight * sizeWeight };
-    });
+    })
+    .filter(Boolean) as { value: number; weight: number }[];
+
   if (relevant.length === 0) return null;
   const totalWeight = relevant.reduce((s, r) => s + r.weight, 0);
   return relevant.reduce((s, r) => s + r.value * r.weight, 0) / totalWeight;

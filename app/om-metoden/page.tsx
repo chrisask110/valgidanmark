@@ -30,8 +30,8 @@ export default function OmMetoden() {
         <div className="rounded-xl border border-border bg-card p-5 text-sm font-mono leading-relaxed space-y-3">
           <p>
             {da
-              ? "Alle meningsmålinger fra de fire institutter (Verian, Epinion, Megafon og Voxmeter) indgår i gennemsnittet. Nyere målinger vægtes højere end ældre via en eksponentiel tidsforfald med en halveringstid på 30 dage — en måling fra for to måneder siden vejer altså kun ca. 25 % af en måling fra i dag."
-              : "All polls from the four pollsters (Verian, Epinion, Megafon, Voxmeter) are included in the average. More recent polls are weighted higher through exponential time-decay with a half-life of 30 days — a poll from two months ago counts for roughly 25 % of a poll from today."}
+              ? "Alle meningsmålinger fra de fire institutter (Verian, Epinion, Megafon og Voxmeter) indgår i gennemsnittet. Nyere målinger vægtes højere end ældre via et eksponentielt tidsforfald med en dynamisk halveringstid: tæt på valgdagen ca. 14 dage, op til 45 dage når valgdatoen er langt væk eller ukendt. Målinger ældre end 60 dage får nul vægt. Der bruges minimum 8 målinger — hvis for få falder inden for vinduet, udvides det automatisk i trin af 5 dage, dog maksimalt til 90 dage."
+              : "All polls from the four pollsters (Verian, Epinion, Megafon, Voxmeter) are included in the average. More recent polls are weighted higher through exponential time-decay with a dynamic half-life: roughly 14 days near election day, up to 45 days when the election is far away or unknown. Polls older than 60 days receive zero weight. At least 8 polls are always included — if too few fall within the window, it is automatically extended in 5-day steps up to a hard maximum of 90 days."}
           </p>
           <p>
             {da
