@@ -320,6 +320,24 @@ function saveCache(r: ScrapeResult) {
   try { writeFileSync(CACHE_FILE, JSON.stringify(r)); } catch { /* no-op */ }
 }
 
+// ─── Exported scrape function (used by cron) ─────────────────────────────────
+
+export async function scrapeWikiPolls(): Promise<{ polls: WikiPoll[]; warnings: string[] }> {
+  const warnings: string[] = [];
+  const res = await fetch(WIKI_API, {
+    headers: { "User-Agent": "valgidanmark/1.0 (https://valgidanmark.dk)" },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Wikipedia API ${res.status}`);
+  const data = await res.json();
+  const wikitext: string = data?.parse?.wikitext ?? "";
+  if (!wikitext) throw new Error("Empty wikitext");
+  const tables = parseWikiTables(wikitext);
+  warnings.push(`Found ${tables.length} table(s)`);
+  const polls = extractPolls(tables, warnings);
+  return { polls, warnings };
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function GET(req: Request) {
@@ -328,21 +346,8 @@ export async function GET(req: Request) {
     if (cached) return NextResponse.json({ ...cached, fromCache: true });
   }
 
-  const warnings: string[] = [];
   try {
-    const res = await fetch(WIKI_API, {
-      headers: { "User-Agent": "valgidanmark/1.0 (https://valgidanmark.dk)" },
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error(`Wikipedia API ${res.status}`);
-    const data = await res.json();
-    const wikitext: string = data?.parse?.wikitext ?? "";
-    if (!wikitext) throw new Error("Empty wikitext");
-
-    const tables = parseWikiTables(wikitext);
-    warnings.push(`Found ${tables.length} table(s)`);
-
-    const polls = extractPolls(tables, warnings);
+    const { polls, warnings } = await scrapeWikiPolls();
     const result: ScrapeResult = { polls, cachedAt: new Date().toISOString(), totalFound: polls.length, warnings };
     saveCache(result);
     return NextResponse.json({ ...result, fromCache: false });

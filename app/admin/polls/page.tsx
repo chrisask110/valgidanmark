@@ -8,8 +8,9 @@
  */
 
 import { revalidatePath } from "next/cache";
-import { insertPoll, getPolls, getPollCount } from "@/lib/db";
-import { PARTIES, PARTY_KEYS, type Poll } from "@/app/lib/data";
+import { insertPoll, getPollCount } from "@/lib/db";
+import { PARTY_KEYS, type Poll } from "@/app/lib/data";
+import EditablePolls from "./EditablePolls";
 
 // ─── Server action ────────────────────────────────────────────────────────────
 
@@ -36,7 +37,6 @@ async function addPollAction(formData: FormData) {
 
 export default async function AdminPollsPage() {
   const count = await getPollCount();
-  const recent = (await getPolls()).slice(0, 10);
 
   const inputCls =
     "w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-white placeholder:text-zinc-500 focus:border-blue-500 focus:outline-none";
@@ -126,44 +126,8 @@ export default async function AdminPollsPage() {
         </pre>
       </section>
 
-      {/* ── Recent polls table ────────────────────────────────────── */}
-      <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <h2 className="text-sm font-bold mb-4 text-zinc-200 uppercase tracking-wider">
-          Seneste 10 målinger i databasen
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-zinc-800">
-                <th className="text-left py-2 pr-4 text-zinc-400">Dato</th>
-                <th className="text-left py-2 pr-4 text-zinc-400">Institut</th>
-                <th className="text-left py-2 pr-4 text-zinc-400">n</th>
-                {["A", "F", "V", "I", "M"].map(pk => (
-                  <th key={pk} className="text-right py-2 px-2 text-zinc-400"
-                    style={{ color: PARTIES[pk].color }}>
-                    {pk}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((p, i) => (
-                <tr key={i} className="border-b border-zinc-900 hover:bg-zinc-800/50">
-                  <td className="py-1.5 pr-4 text-zinc-200">{p.date}</td>
-                  <td className="py-1.5 pr-4 text-zinc-300">{p.pollster}</td>
-                  <td className="py-1.5 pr-4 text-zinc-400">{p.n}</td>
-                  {["A", "F", "V", "I", "M"].map(pk => (
-                    <td key={pk} className="py-1.5 px-2 text-right tabular-nums"
-                      style={{ color: PARTIES[pk].color }}>
-                      {p[pk] != null ? Number(p[pk]).toFixed(1) : "–"}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {/* ── Editable polls table (client component) ──────────────── */}
+      <EditablePolls />
     </div>
   );
 }

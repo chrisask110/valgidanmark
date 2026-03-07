@@ -41,7 +41,7 @@ function rowToPoll(row: any): Poll {
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
-/** Fetch all polls from the DB, newest first.  Falls back to FALLBACK_POLLS. */
+/** Fetch all polls from the DB, newest first.  Falls back to FALLBACK_POLLS on DB error. */
 export async function getPolls(): Promise<Poll[]> {
   try {
     const rows = await sql()`
@@ -50,12 +50,49 @@ export async function getPolls(): Promise<Poll[]> {
       ORDER BY date DESC
       LIMIT 500
     `;
-    if (rows.length === 0) return mergeFallback([]);
-    return mergeFallback(rows.map(rowToPoll));
+    return rows.map(rowToPoll);
   } catch (err) {
     console.error("[db] getPolls error:", err);
     return FALLBACK_POLLS;
   }
+}
+
+/** Fetch all polls with their DB IDs (for the admin edit UI). */
+export async function getDBPolls(): Promise<DBPoll[]> {
+  const rows = await sql()`
+    SELECT id, date, pollster, n, parties, source_url, created_at
+    FROM polls
+    ORDER BY date DESC
+    LIMIT 500
+  `;
+  return rows.map(row => ({
+    id:         Number(row.id),
+    date:       String(row.date).slice(0, 10),
+    pollster:   String(row.pollster),
+    n:          Number(row.n),
+    parties:    typeof row.parties === "string" ? JSON.parse(row.parties) : (row.parties ?? {}),
+    source_url: row.source_url as string | null,
+    created_at: String(row.created_at),
+  }));
+}
+
+/** Update n and/or parties for a poll by ID. */
+export async function updatePoll(
+  id: number,
+  updates: { n?: number; parties?: Record<string, number | null> }
+): Promise<void> {
+  if (updates.n !== undefined && updates.parties !== undefined) {
+    await sql()`UPDATE polls SET n = ${updates.n}, parties = ${JSON.stringify(updates.parties)} WHERE id = ${id}`;
+  } else if (updates.n !== undefined) {
+    await sql()`UPDATE polls SET n = ${updates.n} WHERE id = ${id}`;
+  } else if (updates.parties !== undefined) {
+    await sql()`UPDATE polls SET parties = ${JSON.stringify(updates.parties)} WHERE id = ${id}`;
+  }
+}
+
+/** Delete a poll by ID. */
+export async function deletePoll(id: number): Promise<void> {
+  await sql()`DELETE FROM polls WHERE id = ${id}`;
 }
 
 /** Return true if a poll with this date + pollster already exists. */
