@@ -5,38 +5,33 @@ const POLYMARKET_EVENT_SLUG = "next-prime-minister-of-denmark-after-parliamentar
 const POLYMARKET_API_URL = `https://gamma-api.polymarket.com/events?slug=${POLYMARKET_EVENT_SLUG}`;
 const POLYMARKET_EVENT_URL = `https://polymarket.com/event/${POLYMARKET_EVENT_SLUG}`;
 
-const SNAPSHOT_FILE = "/tmp/pm-snapshot.json";
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const ONE_HOUR_MS = 60 * 60 * 1000;
+const SNAPSHOT_FILE = "/tmp/pm-history.json";
+const ONE_HOUR_MS  =       60 * 60 * 1000;
+const TARGET_AGE_MS = 24 * 60 * 60 * 1000; // compare against snapshot ~24h old
+const KEEP_FOR_MS  = 26 * 60 * 60 * 1000;  // discard snapshots older than 26h
 
-interface Snapshot {
-  // "dayAgo" snapshot: the probabilities ~24h ago, used for delta calculation
-  dayAgo: { timestamp: number; probs: Record<string, number> } | null;
-  // "recent" snapshot: the last fetched probabilities (promoted to dayAgo after 24h)
-  recent: { timestamp: number; probs: Record<string, number> } | null;
+interface SnapshotEntry {
+  timestamp: number;
+  probs: Record<string, number>;
 }
 
-function loadSnapshot(): Snapshot {
-  try {
-    return JSON.parse(readFileSync(SNAPSHOT_FILE, "utf-8"));
-  } catch {
-    return { dayAgo: null, recent: null };
-  }
+function loadHistory(): SnapshotEntry[] {
+  try { return JSON.parse(readFileSync(SNAPSHOT_FILE, "utf-8")); }
+  catch { return []; }
 }
 
-function saveSnapshot(s: Snapshot) {
-  try { writeFileSync(SNAPSHOT_FILE, JSON.stringify(s)); } catch { /* no-op */ }
+function saveHistory(entries: SnapshotEntry[]) {
+  try { writeFileSync(SNAPSHOT_FILE, JSON.stringify(entries)); } catch { /* no-op */ }
 }
 
 export interface PredictionMarketEntry {
   candidate: string;
   partyKey: string | null;
   probability: number;
-  change: number | null; // probability change vs ~24h ago (0–1 scale), null if unknown
+  change: number | null; // delta vs ~24h ago (0–1 scale), null if not enough history
   url: string;
 }
 
-// Maps candidate full name → party key (for photo + color lookup)
 const CANDIDATE_TO_PARTY: Record<string, string> = {
   "Mette Frederiksen":     "A",
   "Troels Lund Poulsen":   "V",
@@ -68,10 +63,7 @@ function parseOutcomePrice(outcomePrices: string | string[] | undefined): number
 export async function GET() {
   try {
     const res = await fetch(POLYMARKET_API_URL, {
-      headers: {
-        "Accept": "application/json",
-        "User-Agent": "valgidanmark/1.0",
-      },
+      headers: { "Accept": "application/json", "User-Agent": "valgidanmark/1.0" },
       cache: "no-store",
     });
 
@@ -89,51 +81,42 @@ export async function GET() {
       return NextResponse.json({ markets: [] });
     }
 
-    // Build current probabilities map
+    // Build current probability map
     const currentProbs: Record<string, number> = {};
     for (const m of event.markets) {
       if (!m.outcomePrices) continue;
-      const candidate = extractCandidate(m.question);
-      currentProbs[candidate] = parseOutcomePrice(m.outcomePrices);
+      currentProbs[extractCandidate(m.question)] = parseOutcomePrice(m.outcomePrices);
     }
 
-    // Load snapshot and compute deltas
     const now = Date.now();
-    const snapshot = loadSnapshot();
 
-    // Determine what to use as "24h ago" reference
-    let dayAgoProbs: Record<string, number> | null = snapshot.dayAgo?.probs ?? null;
-
-    // If the dayAgo snapshot is older than 24h, promote "recent" to "dayAgo"
-    if (snapshot.dayAgo && now - snapshot.dayAgo.timestamp > ONE_DAY_MS) {
-      dayAgoProbs = snapshot.recent?.probs ?? snapshot.dayAgo.probs;
-      saveSnapshot({
-        dayAgo: snapshot.recent
-          ? { timestamp: snapshot.recent.timestamp, probs: snapshot.recent.probs }
-          : { timestamp: now, probs: currentProbs },
-        recent: { timestamp: now, probs: currentProbs },
-      });
-    } else if (!snapshot.dayAgo) {
-      // First boot: seed both with current, delta will be null
-      saveSnapshot({
-        dayAgo: { timestamp: now, probs: currentProbs },
-        recent: { timestamp: now, probs: currentProbs },
-      });
-    } else if (!snapshot.recent || now - snapshot.recent.timestamp > ONE_HOUR_MS) {
-      // Update "recent" every hour
-      saveSnapshot({ dayAgo: snapshot.dayAgo, recent: { timestamp: now, probs: currentProbs } });
+    // Load history, drop old entries, append current if >1h since last entry
+    let history = loadHistory();
+    history = history.filter(e => now - e.timestamp < KEEP_FOR_MS);
+    const lastEntry = history[history.length - 1];
+    if (!lastEntry || now - lastEntry.timestamp > ONE_HOUR_MS) {
+      history.push({ timestamp: now, probs: currentProbs });
+      saveHistory(history);
     }
 
-    // Only show delta if dayAgo is at least 1 hour old (avoid showing 0 on first boot)
-    const dayAgoAge = snapshot.dayAgo ? now - snapshot.dayAgo.timestamp : 0;
-    const showDelta = dayAgoAge > ONE_HOUR_MS;
+    // Find the entry closest to 24h ago for the delta reference
+    const targetTs = now - TARGET_AGE_MS;
+    const reference = history.reduce<SnapshotEntry | null>((best, entry) => {
+      if (!best) return entry;
+      return Math.abs(entry.timestamp - targetTs) < Math.abs(best.timestamp - targetTs)
+        ? entry : best;
+    }, null);
+
+    // Only show delta if our best reference is at least 1h old (avoids showing 0 on fresh boot)
+    const refAge = reference ? now - reference.timestamp : 0;
+    const showDelta = refAge > ONE_HOUR_MS;
 
     const markets: PredictionMarketEntry[] = event.markets
       .filter((m: { outcomePrices?: string | string[] }) => !!m.outcomePrices)
       .map((m: { question: string; outcomePrices?: string | string[] }) => {
         const candidate = extractCandidate(m.question);
         const probability = parseOutcomePrice(m.outcomePrices);
-        const prev = dayAgoProbs?.[candidate];
+        const prev = reference?.probs[candidate];
         const change = showDelta && prev != null ? probability - prev : null;
         return {
           candidate,
@@ -149,11 +132,7 @@ export async function GET() {
 
     return NextResponse.json(
       { markets },
-      {
-        headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
-        },
-      }
+      { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60" } }
     );
   } catch (err) {
     console.error("[prediction-markets] fetch failed:", err);
