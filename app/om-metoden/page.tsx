@@ -101,8 +101,8 @@ export default function OmMetoden() {
         <div className="rounded-xl border border-border bg-card p-5 text-sm font-mono leading-relaxed">
           <p>
             {da
-              ? "FO og GL har 2 mandater hver og vælges ikke via danske meningsmålinger. I Monte Carlo-simuleringen tildeles hvert af de 4 mandater til rød blok med 80 % sandsynlighed, svarende til det historiske mønster ved seneste valg."
-              : "FO and GL each hold 2 seats, which are not determined by Danish polling. In the Monte Carlo simulation, each of the 4 seats is assigned to red bloc with 80 % probability, reflecting the historical pattern from recent elections."}
+              ? "FO og GL har 2 mandater hver og vælges ikke via danske meningsmålinger. I Monte Carlo-simuleringen tildeles hvert af de 4 mandater til rød blok med 65 % sandsynlighed — et vægtet skøn baseret på historiske resultater og aktuelle tendenser i Færøerne og Grønland."
+              : "FO and GL each hold 2 seats, which are not determined by Danish polling. In the Monte Carlo simulation, each of the 4 seats is assigned to red bloc with 65 % probability — a weighted estimate based on historical results and current trends in the Faroe Islands and Greenland."}
           </p>
         </div>
       </section>

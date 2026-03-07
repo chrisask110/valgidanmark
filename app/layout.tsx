@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LanguageProvider>
             <SiteHeader />
             <Countdown />
-            {children}
+            <div className="pb-16 sm:pb-0">{children}</div>
             <Toaster richColors position="bottom-center" />
             <Analytics />
           </LanguageProvider>

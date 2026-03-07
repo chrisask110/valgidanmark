@@ -48,9 +48,9 @@ export function runMonteCarlo(
     const dkRodSeats  = ROD_BLOK.reduce((s, pk)  => s + (seats[pk] || 0), 0);
     const dkBlaaSeats = BLAA_BLOK.reduce((s, pk) => s + (seats[pk] || 0), 0);
 
-    // FO + GL: 4 swing seats — historically ~80% red, 20% blue
+    // FO + GL: 4 swing seats — historically ~65% red, 35% blue
     let foGlRed = 0;
-    for (let j = 0; j < 4; j++) if (Math.random() < 0.8) foGlRed++;
+    for (let j = 0; j < 4; j++) if (Math.random() < 0.65) foGlRed++;
 
     const rodSeats  = dkRodSeats  + foGlRed;
     const blaaSeats = dkBlaaSeats + (4 - foGlRed);

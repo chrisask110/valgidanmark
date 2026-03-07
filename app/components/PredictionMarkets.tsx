@@ -8,7 +8,22 @@ interface MarketEntry {
   candidate: string;
   partyKey: string | null;
   probability: number;
+  change: number | null; // delta vs ~24h ago (0–1 scale)
   url: string;
+}
+
+function ChangeChip({ change }: { change: number | null }) {
+  if (change == null || Math.abs(change) < 0.001) return null;
+  const pct = Math.round(change * 100);
+  const up = change > 0;
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 text-[10px] font-mono tabular-nums font-semibold"
+      style={{ color: up ? "#22c55e" : "#ef4444" }}
+    >
+      {up ? "▲" : "▼"}{Math.abs(pct)}%
+    </span>
+  );
 }
 
 const POLYMARKET_EVENT_URL =
@@ -151,11 +166,11 @@ export function PredictionMarkets() {
                     <span className="text-sm font-semibold font-mono truncate group-hover:underline">
                       {top.candidate}
                     </span>
-                    <span
-                      className="text-xl font-black font-mono tabular-nums flex-shrink-0"
-                      style={{ color }}
-                    >
-                      {pct}%
+                    <span className="flex items-baseline gap-1.5 flex-shrink-0">
+                      <ChangeChip change={top.change} />
+                      <span className="text-xl font-black font-mono tabular-nums" style={{ color }}>
+                        {pct}%
+                      </span>
                     </span>
                   </div>
                   {top.partyKey && (
@@ -204,11 +219,11 @@ export function PredictionMarkets() {
                       <span className="text-xs font-mono truncate text-foreground group-hover:underline">
                         {m.candidate}
                       </span>
-                      <span
-                        className="text-xs font-bold font-mono tabular-nums flex-shrink-0"
-                        style={{ color }}
-                      >
-                        {pct}%
+                      <span className="flex items-center gap-1 flex-shrink-0">
+                        <ChangeChip change={m.change} />
+                        <span className="text-xs font-bold font-mono tabular-nums" style={{ color }}>
+                          {pct}%
+                        </span>
                       </span>
                     </div>
                     <div className="h-1 rounded-full bg-muted/60 overflow-hidden">
