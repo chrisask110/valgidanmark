@@ -9,7 +9,7 @@
 
 import { revalidatePath } from "next/cache";
 import { insertPoll, getPollCount } from "@/lib/db";
-import { PARTY_KEYS, type Poll } from "@/app/lib/data";
+import { PARTIES, PARTY_KEYS, type Poll } from "@/app/lib/data";
 import EditablePolls from "./EditablePolls";
 
 // ─── Server action ────────────────────────────────────────────────────────────
