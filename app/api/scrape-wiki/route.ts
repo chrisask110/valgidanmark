@@ -149,10 +149,12 @@ function parseOneTable(txt: string): ParsedTable | null {
 
   // Split into row-blocks by |-
   for (const block of txt.split(/\n\s*\|-[^\n]*\n?/)) {
-    const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+    // Strip the table-open line ({| ...) and caption (|+) — only present in the first block
+    const lines = block.split("\n").map(l => l.trim())
+      .filter(l => l && !l.startsWith("{|") && !l.startsWith("|+"));
     if (!lines.length) continue;
     const first = lines[0];
-    if (first.startsWith("{|") || first.startsWith("|}") || first.startsWith("|+")) continue;
+    if (first.startsWith("|}")) continue;
 
     if (first.startsWith("!")) {
       // Header block: cells separated by !! or each line starts with !
