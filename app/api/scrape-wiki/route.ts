@@ -71,19 +71,24 @@ function parseDanishNumber(s: string): number | null {
   return isNaN(n) ? null : n;
 }
 
-function parseDanishDate(s: string): string | null {
+function parseDanishDate(s: string, fallbackYear?: string): string | null {
   s = s.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   const m1 = s.match(/^(\d{1,2})\.?\s+(\w+)\s+(\d{4})$/);
   if (m1) { const mm = DA_MONTHS[m1[2].toLowerCase()]; if (mm) return `${m1[3]}-${mm}-${m1[1].padStart(2,"0")}`; }
   const m2 = s.match(/^(\d{1,2})[/\-](\d{1,2})[/\-\s](\d{4})$/);
   if (m2) return `${m2[3]}-${m2[2].padStart(2,"0")}-${m2[1].padStart(2,"0")}`;
+  // Try day+month without year using the section-heading year context
+  if (fallbackYear) {
+    const m3 = s.match(/^(\d{1,2})\.?\s+(\w+)$/);
+    if (m3) { const mm = DA_MONTHS[m3[2].toLowerCase()]; if (mm) return `${fallbackYear}-${mm}-${m3[1].padStart(2,"0")}`; }
+  }
   return null;
 }
 
 function metaRole(h: string): "institute" | "date" | "n" | null {
   const lo = h.toLowerCase();
-  if (/^(institut|bureau|firma)/.test(lo)) return "institute";
+  if (/institut|bureau|firma/.test(lo)) return "institute";
   if (/offentlig|^dato$|publiceret|published/.test(lo)) return "date";
   if (/størrelse|stikprøve|^n$|antal|sample/.test(lo)) return "n";
   return null;
@@ -107,7 +112,7 @@ function mapInstitute(s: string): string | null {
 
 // ─── Wikitext table parser ────────────────────────────────────────────────────
 
-interface ParsedTable { headerRows: string[][]; rows: string[][]; }
+interface ParsedTable { headerRows: string[][]; rows: string[][]; fallbackYear?: string; }
 
 /** Depth-scan to find {| ... |} blocks, then parse each. */
 function parseWikiTables(wikitext: string): ParsedTable[] {
@@ -122,8 +127,13 @@ function parseWikiTables(wikitext: string): ParsedTable[] {
       else if (wikitext[j] === "|" && wikitext[j+1] === "}") { depth--; if (depth > 0) j += 2; else break; }
       else j++;
     }
+    // Find the most recent section heading containing a 4-digit year before this table
+    const beforeTable = wikitext.slice(0, start);
+    const yearMatches = [...beforeTable.matchAll(/^=+[^=\n]*?(\d{4})[^=\n]*?=+/gm)];
+    const fallbackYear = yearMatches.length > 0 ? yearMatches[yearMatches.length - 1][1] : undefined;
+
     const t = parseOneTable(wikitext.slice(start, j + 2));
-    if (t) tables.push(t);
+    if (t) { t.fallbackYear = fallbackYear; tables.push(t); }
     i = j + 2;
   }
   return tables;
@@ -169,18 +179,20 @@ function parseOneTable(txt: string): ParsedTable | null {
 // ─── Column map builder ───────────────────────────────────────────────────────
 
 /**
- * Handles two common Wikipedia table structures:
+ * Handles three common Wikipedia table structures:
  *
- * Simple (single header row):
- *   ! Institut !! Dato !! Størrelse !! A !! F !! ...
+ * 1. Simple (single header row):
+ *    ! Institut !! Dato !! Størrelse !! A !! F !! ...
  *
- * Multi-level (two header rows — common for bloc-grouped tables):
- *   Row 1: ! Institut !! Dato !! Størrelse !! Rød blok !! Blå blok
- *   Row 2: ! A !! F !! Ø !! B !! Å !! V !! I !! Æ !! C !! O !! M !! H
+ * 2. Combined row + summary row (e.g. 2026 table):
+ *    Row 1: ! Publiceret !! Analyseinstitut !! Størrelse !! A !! B !! ... !! Politiske blokke
+ *    Row 2: ! Rød blok !! Blå blok !! ...  (bloc summaries — all "skip")
+ *    → Row 1 has BOTH meta AND party cols, so use it directly.
  *
- * In the multi-level case the "rowspan" meta columns (Institut, Dato, Størrelse)
- * appear at the SAME column index in data rows as in row 1.  The party columns
- * in row 2 start at data-index = (number of meta cols found in row 1).
+ * 3. Separate meta + party rows:
+ *    Row 1: ! Institut !! Dato !! Størrelse !! Rød blok !! Blå blok
+ *    Row 2: ! A !! F !! Ø !! B !! Å !! V !! I !! Æ !! C !! O !! M !! H
+ *    → Row 1 has meta but no party; row 2 has party but no meta.
  */
 function buildColumnMap(headerRows: string[][], warnings: string[]): ColRole[] {
   if (!headerRows.length) return [];
@@ -190,8 +202,17 @@ function buildColumnMap(headerRows: string[][], warnings: string[]): ColRole[] {
     return headerRows[0].map(h => identifyColumn(h));
   }
 
-  // Find a row that has meta cols but NO party cols → "meta row"
-  // Find a row that has party cols → "party row"
+  // Case 2: a row that has BOTH meta cols AND party cols → use it directly
+  for (const row of headerRows) {
+    const hasMeta  = row.some(h => metaRole(h) !== null);
+    const hasParty = row.some(h => { const r = identifyColumn(h); return typeof r === "object"; });
+    if (hasMeta && hasParty) {
+      warnings.push(`Combined meta+party header row: [${row.slice(0,8).join(", ")}...]`);
+      return row.map(h => identifyColumn(h));
+    }
+  }
+
+  // Case 3: find a meta-only row and a party-only row
   let metaRow: string[] | null = null;
   let partyRow: string[] | null = null;
 
@@ -202,7 +223,7 @@ function buildColumnMap(headerRows: string[][], warnings: string[]): ColRole[] {
     if (hasParty && !partyRow)             partyRow = row;
   }
 
-  // Fallback: single combined row
+  // Fallback: use last header row
   if (!metaRow || !partyRow) {
     const combined = headerRows[headerRows.length - 1];
     warnings.push(`Could not find separate meta/party rows; using last header row: [${combined.slice(0,6).join(", ")}...]`);
@@ -210,20 +231,17 @@ function buildColumnMap(headerRows: string[][], warnings: string[]): ColRole[] {
   }
 
   // Count how many meta (non-group-header) columns are in the meta row
-  // These are the rowspan columns that will appear first in every data row
   let partyBaseIdx = 0;
   const colMap: ColRole[] = [];
 
   for (const h of metaRow) {
     const r = metaRole(h);
     if (r) { colMap.push(r); partyBaseIdx++; }
-    // Group headers like "Rød blok" → skip in colMap (they'll be replaced by party row)
+    // Group headers like "Rød blok" → skip (they'll be replaced by party row)
   }
 
-  // Append party columns from the party row
   for (const h of partyRow) {
-    const r = identifyColumn(h);
-    colMap.push(r); // will be { party: ... } or "skip"
+    colMap.push(identifyColumn(h));
   }
 
   warnings.push(`Multi-level headers: ${partyBaseIdx} meta cols + ${partyRow.length} party cols = ${colMap.length} total`);
@@ -236,7 +254,7 @@ function extractPolls(tables: ParsedTable[], warnings: string[]): WikiPoll[] {
   const polls: WikiPoll[] = [];
 
   for (let ti = 0; ti < tables.length; ti++) {
-    const { headerRows, rows } = tables[ti];
+    const { headerRows, rows, fallbackYear } = tables[ti];
     const colRoles = buildColumnMap(headerRows, warnings);
 
     const hasInstitute = colRoles.some(r => r === "institute");
@@ -264,7 +282,7 @@ function extractPolls(tables: ParsedTable[], warnings: string[]): WikiPoll[] {
         if (role === "institute") {
           institute = institute ?? mapInstitute(cell);
         } else if (role === "date") {
-          date = date ?? parseDanishDate(cell);
+          date = date ?? parseDanishDate(cell, fallbackYear);
         } else if (role === "n") {
           const num = parseDanishNumber(cell);
           if (num != null) n = Math.round(num);
