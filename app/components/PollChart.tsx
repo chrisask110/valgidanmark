@@ -247,9 +247,16 @@ export function PollChart({ polls, selectedParties, onToggleParty }: PollChartPr
     else if (timeRange === "3m") d.setMonth(d.getMonth() - 3);
     else if (timeRange === "6m") d.setMonth(d.getMonth() - 6);
     else if (timeRange === "1y") d.setFullYear(d.getFullYear() - 1);
-    else d.setFullYear(2025, 0, 1);
+    else {
+      // "Alt" — use the earliest poll date in the dataset
+      const earliest = polls.reduce<string | null>(
+        (min, p) => (min === null || p.date < min ? p.date : min),
+        null
+      );
+      return earliest ? new Date(earliest) : new Date(d.setFullYear(d.getFullYear() - 2));
+    }
     return d;
-  }, [timeRange]);
+  }, [timeRange, polls]);
 
   // For short ranges end at today; longer ranges extend to election day
   const toDate = useMemo(() => {
