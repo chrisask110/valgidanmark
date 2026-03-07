@@ -67,7 +67,7 @@ export async function getDBPolls(): Promise<DBPoll[]> {
   `;
   return rows.map(row => ({
     id:         Number(row.id),
-    date:       String(row.date).slice(0, 10),
+    date:       row.date instanceof Date ? row.date.toISOString().slice(0, 10) : String(row.date).slice(0, 10),
     pollster:   String(row.pollster),
     n:          Number(row.n),
     parties:    typeof row.parties === "string" ? JSON.parse(row.parties) : (row.parties ?? {}),
