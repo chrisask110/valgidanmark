@@ -18,7 +18,16 @@
     "afterFiles": [],
     "fallback": []
   },
-  "dynamicRoutes": [],
+  "dynamicRoutes": [
+    {
+      "page": "/api/polls/[id]",
+      "regex": "^/api/polls/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/polls/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
   "staticRoutes": [
     {
       "page": "/",
@@ -37,6 +46,36 @@
       "regex": "^/admin/polls(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/polls(?:/)?$"
+    },
+    {
+      "page": "/om-metoden",
+      "regex": "^/om\\-metoden(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/om\\-metoden(?:/)?$"
+    },
+    {
+      "page": "/robots.txt",
+      "regex": "^/robots\\.txt(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/robots\\.txt(?:/)?$"
+    },
+    {
+      "page": "/scrape-wiki",
+      "regex": "^/scrape\\-wiki(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/scrape\\-wiki(?:/)?$"
+    },
+    {
+      "page": "/sitemap.xml",
+      "regex": "^/sitemap\\.xml(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sitemap\\.xml(?:/)?$"
+    },
+    {
+      "page": "/spaerregraensen",
+      "regex": "^/spaerregraensen(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/spaerregraensen(?:/)?$"
     },
     {
       "page": "/statsminister",
