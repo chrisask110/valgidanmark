@@ -12,6 +12,11 @@ export const metadata: Metadata = {
     description:
       "Læs om metoden bag ValgiDanmarks meningsmålingsgennemsnit, vægtning og Monte Carlo-simulering.",
     url: "https://valgidanmark.dk/om-metoden",
+    images: [{ url: "/Gemini_Generated_Image_47dy8447dy8447dy.png", alt: "ValgiDanmark logo" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/Gemini_Generated_Image_47dy8447dy8447dy.png"],
   },
 };
 

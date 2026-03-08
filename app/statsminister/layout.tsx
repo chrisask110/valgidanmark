@@ -12,6 +12,11 @@ export const metadata: Metadata = {
     description:
       "Byg din egen regering og se hvem der kan blive statsminister efter Folketingsvalget 2026.",
     url: "https://valgidanmark.dk/statsminister",
+    images: [{ url: "/Gemini_Generated_Image_47dy8447dy8447dy.png", alt: "ValgiDanmark logo" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/Gemini_Generated_Image_47dy8447dy8447dy.png"],
   },
 };
 
