@@ -24,7 +24,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "forecast.projected": { da: "Forventet:", en: "Projected:" },
 
   // Chart
-  "chart.title": { da: "Meningsmålinger siden jan. 2025", en: "Opinion Polls since Jan. 2025" },
+  "chart.title": { da: "Meningsmålinger siden nov. 2022", en: "Opinion Polls since Nov. 2022" },
   "chart.threshold": { da: "Spærregrænse 2%", en: "2% threshold" },
   "chart.election": { da: "Valg 24. mar", en: "Election Mar 24" },
   "chart.range.1m": { da: "1 mdr", en: "1 mo" },
