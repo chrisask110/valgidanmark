@@ -3,4 +3,5 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+Host: https://valgidanmark.dk
 Sitemap: https://valgidanmark.dk/sitemap.xml

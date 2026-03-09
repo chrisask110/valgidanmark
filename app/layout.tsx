@@ -87,6 +87,63 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Blocking script: apply stored theme before first paint to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',t==='dark')}catch(e){}})()` }} />
+        {/* JSON-LD structured data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                name: "ValgiDanmark",
+                url: "https://valgidanmark.dk",
+                description:
+                  "Vægtet meningsmålingsgennemsnit, mandatfordeling og Monte Carlo-prognose til Folketingsvalget 24. marts 2026.",
+                inLanguage: "da-DK",
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: "https://valgidanmark.dk/?q={search_term_string}",
+                  "query-input": "required name=search_term_string",
+                },
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "Dataset",
+                name: "Meningsmålinger til Folketingsvalget 2026",
+                description:
+                  "Løbende opdaterede meningsmålinger fra alle større danske analyseinstitutter til Folketingsvalget 24. marts 2026. Indeholder stemmeandele for alle partier, vægtet gennemsnit og mandatprognose.",
+                url: "https://valgidanmark.dk",
+                inLanguage: "da-DK",
+                keywords: [
+                  "meningsmålinger",
+                  "folketing",
+                  "valg 2026",
+                  "valgprognose",
+                  "dansk politik",
+                ],
+                creator: {
+                  "@type": "Organization",
+                  name: "ValgiDanmark",
+                  url: "https://valgidanmark.dk",
+                },
+                temporalCoverage: "2024/2026",
+                spatialCoverage: {
+                  "@type": "Place",
+                  name: "Danmark",
+                },
+                updateFrequency: "dagligt",
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: "ValgiDanmark",
+                url: "https://valgidanmark.dk",
+                logo: `https://valgidanmark.dk/Gemini_Generated_Image_47dy8447dy8447dy.png`,
+                sameAs: [],
+              },
+            ]),
+          }}
+        />
       </head>
       <body className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>

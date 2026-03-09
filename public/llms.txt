@@ -1,0 +1,27 @@
+# ValgiDanmark
+
+> ValgiDanmark er en uafhængig dansk valgportal der viser løbende opdaterede meningsmålinger, mandatprognoser og Monte Carlo-simulering til Folketingsvalget den 24. marts 2026.
+
+## Hvad er ValgiDanmark?
+
+ValgiDanmark aggregerer og vægtede meningsmålinger fra alle store danske analyseinstitutter (Voxmeter, Gallup, Epinion, YouGov, Megafon m.fl.) og beregner et vægtet gennemsnit baseret på alder og metode. Mandatfordeling beregnes efter d'Hondt-metoden med spærregrænse på 2%.
+
+## Sider
+
+- [Forside – Meningsmålinger & Mandatfordeling](https://valgidanmark.dk): Vægtet gennemsnit, mandatfordeling og blokprognoser
+- [Spærregrænsen](https://valgidanmark.dk/spaerregraensen): Partier tæt på 2%-grænsen med historisk udvikling
+- [Statsministerkandidat-simulator](https://valgidanmark.dk/statsminister): Simuler koalitioner og find mulige statsministre
+- [Om metoden](https://valgidanmark.dk/om-metoden): Forklaring af vægtning, Monte Carlo-simulering og datakilder
+
+## Datakilder
+
+Meningsmålinger hentes automatisk dagligt fra Wikipedia (dansk) og suppleres med data fra analyseinstitutternes egne pressemeddelelser.
+
+## Nøgletal (opdateres løbende)
+
+- Valg: Folketingsvalget 2026
+- Valgdato: 24. marts 2026
+- Antal partier med mandater: typisk 10-13
+- Spærregrænse: 2%
+- Mandater i Folketing: 179 (inkl. Færøerne og Grønland)
+- Flertal: 90 mandater

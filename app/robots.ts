@@ -8,5 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ["/admin/", "/api/"],
     },
     sitemap: "https://valgidanmark.dk/sitemap.xml",
+    host: "https://valgidanmark.dk",
   };
 }

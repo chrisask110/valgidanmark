@@ -3,18 +3,18 @@
   "/sitemap.xml/route": "app/sitemap.xml/route.js",
   "/robots.txt/route": "app/robots.txt/route.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/api/polls/route": "app/api/polls/route.js",
-  "/api/polls/[id]/route": "app/api/polls/[id]/route.js",
   "/api/cron/update-polls/route": "app/api/cron/update-polls/route.js",
+  "/api/polls/[id]/route": "app/api/polls/[id]/route.js",
   "/api/db-polls/route": "app/api/db-polls/route.js",
+  "/api/polls/route": "app/api/polls/route.js",
   "/api/simulator/stats/route": "app/api/simulator/stats/route.js",
   "/api/admin/seed/route": "app/api/admin/seed/route.js",
   "/api/simulator/submit/route": "app/api/simulator/submit/route.js",
   "/api/scrape-wiki/route": "app/api/scrape-wiki/route.js",
   "/admin/polls/page": "app/admin/polls/page.js",
-  "/scrape-wiki/page": "app/scrape-wiki/page.js",
   "/page": "app/page.js",
+  "/scrape-wiki/page": "app/scrape-wiki/page.js",
+  "/om-metoden/page": "app/om-metoden/page.js",
   "/spaerregraensen/page": "app/spaerregraensen/page.js",
-  "/statsminister/page": "app/statsminister/page.js",
-  "/om-metoden/page": "app/om-metoden/page.js"
+  "/statsminister/page": "app/statsminister/page.js"
 }

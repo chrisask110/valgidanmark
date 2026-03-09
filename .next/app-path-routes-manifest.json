@@ -3,18 +3,18 @@
   "/sitemap.xml/route": "/sitemap.xml",
   "/robots.txt/route": "/robots.txt",
   "/_not-found/page": "/_not-found",
-  "/api/polls/route": "/api/polls",
-  "/api/polls/[id]/route": "/api/polls/[id]",
   "/api/cron/update-polls/route": "/api/cron/update-polls",
+  "/api/polls/[id]/route": "/api/polls/[id]",
   "/api/db-polls/route": "/api/db-polls",
+  "/api/polls/route": "/api/polls",
   "/api/simulator/stats/route": "/api/simulator/stats",
   "/api/admin/seed/route": "/api/admin/seed",
   "/api/simulator/submit/route": "/api/simulator/submit",
   "/api/scrape-wiki/route": "/api/scrape-wiki",
   "/admin/polls/page": "/admin/polls",
-  "/scrape-wiki/page": "/scrape-wiki",
   "/page": "/",
+  "/scrape-wiki/page": "/scrape-wiki",
+  "/om-metoden/page": "/om-metoden",
   "/spaerregraensen/page": "/spaerregraensen",
-  "/statsminister/page": "/statsminister",
-  "/om-metoden/page": "/om-metoden"
+  "/statsminister/page": "/statsminister"
 }
