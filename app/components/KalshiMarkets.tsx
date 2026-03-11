@@ -126,7 +126,7 @@ function GainSeatsGrid({
               <div className="flex items-center justify-between text-[10px] font-mono border-t border-border pt-2">
                 <span className="text-muted-foreground">2022: {seats2022} m.</span>
                 <span className="flex items-center gap-1">
-                  <span className="text-muted-foreground">Nu: ~{seatsNow} m.</span>
+                  <span className="text-muted-foreground">Model: ~{seatsNow} m.</span>
                   {gaining && <span className="text-green-500 font-semibold">▲{diff}</span>}
                   {losing  && <span className="text-red-500 font-semibold">▼{Math.abs(diff!)}</span>}
                   {!gaining && !losing && <span className="text-muted-foreground">—</span>}
@@ -216,7 +216,7 @@ function SeatDistribution({
       {/* Context bar */}
       <div className="flex items-center justify-between mb-4 px-1">
         <span className="text-xs font-mono text-muted-foreground">
-          Nuværende prognose: <span className="font-bold text-foreground">~{currentSocdemSeats} mandater</span>
+          ValgiDanmarks model: <span className="font-bold text-foreground">~{currentSocdemSeats} mandater</span>
         </span>
         <span className="text-[10px] font-mono text-muted-foreground/60">2022: 50 mandater</span>
       </div>
@@ -243,7 +243,7 @@ function SeatDistribution({
                   {SEAT_BUCKET_LABELS[m.label] ?? m.label}
                 </span>
                 {isClosest && (
-                  <div className="text-[8px] font-mono text-muted-foreground leading-none">← nu</div>
+                  <div className="text-[8px] font-mono text-muted-foreground leading-none">← model</div>
                 )}
               </div>
               <div className="flex-1 h-5 rounded bg-muted/60 overflow-hidden relative">
