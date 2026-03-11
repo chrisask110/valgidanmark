@@ -14,19 +14,19 @@
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/app/api/prediction-markets/route-c1ce65b67c811d53.js"
     ],
-    "/sitemap.xml/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/sitemap.xml/route-c1ce65b67c811d53.js"
-    ],
     "/robots.txt/route": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/app/robots.txt/route-c1ce65b67c811d53.js"
+    ],
+    "/sitemap.xml/route": [
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/4bd1b696-409494caf8c83275.js",
+      "static/chunks/255-091853b4155593e2.js",
+      "static/chunks/main-app-188b1035816cb0e1.js",
+      "static/chunks/app/sitemap.xml/route-c1ce65b67c811d53.js"
     ],
     "/layout": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
@@ -37,21 +37,14 @@
       "static/chunks/619-f072ac750404f9da.js",
       "static/chunks/125-4701561c6d6b4ffa.js",
       "static/chunks/230-28fbbe62cdc8ec2c.js",
-      "static/chunks/app/layout-7a528b47f78a1e7d.js"
+      "static/chunks/app/layout-e2b9bbba7edda774.js"
     ],
-    "/api/cron/update-polls/route": [
+    "/api/admin/seed/route": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/cron/update-polls/route-c1ce65b67c811d53.js"
-    ],
-    "/api/polls/[id]/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/polls/[id]/route-c1ce65b67c811d53.js"
+      "static/chunks/app/api/admin/seed/route-c1ce65b67c811d53.js"
     ],
     "/api/db-polls/route": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
@@ -67,6 +60,13 @@
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/app/api/polls/route-c1ce65b67c811d53.js"
     ],
+    "/api/cron/update-polls/route": [
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/4bd1b696-409494caf8c83275.js",
+      "static/chunks/255-091853b4155593e2.js",
+      "static/chunks/main-app-188b1035816cb0e1.js",
+      "static/chunks/app/api/cron/update-polls/route-c1ce65b67c811d53.js"
+    ],
     "/api/simulator/stats/route": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
@@ -74,19 +74,19 @@
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/app/api/simulator/stats/route-c1ce65b67c811d53.js"
     ],
-    "/api/admin/seed/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/admin/seed/route-c1ce65b67c811d53.js"
-    ],
     "/api/simulator/submit/route": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
       "static/chunks/4bd1b696-409494caf8c83275.js",
       "static/chunks/255-091853b4155593e2.js",
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/app/api/simulator/submit/route-c1ce65b67c811d53.js"
+    ],
+    "/api/polls/[id]/route": [
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/4bd1b696-409494caf8c83275.js",
+      "static/chunks/255-091853b4155593e2.js",
+      "static/chunks/main-app-188b1035816cb0e1.js",
+      "static/chunks/app/api/polls/[id]/route-c1ce65b67c811d53.js"
     ],
     "/api/scrape-wiki/route": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
@@ -112,7 +112,7 @@
       "static/chunks/319-5f22805327ca7a29.js",
       "static/chunks/125-4701561c6d6b4ffa.js",
       "static/chunks/639-0b77ae0131796670.js",
-      "static/chunks/app/page-c4b3ab774b4dbd1e.js"
+      "static/chunks/app/page-ed1329797f52bbb0.js"
     ],
     "/scrape-wiki/page": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
@@ -121,21 +121,6 @@
       "static/chunks/main-app-188b1035816cb0e1.js",
       "static/chunks/639-0b77ae0131796670.js",
       "static/chunks/app/scrape-wiki/page-eac73ee57eeae2dd.js"
-    ],
-    "/om-metoden/layout": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/om-metoden/layout-c1ce65b67c811d53.js"
-    ],
-    "/om-metoden/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/619-f072ac750404f9da.js",
-      "static/chunks/app/om-metoden/page-528834e7dc1fe614.js"
     ],
     "/spaerregraensen/layout": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",
@@ -152,7 +137,22 @@
       "static/chunks/619-f072ac750404f9da.js",
       "static/chunks/319-5f22805327ca7a29.js",
       "static/chunks/639-0b77ae0131796670.js",
-      "static/chunks/app/spaerregraensen/page-c687bf556431558d.js"
+      "static/chunks/app/spaerregraensen/page-153b36319fa5c29e.js"
+    ],
+    "/om-metoden/layout": [
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/4bd1b696-409494caf8c83275.js",
+      "static/chunks/255-091853b4155593e2.js",
+      "static/chunks/main-app-188b1035816cb0e1.js",
+      "static/chunks/app/om-metoden/layout-c1ce65b67c811d53.js"
+    ],
+    "/om-metoden/page": [
+      "static/chunks/webpack-74ae7a605c9a7af3.js",
+      "static/chunks/4bd1b696-409494caf8c83275.js",
+      "static/chunks/255-091853b4155593e2.js",
+      "static/chunks/main-app-188b1035816cb0e1.js",
+      "static/chunks/619-f072ac750404f9da.js",
+      "static/chunks/app/om-metoden/page-eba9526a881115db.js"
     ],
     "/statsminister/layout": [
       "static/chunks/webpack-74ae7a605c9a7af3.js",

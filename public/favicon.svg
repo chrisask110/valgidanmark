@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 32">
-  <rect width="40" height="32" rx="7" fill="#0f172a"/>
-  <text x="2" y="24" font-family="system-ui,sans-serif" font-size="19" font-weight="900" fill="#ffffff">V</text>
-  <text x="16" y="24" font-family="system-ui,sans-serif" font-size="19" font-weight="900" fill="#3b82f6">i</text>
-  <text x="23" y="24" font-family="system-ui,sans-serif" font-size="19" font-weight="900" fill="#ffffff">D</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#0f172a"/>
+  <text x="1" y="24" font-family="system-ui,sans-serif" font-size="19" font-weight="900" fill="#ffffff">V</text>
+  <text x="13" y="24" font-family="system-ui,sans-serif" font-size="19" font-weight="900" fill="#3b82f6">i</text>
+  <text x="19" y="24" font-family="system-ui,sans-serif" font-size="19" font-weight="900" fill="#ffffff">D</text>
 </svg>

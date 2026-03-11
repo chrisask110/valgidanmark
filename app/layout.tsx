@@ -68,7 +68,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: BASE_URL,
   },
-  icons: { icon: "/favicon.svg", type: "image/svg+xml" },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   robots: {
     index: true,
     follow: true,

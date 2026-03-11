@@ -1,5 +1,11 @@
 import { PARTY_KEYS, ROD_BLOK, BLAA_BLOK, calcPartySeats } from "./data";
 
+// ─── FO + GL subjective probability ──────────────────────────────────────────
+// Each of the 4 seats (FO×2, GL×2) is independently assigned to rød blok
+// with this probability. 0.5 = 50/50, 0.65 = historically red-leaning.
+// Adjust freely — there is no hard polling data for FO/GL.
+export const FO_GL_RED_PROBABILITY = 0.5;
+
 // Box-Muller transform — standard normal random variable
 function randn(): number {
   let u = 0, v = 0;
@@ -48,9 +54,9 @@ export function runMonteCarlo(
     const dkRodSeats  = ROD_BLOK.reduce((s, pk)  => s + (seats[pk] || 0), 0);
     const dkBlaaSeats = BLAA_BLOK.reduce((s, pk) => s + (seats[pk] || 0), 0);
 
-    // FO + GL: 4 swing seats — historically ~65% red, 35% blue
+    // FO + GL: 4 swing seats — see FO_GL_RED_PROBABILITY above
     let foGlRed = 0;
-    for (let j = 0; j < 4; j++) if (Math.random() < 0.65) foGlRed++;
+    for (let j = 0; j < 4; j++) if (Math.random() < FO_GL_RED_PROBABILITY) foGlRed++;
 
     const rodSeats  = dkRodSeats  + foGlRed;
     const blaaSeats = dkBlaaSeats + (4 - foGlRed);
