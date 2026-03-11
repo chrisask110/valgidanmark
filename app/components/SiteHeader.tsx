@@ -63,10 +63,10 @@ export function SiteHeader() {
   };
 
   const tabs = [
-    { href: "/",                    label: t("nav.polls"),        Icon: IconPolls     },
-    { href: "/statsminister",       label: t("nav.statsminister"), Icon: IconPM       },
-    { href: "/spaerregraensen",     label: t("nav.threshold"),    Icon: IconThreshold },
-    { href: "/prediction-markets",  label: t("nav.markets"),      Icon: IconMarkets   },
+    { href: "/",                    label: t("nav.polls"),        mobileLabel: t("nav.polls"),        Icon: IconPolls     },
+    { href: "/statsminister",       label: t("nav.statsminister"), mobileLabel: t("nav.statsminister"), Icon: IconPM      },
+    { href: "/spaerregraensen",     label: t("nav.threshold"),    mobileLabel: t("nav.threshold"),    Icon: IconThreshold },
+    { href: "/prediction-markets",  label: t("nav.markets"),      mobileLabel: "Markets",             Icon: IconMarkets   },
   ];
 
   return (
@@ -99,7 +99,7 @@ export function SiteHeader() {
 
       {/* Mobile bottom tab bar — hidden on sm+ */}
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm flex safe-area-inset-bottom">
-        {tabs.map(({ href, label, Icon }) => {
+        {tabs.map(({ href, mobileLabel, Icon }) => {
           const active = pathname === href;
           return (
             <Link
@@ -109,7 +109,7 @@ export function SiteHeader() {
               style={{ color: active ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}
             >
               <Icon active={active} />
-              <span className="text-[9px] font-mono leading-none">{label}</span>
+              <span className="text-[9px] font-mono leading-none text-center">{mobileLabel}</span>
             </Link>
           );
         })}
