@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSign } from "crypto";
 
-const BASE_URL = "https://trading-api.kalshi.com/trade-api/v2";
+const BASE_URL = "https://api.elections.kalshi.com/trade-api/v2";
 
 // Kalshi event tickers for Denmark markets
 const EVENTS = {
