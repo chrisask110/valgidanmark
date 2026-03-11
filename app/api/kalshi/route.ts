@@ -5,14 +5,29 @@ const BASE_URL = "https://trading-api.kalshi.com/trade-api/v2";
 
 // Kalshi event tickers for Denmark markets
 const EVENTS = {
-  gainSeats:   "kxdenmarkgain-26mar24",
-  secondPlace: "kxdenmark2nd-26mar24-2",
-  thirdPlace:  "kxdenmark3rd-26mar24-3",
-  socdemSeats: "kxsocdemseats-26mar24",
+  gainSeats:   "KXDENMARKGAIN-26MAR24",
+  secondPlace: "KXDENMARK2ND-26MAR24-2",
+  thirdPlace:  "KXDENMARK3RD-26MAR24-3",
+  socdemSeats: "KXSOCDEMSEATS-26MAR24",
 } as const;
 
-// Map Kalshi party names → our party keys
+// Map Kalshi party names/codes → our party keys
 const PARTY_NAME_MAP: Record<string, string> = {
+  // Short codes (used as market subtitles in e.g. KXDENMARKGAIN)
+  "a":   "A",
+  "v":   "V",
+  "i":   "I",
+  "m":   "M",
+  "ae":  "Æ",  // Kalshi uses AE for Æ (Danmarksdemokraterne)
+  "c":   "C",
+  "o":   "O",
+  "b":   "B",
+  "f":   "F",
+  "å":   "Å",
+  "aa":  "Å",
+  "ø":   "Ø",
+  "h":   "H",
+  // Full names
   "socialdemokraterne":          "A",
   "socialdemokratiet":           "A",
   "social democrats":            "A",

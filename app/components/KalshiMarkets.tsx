@@ -4,7 +4,17 @@ import { useEffect, useState } from "react";
 import { PARTIES } from "@/app/lib/data";
 import type { KalshiData, KalshiEntry } from "@/app/api/kalshi/route";
 
-const KALSHI_LOGO_URL = "https://pbs.twimg.com/profile_images/1674127064836648961/xbABMCBq_400x400.jpg";
+const KALSHI_LOGO_URL = "/Kalshi.png";
+
+// Maps Kalshi's seat-bucket ticker suffixes to readable Danish labels
+const SEAT_BUCKET_LABELS: Record<string, string> = {
+  "A34": "≤36 sæder",
+  "A37": "37–39 sæder",
+  "A40": "40–42 sæder",
+  "A43": "43–45 sæder",
+  "A46": "46–48 sæder",
+  "A49": "49+ sæder",
+};
 
 function getColor(partyKey: string | null, fallback = "#64748b"): string {
   if (partyKey && PARTIES[partyKey]) return PARTIES[partyKey].color;
@@ -74,7 +84,7 @@ function RankedList({ entries, url }: { entries: KalshiEntry[]; url: string }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-2 mb-1">
             <span className="text-sm font-semibold font-mono truncate group-hover:underline">
-              {top.label}
+              {top.partyKey ? PARTIES[top.partyKey]?.name ?? top.label : top.label}
             </span>
             <span className="text-xl font-black font-mono tabular-nums" style={{ color }}>
               {pct}%
@@ -82,7 +92,7 @@ function RankedList({ entries, url }: { entries: KalshiEntry[]; url: string }) {
           </div>
           {top.partyKey && (
             <span className="text-[10px] font-mono text-muted-foreground">
-              {PARTIES[top.partyKey]?.short} · {PARTIES[top.partyKey]?.name.split("–")[0].trim()}
+              {PARTIES[top.partyKey]?.short}
             </span>
           )}
           <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden mt-1.5">
@@ -114,7 +124,7 @@ function RankedList({ entries, url }: { entries: KalshiEntry[]; url: string }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1 mb-0.5">
                   <span className="text-xs font-mono truncate text-foreground group-hover:underline">
-                    {m.label}
+                    {m.partyKey ? PARTIES[m.partyKey]?.name ?? m.label : m.label}
                   </span>
                   <span className="text-xs font-bold font-mono tabular-nums" style={{ color: c }}>
                     {p}%
@@ -141,7 +151,7 @@ function GainSeatsChart({ entries, url }: { entries: KalshiEntry[]; url: string 
       {entries.map((m) => {
         const color = getColor(m.partyKey, "#64748b");
         const pct = Math.round(m.probability * 100);
-        const partyShort = m.partyKey ? PARTIES[m.partyKey]?.short : null;
+        const partyName = m.partyKey ? (PARTIES[m.partyKey]?.name ?? m.label) : m.label;
 
         return (
           <a
@@ -151,10 +161,10 @@ function GainSeatsChart({ entries, url }: { entries: KalshiEntry[]; url: string 
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 group"
           >
-            <div className="flex items-center gap-1.5 w-36 flex-shrink-0">
+            <div className="flex items-center gap-1.5 w-40 flex-shrink-0">
               <PartyAvatar partyKey={m.partyKey} label={m.label} size={22} color={color} />
               <span className="text-xs font-mono truncate text-foreground group-hover:underline">
-                {partyShort ?? m.label}
+                {partyName}
               </span>
             </div>
             <div className="flex-1 h-5 rounded bg-muted/60 overflow-hidden relative">
@@ -198,7 +208,7 @@ function SeatDistribution({ entries, url }: { entries: KalshiEntry[]; url: strin
             className="flex items-center gap-2 group"
           >
             <span className="text-xs font-mono text-muted-foreground w-20 flex-shrink-0 text-right group-hover:text-foreground transition-colors">
-              {m.label}
+              {SEAT_BUCKET_LABELS[m.label] ?? m.label}
             </span>
             <div className="flex-1 h-4 rounded bg-muted/60 overflow-hidden">
               <div
@@ -293,10 +303,10 @@ export function KalshiMarkets() {
       .catch(() => setError(true));
   }, []);
 
-  const gainUrl    = `https://kalshi.com/markets/kxdenmarkgain/denmark-general-election-which-parties-will-gain-seats/kxdenmarkgain-26mar24`;
-  const secondUrl  = `https://kalshi.com/markets/kxdenmark2nd/denmark-general-election-second-place/kxdenmark2nd-26mar24-2`;
-  const thirdUrl   = `https://kalshi.com/markets/kxdenmark3rd/denmark-general-election-third-place/kxdenmark3rd-26mar24-3`;
-  const socdemUrl  = `https://kalshi.com/markets/kxsocdemseats/denmark-general-election-social-democrats-number-of-seats/kxsocdemseats-26mar24`;
+  const gainUrl    = `https://kalshi.com/markets/kxdenmarkgain/denmark-general-election-which-parties-will-gain-seats/KXDENMARKGAIN-26MAR24`;
+  const secondUrl  = `https://kalshi.com/markets/kxdenmark2nd/denmark-general-election-second-place/KXDENMARK2ND-26MAR24-2`;
+  const thirdUrl   = `https://kalshi.com/markets/kxdenmark3rd/denmark-general-election-third-place/KXDENMARK3RD-26MAR24-3`;
+  const socdemUrl  = `https://kalshi.com/markets/kxsocdemseats/denmark-general-election-social-democrats-number-of-seats/KXSOCDEMSEATS-26MAR24`;
 
   if (error) {
     return (
