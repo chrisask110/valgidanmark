@@ -6,14 +6,14 @@ import type { KalshiData, KalshiEntry } from "@/app/api/kalshi/route";
 
 const KALSHI_LOGO_URL = "/Kalshi.png";
 
-// Maps Kalshi's seat-bucket ticker suffixes to readable Danish labels
+// Maps Kalshi seat-threshold ticker suffixes to short labels
 const SEAT_BUCKET_LABELS: Record<string, string> = {
-  "A34": "≤36 sæder",
-  "A37": "37–39 sæder",
-  "A40": "40–42 sæder",
-  "A43": "43–45 sæder",
-  "A46": "46–48 sæder",
-  "A49": "49+ sæder",
+  "A34": ">34",
+  "A37": ">37",
+  "A40": ">40",
+  "A43": ">43",
+  "A46": ">46",
+  "A49": ">49",
 };
 
 function getColor(partyKey: string | null, fallback = "#64748b"): string {
@@ -21,43 +21,23 @@ function getColor(partyKey: string | null, fallback = "#64748b"): string {
   return fallback;
 }
 
-function PartyAvatar({
+// Kalshi uses a simple colored badge with the party letter — no leader photos
+function PartyBadge({
   partyKey,
-  label,
   size,
   color,
 }: {
   partyKey: string | null;
-  label: string;
   size: number;
   color: string;
 }) {
-  const [failed, setFailed] = useState(false);
-  const initials = label.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-
-  if (!partyKey || failed) {
-    return (
-      <div
-        className="rounded-full flex items-center justify-center flex-shrink-0 font-mono font-bold text-white"
-        style={{ width: size, height: size, background: color, fontSize: size * 0.32 }}
-      >
-        {initials}
-      </div>
-    );
-  }
-
+  const letter = partyKey ?? "?";
   return (
     <div
-      className="rounded-full overflow-hidden flex-shrink-0"
-      style={{ width: size, height: size, border: `2px solid ${color}55`, background: color }}
+      className="rounded-full flex items-center justify-center flex-shrink-0 font-mono font-bold text-white"
+      style={{ width: size, height: size, background: color, fontSize: size * 0.42 }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`/Leaders/${partyKey}.jpg`}
-        alt={label}
-        className="w-full h-full object-cover object-top"
-        onError={() => setFailed(true)}
-      />
+      {letter}
     </div>
   );
 }
@@ -80,7 +60,7 @@ function RankedList({ entries, url }: { entries: KalshiEntry[]; url: string }) {
         className="flex items-center gap-3 rounded-lg p-3 group transition-colors"
         style={{ background: `${color}10`, border: `1px solid ${color}30` }}
       >
-        <PartyAvatar partyKey={top.partyKey} label={top.label} size={48} color={color} />
+        <PartyBadge partyKey={top.partyKey} size={48} color={color} />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-2 mb-1">
             <span className="text-sm font-semibold font-mono truncate group-hover:underline">
@@ -120,7 +100,7 @@ function RankedList({ entries, url }: { entries: KalshiEntry[]; url: string }) {
               <span className="text-[10px] font-mono text-muted-foreground/60 w-3 flex-shrink-0 text-right">
                 {i + 2}
               </span>
-              <PartyAvatar partyKey={m.partyKey} label={m.label} size={28} color={c} />
+              <PartyBadge partyKey={m.partyKey} size={28} color={c} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1 mb-0.5">
                   <span className="text-xs font-mono truncate text-foreground group-hover:underline">
@@ -162,7 +142,7 @@ function GainSeatsChart({ entries, url }: { entries: KalshiEntry[]; url: string 
             className="flex items-center gap-2.5 group"
           >
             <div className="flex items-center gap-1.5 w-40 flex-shrink-0">
-              <PartyAvatar partyKey={m.partyKey} label={m.label} size={22} color={color} />
+              <PartyBadge partyKey={m.partyKey} size={22} color={color} />
               <span className="text-xs font-mono truncate text-foreground group-hover:underline">
                 {partyName}
               </span>

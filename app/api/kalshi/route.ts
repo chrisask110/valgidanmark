@@ -105,14 +105,12 @@ function extractProb(market: Record<string, unknown>): number {
   return 0;
 }
 
-// Extract a human-readable label from a market title/subtitle
-function extractLabel(market: Record<string, unknown>): string {
-  return (
-    (market.subtitle as string) ||
-    (market.title as string) ||
-    (market.ticker as string) ||
-    "Unknown"
-  );
+// Extract the suffix from a Kalshi ticker — the most reliable party/bucket identifier
+// e.g. "KXDENMARK2ND-26MAR24-2-V" → "V", "KXSOCDEMSEATS-26MAR24-A49" → "A49"
+function tickerSuffix(market: Record<string, unknown>): string {
+  const ticker = (market.ticker as string) ?? "";
+  const parts = ticker.split("-");
+  return parts[parts.length - 1] ?? ticker;
 }
 
 async function fetchEvent(eventTicker: string): Promise<Record<string, unknown> | null> {
@@ -182,12 +180,15 @@ export async function GET() {
     const gainSeats: KalshiEntry[] = gainData
       ? getMarkets(gainData)
           .filter(m => m.status !== "settled")
-          .map(m => ({
-            label:       extractLabel(m),
-            partyKey:    resolvePartyKey(extractLabel(m)),
-            probability: extractProb(m),
-            url:         marketUrl("kxdenmarkgain", EVENTS.gainSeats),
-          }))
+          .map(m => {
+            const suffix = tickerSuffix(m);
+            return {
+              label:       suffix,
+              partyKey:    resolvePartyKey(suffix),
+              probability: extractProb(m),
+              url:         marketUrl("kxdenmarkgain", EVENTS.gainSeats),
+            };
+          })
           .filter(e => e.probability > 0)
           .sort((a, b) => b.probability - a.probability)
       : [];
@@ -196,12 +197,15 @@ export async function GET() {
     const secondPlace: KalshiEntry[] = secondData
       ? getMarkets(secondData)
           .filter(m => m.status !== "settled")
-          .map(m => ({
-            label:       extractLabel(m),
-            partyKey:    resolvePartyKey(extractLabel(m)),
-            probability: extractProb(m),
-            url:         marketUrl("kxdenmark2nd", EVENTS.secondPlace),
-          }))
+          .map(m => {
+            const suffix = tickerSuffix(m);
+            return {
+              label:       suffix,
+              partyKey:    resolvePartyKey(suffix),
+              probability: extractProb(m),
+              url:         marketUrl("kxdenmark2nd", EVENTS.secondPlace),
+            };
+          })
           .filter(e => e.probability > 0.005)
           .sort((a, b) => b.probability - a.probability)
       : [];
@@ -210,28 +214,30 @@ export async function GET() {
     const thirdPlace: KalshiEntry[] = thirdData
       ? getMarkets(thirdData)
           .filter(m => m.status !== "settled")
-          .map(m => ({
-            label:       extractLabel(m),
-            partyKey:    resolvePartyKey(extractLabel(m)),
-            probability: extractProb(m),
-            url:         marketUrl("kxdenmark3rd", EVENTS.thirdPlace),
-          }))
+          .map(m => {
+            const suffix = tickerSuffix(m);
+            return {
+              label:       suffix,
+              partyKey:    resolvePartyKey(suffix),
+              probability: extractProb(m),
+              url:         marketUrl("kxdenmark3rd", EVENTS.thirdPlace),
+            };
+          })
           .filter(e => e.probability > 0.005)
           .sort((a, b) => b.probability - a.probability)
       : [];
 
-    // --- socdemSeats: seat count distribution (keep all buckets, sorted by label) ---
+    // --- socdemSeats: seat threshold distribution, sorted numerically ---
     const socdemSeats: KalshiEntry[] = socdemData
       ? getMarkets(socdemData)
           .filter(m => m.status !== "settled")
           .map(m => ({
-            label:       extractLabel(m),
+            label:       tickerSuffix(m),   // "A34", "A37", … → mapped to ">34" in UI
             partyKey:    "A",
             probability: extractProb(m),
             url:         marketUrl("kxsocdemseats", EVENTS.socdemSeats),
           }))
           .filter(e => e.probability > 0)
-          // Keep natural order (label order) for seat distribution
           .sort((a, b) => a.label.localeCompare(b.label, "da", { numeric: true }))
       : [];
 
