@@ -33,6 +33,15 @@ function IconThreshold({ active }: { active: boolean }) {
   );
 }
 
+function IconMarkets({ active }: { active: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity={active ? 1 : 0.45}>
+      <polyline points="2,14 7,8 11,11 18,4" />
+      <polyline points="14,4 18,4 18,8" />
+    </svg>
+  );
+}
+
 export function SiteHeader() {
   const { t, lang, setLang } = useLanguage();
   const pathname = usePathname();
@@ -54,9 +63,10 @@ export function SiteHeader() {
   };
 
   const tabs = [
-    { href: "/",                label: t("nav.polls"),        Icon: IconPolls      },
-    { href: "/statsminister",   label: t("nav.statsminister"), Icon: IconPM        },
-    { href: "/spaerregraensen", label: t("nav.threshold"),    Icon: IconThreshold  },
+    { href: "/",                    label: t("nav.polls"),        Icon: IconPolls     },
+    { href: "/statsminister",       label: t("nav.statsminister"), Icon: IconPM       },
+    { href: "/spaerregraensen",     label: t("nav.threshold"),    Icon: IconThreshold },
+    { href: "/prediction-markets",  label: t("nav.markets"),      Icon: IconMarkets   },
   ];
 
   return (
@@ -71,6 +81,7 @@ export function SiteHeader() {
               {navLink("/", t("nav.polls"))}
               {navLink("/statsminister", t("nav.statsminister"))}
               {navLink("/spaerregraensen", t("nav.threshold"))}
+              {navLink("/prediction-markets", t("nav.markets"))}
             </nav>
           </div>
 

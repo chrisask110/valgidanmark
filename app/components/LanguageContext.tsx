@@ -85,6 +85,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "pm.viewall": { da: "Se alle markeder →", en: "View all markets →" },
   "pm.loading": { da: "Henter markedsdata…", en: "Loading market data…" },
   "pm.error": { da: "Markedsdata ikke tilgængelig", en: "Market data unavailable" },
+  "pm.moremarkets": { da: "flere markeder på Kalshi →", en: "more markets on Kalshi →" },
 
   // Simulator link
   "sim.title": { da: "Statsminister-simulator", en: "PM Simulator" },
@@ -96,6 +97,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   // Nav
   "nav.statsminister": { da: "Simulator", en: "Simulator" },
   "nav.threshold": { da: "Spærregrænsen", en: "Threshold" },
+  "nav.markets": { da: "Markeder", en: "Markets" },
 
   // Spærregrænsen Tracker
   "threshold.title": { da: "Spærregrænsen Tracker", en: "Threshold Tracker" },

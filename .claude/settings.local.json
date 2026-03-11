@@ -9,7 +9,11 @@
       "Bash(npx vercel link --yes)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://raw.githubusercontent.com/erikgahner/polls/master/polls.csv\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://raw.githubusercontent.com/erikgahner/polls/main/polls.csv\")",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://api.github.com/repos/erikgahner/polls\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://api.github.com/repos/erikgahner/polls\")",
+      "WebFetch(domain:www.kalshi.com)",
+      "WebFetch(domain:trading-api.kalshi.com)",
+      "WebFetch(domain:docs.kalshi.com)",
+      "WebFetch(domain:api.elections.kalshi.com)"
     ]
   }
 }

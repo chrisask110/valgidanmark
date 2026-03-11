@@ -245,9 +245,17 @@ export function PredictionMarkets() {
         <span className="text-[10px] font-mono text-muted-foreground/60">
           {t("pm.source")}
         </span>
-        <span className="text-[10px] font-mono text-muted-foreground/60">
-          {t("pm.implied")}
-        </span>
+        <div className="flex items-center gap-3">
+          <a
+            href="/prediction-markets"
+            className="text-[10px] font-mono text-muted-foreground/60 hover:text-foreground transition-colors"
+          >
+            + 4 {t("pm.moremarkets")}
+          </a>
+          <span className="text-[10px] font-mono text-muted-foreground/60">
+            {t("pm.implied")}
+          </span>
+        </div>
       </div>
     </div>
   );
