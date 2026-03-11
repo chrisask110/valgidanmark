@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PredictionMarkets } from "@/app/components/PredictionMarkets";
 import { KalshiMarkets } from "@/app/components/KalshiMarkets";
 import { FALLBACK_POLLS, PARTIES, PARTY_KEYS, calcWeightedAverage, calcPartySeats } from "@/app/lib/data";
-import { getPolls } from "@/app/lib/db";
+import { getPolls } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Prediction Markets",
