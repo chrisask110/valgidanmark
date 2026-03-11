@@ -51,19 +51,12 @@ export const metadata: Metadata = {
     title: "ValgiDanmark – Meningsmålinger & Prognose 2026",
     description:
       "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. Vægtet gennemsnit, mandatfordeling og Monte Carlo-prognose.",
-    images: [
-      {
-        url: "/Gemini_Generated_Image_47dy8447dy8447dy.png",
-        alt: "ValgiDanmark – Meningsmålinger til Folketingsvalget 2026",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "ValgiDanmark – Meningsmålinger & Prognose 2026",
     description:
       "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. Vægtet gennemsnit, mandatfordeling og Monte Carlo-prognose.",
-    images: ["/Gemini_Generated_Image_47dy8447dy8447dy.png"],
   },
   alternates: {
     canonical: BASE_URL,

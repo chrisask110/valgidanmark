@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     description:
       "Følg hvilke partier der er tæt på spærregrænsen på 2% ved Folketingsvalget 2026.",
     url: "https://valgidanmark.dk/spaerregraensen",
-    images: [{ url: "/Gemini_Generated_Image_47dy8447dy8447dy.png", alt: "ValgiDanmark logo" }],
+    images: [{ url: "/opengraph-image", alt: "ValgiDanmark logo", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/Gemini_Generated_Image_47dy8447dy8447dy.png"],
+    images: ["/opengraph-image"],
   },
 };
 

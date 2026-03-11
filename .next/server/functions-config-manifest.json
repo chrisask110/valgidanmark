@@ -1,6 +1,7 @@
 {
   "version": 1,
   "functions": {
+    "/opengraph-image": {},
     "/api/cron/update-polls": {
       "maxDuration": 60
     }

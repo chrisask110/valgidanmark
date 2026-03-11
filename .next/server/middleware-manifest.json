@@ -17,7 +17,7 @@
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "XiblDXuf2nBFdcFVzJ_VS",
+        "__NEXT_BUILD_ID": "N_wz_qnKGdCDNBdrwxcs0",
         "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "vZ2ymJncG3xQVqITkw11jNItr9gsFEbT4luC1zK80Ro=",
         "__NEXT_PREVIEW_MODE_ID": "c18fa02c479c6b8772891cfa87b93367",
         "__NEXT_PREVIEW_MODE_SIGNING_KEY": "a35ccb7f62fed18c80c94b8edb41be58084bce461d22dcf7a3c9eee3cae880ea",
@@ -25,7 +25,49 @@
       }
     }
   },
-  "functions": {},
+  "functions": {
+    "/opengraph-image/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/opengraph-image/route.js"
+      ],
+      "name": "app/opengraph-image/route",
+      "page": "/opengraph-image/route",
+      "matchers": [
+        {
+          "regexp": "^/opengraph\\-image$",
+          "originalSource": "/opengraph-image"
+        }
+      ],
+      "wasm": [
+        {
+          "name": "wasm_77d9faebf7af9e421806970ce10a58e9d83116d7",
+          "filePath": "server/edge-chunks/wasm_77d9faebf7af9e421806970ce10a58e9d83116d7.wasm"
+        },
+        {
+          "name": "wasm_ef4866ecae192fd87727067cf2c0c0cf9fb8b020",
+          "filePath": "server/edge-chunks/wasm_ef4866ecae192fd87727067cf2c0c0cf9fb8b020.wasm"
+        }
+      ],
+      "assets": [
+        {
+          "name": "noto-sans-v27-latin-regular.5dda3fca77107598.ttf",
+          "filePath": "server/edge-chunks/asset_noto-sans-v27-latin-regular.5dda3fca77107598.ttf"
+        }
+      ],
+      "env": {
+        "__NEXT_BUILD_ID": "N_wz_qnKGdCDNBdrwxcs0",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "vZ2ymJncG3xQVqITkw11jNItr9gsFEbT4luC1zK80Ro=",
+        "__NEXT_PREVIEW_MODE_ID": "c18fa02c479c6b8772891cfa87b93367",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "a35ccb7f62fed18c80c94b8edb41be58084bce461d22dcf7a3c9eee3cae880ea",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "71e7a67da432e263e38a4ec06a9ccddf09a8afa60b00ee50020958d81292227a"
+      }
+    }
+  },
   "sortedMiddleware": [
     "/"
   ]
