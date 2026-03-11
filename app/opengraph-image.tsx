@@ -23,10 +23,10 @@ export default function Image() {
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "baseline" }}>
           <span style={{ color: "#ffffff", fontSize: 130, fontWeight: 900, letterSpacing: "-4px" }}>
-            Val
+            Valg
           </span>
           <span style={{ color: "#3b82f6", fontSize: 130, fontWeight: 900, letterSpacing: "-4px" }}>
-            gi
+            i
           </span>
           <span style={{ color: "#ffffff", fontSize: 130, fontWeight: 900, letterSpacing: "-4px" }}>
             Danmark
