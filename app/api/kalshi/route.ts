@@ -116,19 +116,21 @@ function tickerSuffix(market: Record<string, unknown>): string {
 }
 
 async function fetchEvent(eventTicker: string): Promise<Record<string, unknown> | null> {
-  const path = `/trade-api/v2/events/${eventTicker}?with_nested_markets=true`;
   try {
     const headers = buildHeaders(`/trade-api/v2/events/${eventTicker}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000); // 7s per request
+
     const res = await fetch(`${BASE_URL}/events/${eventTicker}?with_nested_markets=true`, {
       headers,
       cache: "no-store",
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
-      console.error(`[kalshi] ${eventTicker} → HTTP ${res.status}`);
-      // Log body for debugging unknown errors
       const text = await res.text().catch(() => "");
-      console.error(`[kalshi] ${eventTicker} response body:`, text.slice(0, 500));
+      console.error(`[kalshi] ${eventTicker} → HTTP ${res.status}`, text.slice(0, 200));
       return null;
     }
 
@@ -170,13 +172,17 @@ function marketUrl(seriesTicker: string, eventTicker: string): string {
 
 export async function GET() {
   try {
-    // Fetch all 4 events in parallel
-    const [gainData, secondData, thirdData, socdemData] = await Promise.all([
+    // Fetch all 4 events in parallel — allSettled so one timeout doesn't kill the rest
+    const [gainResult, secondResult, thirdResult, socdemResult] = await Promise.allSettled([
       fetchEvent(EVENTS.gainSeats),
       fetchEvent(EVENTS.secondPlace),
       fetchEvent(EVENTS.thirdPlace),
       fetchEvent(EVENTS.socdemSeats),
     ]);
+    const gainData   = gainResult.status   === "fulfilled" ? gainResult.value   : null;
+    const secondData = secondResult.status === "fulfilled" ? secondResult.value : null;
+    const thirdData  = thirdResult.status  === "fulfilled" ? thirdResult.value  : null;
+    const socdemData = socdemResult.status === "fulfilled" ? socdemResult.value : null;
 
     // --- gainSeats: yes/no per party ---
     const gainSeats: KalshiEntry[] = gainData
