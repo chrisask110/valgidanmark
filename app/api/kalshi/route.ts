@@ -115,13 +115,15 @@ function tickerSuffix(market: Record<string, unknown>): string {
   return parts[parts.length - 1] ?? ticker;
 }
 
-async function fetchEvent(eventTicker: string): Promise<Record<string, unknown> | null> {
+async function fetchEvent(eventTicker: string): Promise<Record<string, unknown>[] | null> {
   try {
-    const headers = buildHeaders(`/trade-api/v2/events/${eventTicker}`);
+    // Use /markets?event_ticker= — more reliable than /events/{ticker}?with_nested_markets=true
+    const path = `/trade-api/v2/markets`;
+    const headers = buildHeaders(path);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 7000); // 7s per request
+    const timeout = setTimeout(() => controller.abort(), 7000);
 
-    const res = await fetch(`${BASE_URL}/events/${eventTicker}?with_nested_markets=true`, {
+    const res = await fetch(`${BASE_URL}/markets?event_ticker=${eventTicker}&status=open`, {
       headers,
       cache: "no-store",
       signal: controller.signal,
@@ -134,23 +136,16 @@ async function fetchEvent(eventTicker: string): Promise<Record<string, unknown> 
       return null;
     }
 
-    return await res.json();
+    const data = await res.json();
+    const markets = data?.markets ?? data?.data?.markets ?? [];
+    console.log(`[kalshi] ${eventTicker} → ${markets.length} markets`);
+    return Array.isArray(markets) ? markets : null;
   } catch (err) {
     console.error(`[kalshi] ${eventTicker} fetch error:`, err);
     return null;
   }
 }
 
-// Get nested markets from the event response
-// Kalshi returns either event.markets or just markets at top level
-function getMarkets(data: Record<string, unknown>): Record<string, unknown>[] {
-  const event = data.event as Record<string, unknown> | undefined;
-  if (Array.isArray(event?.markets)) return event!.markets as Record<string, unknown>[];
-  if (Array.isArray(data.markets)) return data.markets as Record<string, unknown>[];
-  // Log unknown structure to help debug
-  console.warn("[kalshi] unexpected event structure keys:", Object.keys(data));
-  return [];
-}
 
 export interface KalshiEntry {
   label:    string;
@@ -186,7 +181,7 @@ export async function GET() {
 
     // --- gainSeats: yes/no per party ---
     const gainSeats: KalshiEntry[] = gainData
-      ? getMarkets(gainData)
+      ? gainData
           .filter(m => m.status !== "settled")
           .map(m => {
             const suffix = tickerSuffix(m);
@@ -203,7 +198,7 @@ export async function GET() {
 
     // --- secondPlace: ranked list ---
     const secondPlace: KalshiEntry[] = secondData
-      ? getMarkets(secondData)
+      ? secondData
           .filter(m => m.status !== "settled")
           .map(m => {
             const suffix = tickerSuffix(m);
@@ -220,7 +215,7 @@ export async function GET() {
 
     // --- thirdPlace: ranked list ---
     const thirdPlace: KalshiEntry[] = thirdData
-      ? getMarkets(thirdData)
+      ? thirdData
           .filter(m => m.status !== "settled")
           .map(m => {
             const suffix = tickerSuffix(m);
@@ -237,7 +232,7 @@ export async function GET() {
 
     // --- socdemSeats: seat threshold distribution, sorted numerically ---
     const socdemSeats: KalshiEntry[] = socdemData
-      ? getMarkets(socdemData)
+      ? socdemData
           .filter(m => m.status !== "settled")
           .map(m => ({
             label:       tickerSuffix(m),   // "A34", "A37", … → mapped to ">34" in UI
