@@ -284,10 +284,15 @@ export function KalshiMarkets({ currentSeats }: { currentSeats: Record<string, n
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/kalshi")
-      .then((r) => r.json())
-      .then((d: KalshiData) => setData(d))
-      .catch(() => setError(true));
+    const load = () =>
+      fetch("/api/kalshi")
+        .then((r) => r.json())
+        .then((d: KalshiData) => setData(d))
+        .catch(() => setError(true));
+
+    load();
+    const id = setInterval(load, 2 * 60 * 1000); // refetch every 2 minutes
+    return () => clearInterval(id);
   }, []);
 
   const gainUrl   = "https://kalshi.com/markets/kxdenmarkgain/denmark-general-election-which-parties-will-gain-seats/KXDENMARKGAIN-26MAR24";

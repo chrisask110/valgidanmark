@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSign } from "crypto";
 
+export const dynamic = "force-dynamic";
+
 const BASE_URL = "https://api.elections.kalshi.com/trade-api/v2";
 
 // Kalshi event tickers for Denmark markets
