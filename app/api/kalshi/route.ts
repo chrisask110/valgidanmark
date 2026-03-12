@@ -123,22 +123,23 @@ async function fetchEvent(eventTicker: string): Promise<Record<string, unknown>[
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 7000);
 
-    const res = await fetch(`${BASE_URL}/markets?event_ticker=${eventTicker}&status=open`, {
+    const res = await fetch(`${BASE_URL}/markets?event_ticker=${eventTicker}`, {
       headers,
       cache: "no-store",
       signal: controller.signal,
     });
     clearTimeout(timeout);
 
+    const text = await res.text().catch(() => "");
     if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error(`[kalshi] ${eventTicker} → HTTP ${res.status}`, text.slice(0, 200));
+      console.error(`[kalshi] ${eventTicker} → HTTP ${res.status}`, text.slice(0, 300));
       return null;
     }
 
-    const data = await res.json();
+    console.log(`[kalshi] ${eventTicker} raw response:`, text.slice(0, 600));
+    const data = JSON.parse(text);
     const markets = data?.markets ?? data?.data?.markets ?? [];
-    console.log(`[kalshi] ${eventTicker} → ${markets.length} markets`);
+    console.log(`[kalshi] ${eventTicker} → ${markets.length} markets, top-level keys: ${JSON.stringify(Object.keys(data))}`);
     return Array.isArray(markets) ? markets : null;
   } catch (err) {
     console.error(`[kalshi] ${eventTicker} fetch error:`, err);
