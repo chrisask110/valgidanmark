@@ -96,14 +96,20 @@ function buildHeaders(path: string): Record<string, string> {
 }
 
 // Extract mid-price probability (0–1) from a market object
-// Kalshi prices are in cents (0–99)
+// Kalshi elections API returns prices as dollar strings e.g. "0.7200" = 72%
 function extractProb(market: Record<string, unknown>): number {
-  const yesBid  = typeof market.yes_bid  === "number" ? market.yes_bid  : null;
-  const yesAsk  = typeof market.yes_ask  === "number" ? market.yes_ask  : null;
-  const lastPrice = typeof market.last_price === "number" ? market.last_price : null;
+  const parse = (v: unknown) =>
+    typeof v === "string" ? parseFloat(v) : typeof v === "number" ? v : null;
 
-  if (yesBid != null && yesAsk != null) return (yesBid + yesAsk) / 2 / 100;
-  if (lastPrice != null) return lastPrice / 100;
+  const yesBid = parse(market.yes_bid_dollars ?? market.yes_bid);
+  const yesAsk = parse(market.yes_ask_dollars ?? market.yes_ask);
+  const last   = parse(market.last_price_dollars ?? market.last_price);
+
+  if (yesBid != null && yesAsk != null) {
+    const mid = (yesBid + yesAsk) / 2;
+    return mid > 1 ? mid / 100 : mid; // handle both cents and dollar formats
+  }
+  if (last != null) return last > 1 ? last / 100 : last;
   return 0;
 }
 
@@ -136,10 +142,8 @@ async function fetchEvent(eventTicker: string): Promise<Record<string, unknown>[
       return null;
     }
 
-    console.log(`[kalshi] ${eventTicker} raw response:`, text.slice(0, 600));
     const data = JSON.parse(text);
     const markets = data?.markets ?? data?.data?.markets ?? [];
-    console.log(`[kalshi] ${eventTicker} → ${markets.length} markets, top-level keys: ${JSON.stringify(Object.keys(data))}`);
     return Array.isArray(markets) ? markets : null;
   } catch (err) {
     console.error(`[kalshi] ${eventTicker} fetch error:`, err);
