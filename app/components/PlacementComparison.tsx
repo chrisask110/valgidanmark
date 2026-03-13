@@ -51,23 +51,20 @@ function PlacementColumn({
 
   return (
     <div className="flex-1 min-w-0 rounded-xl border border-border bg-card overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border bg-muted/30">
-        <p className="text-xs font-bold font-mono uppercase tracking-wider">{title}</p>
-        <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{subtitle}</p>
-      </div>
-
-      {/* Column labels with logos */}
-      <div className="flex items-center px-3 pt-2 pb-1">
-        <div className="flex-1" /> {/* party name spacer */}
-        <div className="flex gap-1 shrink-0">
+      {/* Header with logos */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+        <div>
+          <p className="text-xs font-bold font-mono uppercase tracking-wider">{title}</p>
+          <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{subtitle}</p>
+        </div>
+        <div className="flex gap-3 shrink-0">
           <a href={pmUrl} target="_blank" rel="noopener noreferrer"
-            className="w-12 flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
+            className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
             <Image src="/Polymarket.png" alt="Polymarket" width={14} height={14} className="rounded-sm" />
             <span className="text-[8px] font-mono text-muted-foreground">PM</span>
           </a>
           <a href={kalshiUrl} target="_blank" rel="noopener noreferrer"
-            className="w-12 flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
+            className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
             <Image src="/Kalshi.png" alt="Kalshi" width={14} height={14} className="rounded-sm" />
             <span className="text-[8px] font-mono text-muted-foreground">Kal</span>
           </a>
@@ -75,7 +72,7 @@ function PlacementColumn({
       </div>
 
       {/* Rows */}
-      <div className="px-3 pb-3 space-y-2">
+      <div className="px-3 pt-2 pb-3 space-y-2">
         {rows.map(({ key, pm, kal }) => {
           const party = PARTIES[key];
           if (!party) return null;

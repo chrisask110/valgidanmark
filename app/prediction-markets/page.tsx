@@ -29,8 +29,10 @@ export default async function PredictionMarketsPage() {
     <main className="max-w-5xl mx-auto px-4 py-8 pb-24 sm:pb-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-sans tracking-tight">Prediction Markets</h1>
-        <p className="text-sm font-mono text-muted-foreground mt-1 max-w-xl">
+        <p className="text-sm font-mono text-muted-foreground mt-1">
           Hvad forventer markederne at der sker ved Folketingsvalget 24. marts 2026?
+        </p>
+        <p className="text-sm font-mono text-muted-foreground mt-0.5">
           Implicitte sandsynligheder fra Polymarket og Kalshi.
         </p>
       </div>
