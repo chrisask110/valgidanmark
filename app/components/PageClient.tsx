@@ -10,7 +10,7 @@ import { HemicycleCard } from "./HemicycleCard";
 import { LatestPollsTable } from "./LatestPollsTable";
 import { PredictionMarkets } from "./PredictionMarkets";
 import {
-  PARTIES, POLLSTERS, ROD_BLOK, BLAA_BLOK, FO_GL_SEATS, type Poll,
+  PARTIES, ROD_BLOK, BLAA_BLOK, FO_GL_SEATS, ANNOUNCEMENT_DATE, type Poll,
 } from "@/app/lib/data";
 import type { MonteCarloResult } from "@/app/lib/monte-carlo";
 
@@ -19,13 +19,23 @@ export interface ModelData {
   partyPct: Record<string, number>;
   seats: Record<string, number>;
   forecast: MonteCarloResult;
+  seatsAnnouncement: Record<string, number>;
+  seatsWeekAgo: Record<string, number>;
 }
 
 const DEFAULT_PARTIES = ["A", "F", "V", "I", "Æ", "C", "Ø", "B", "O", "Å", "M", "H"];
 
+type DeltaRef = "2022" | "announcement" | "weekago";
+const DELTA_LABELS: Record<DeltaRef, { da: string; en: string }> = {
+  "2022":         { da: "Siden valget 2022",    en: "Since 2022 election" },
+  "announcement": { da: "Siden valgudskrivelsen", en: "Since announcement" },
+  "weekago":      { da: "Seneste uge",           en: "Last week" },
+};
+
 export function PageClient({ initialModel }: { initialModel: ModelData }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [selectedParties, setSelectedParties] = useState<string[]>(DEFAULT_PARTIES);
+  const [deltaRef, setDeltaRef] = useState<DeltaRef>("2022");
 
   const toggleParty = (pk: string) => {
     setSelectedParties(prev =>
@@ -33,13 +43,51 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
     );
   };
 
-  const { polls, seats, forecast } = initialModel;
+  const { polls, seats, forecast, seatsAnnouncement, seatsWeekAgo } = initialModel;
 
   const rodSeats  = ROD_BLOK.reduce((s, pk)  => s + (seats[pk] || 0), 0);
   const blaaSeats = BLAA_BLOK.reduce((s, pk) => s + (seats[pk] || 0), 0);
   const mSeats    = seats["M"] || 0;
 
+  // Reference seats for delta display
+  const refSeats: Record<string, number> = deltaRef === "2022"
+    ? Object.fromEntries(Object.entries(PARTIES).map(([pk, p]) => [pk, p.seats2022]))
+    : deltaRef === "announcement"
+      ? seatsAnnouncement
+      : seatsWeekAgo;
+
+  const seatDelta = (pk: string) => (seats[pk] || 0) - (refSeats[pk] || 0);
+  const rodRefSeats  = ROD_BLOK.reduce((s, pk)  => s + (refSeats[pk] || 0), 0);
+  const blaaRefSeats = BLAA_BLOK.reduce((s, pk) => s + (refSeats[pk] || 0), 0);
+  const mRefSeats    = refSeats["M"] || 0;
+
+  function DeltaBadge({ delta }: { delta: number }) {
+    if (delta === 0) return null;
+    return (
+      <span className={`text-[10px] font-mono tabular-nums ${delta > 0 ? "text-green-400" : "text-red-400"}`}>
+        {delta > 0 ? "▲" : "▼"}{Math.abs(delta)}
+      </span>
+    );
+  }
+
   const latestDate = polls[0]?.date ?? "–";
+
+  // "What changed" banner — compare latest poll against previous from same pollster
+  const latestPoll = polls[0] ?? null;
+  const prevPoll = latestPoll
+    ? polls.find(p => p.pollster === latestPoll.pollster && p.date !== latestPoll.date)
+      ?? polls.find(p => p.date !== latestPoll.date)
+    : null;
+  const partyKeys = ["A", "F", "V", "I", "Æ", "C", "Ø", "B", "O", "Å", "M", "H"] as const;
+  const topMovers: { pk: string; delta: number }[] = [];
+  if (latestPoll && prevPoll) {
+    for (const pk of partyKeys) {
+      const delta = ((latestPoll[pk] as number) ?? 0) - ((prevPoll[pk] as number) ?? 0);
+      if (Math.abs(delta) >= 0.1) topMovers.push({ pk, delta });
+    }
+    topMovers.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+    topMovers.splice(4);
+  }
 
   return (
     <>
@@ -56,6 +104,30 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
             ready={true}
           />
         </section>
+
+        {/* "What changed" banner */}
+        {latestPoll && prevPoll && topMovers.length > 0 && (
+          <div className="rounded-lg border border-border bg-muted/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono text-muted-foreground -mt-6">
+            <span className="text-foreground/70">
+              {latestPoll.pollster} · {latestPoll.date}
+            </span>
+            <span className="text-border hidden sm:inline">|</span>
+            {topMovers.map(({ pk, delta }) => (
+              <span
+                key={pk}
+                style={{ color: PARTIES[pk]?.color }}
+                className="tabular-nums"
+              >
+                {PARTIES[pk]?.short ?? pk}{" "}
+                {delta > 0 ? "+" : ""}
+                {delta.toFixed(1)}%
+              </span>
+            ))}
+            <span className="text-muted-foreground/50 text-[10px] ml-auto hidden sm:inline">
+              vs. {prevPoll.pollster} {prevPoll.date}
+            </span>
+          </div>
+        )}
 
         {/* Polling Averages */}
         <section>
@@ -99,25 +171,47 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
 
           {/* Blok summary */}
           <div className="rounded-xl border border-border bg-card p-4">
-            <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-wider mb-4">
-              {t("blok.title")}
-            </h2>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-wider">
+                {t("blok.title")}
+              </h2>
+              <div className="flex gap-1 flex-wrap">
+                {(["2022", "announcement", "weekago"] as DeltaRef[]).map(ref => (
+                  <button
+                    key={ref}
+                    onClick={() => setDeltaRef(ref)}
+                    className="text-[10px] font-mono px-2 py-0.5 rounded border transition-colors"
+                    style={{
+                      borderColor: deltaRef === ref ? "hsl(var(--accent))" : "hsl(var(--border))",
+                      background:  deltaRef === ref ? "hsl(var(--accent)/0.12)" : "transparent",
+                      color:       deltaRef === ref ? "hsl(var(--accent))" : "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    {lang === "da" ? DELTA_LABELS[ref].da : DELTA_LABELS[ref].en}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="space-y-5">
 
               {/* Rød blok */}
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <span className="font-mono text-sm font-semibold text-red-400">{t("blok.red")}</span>
-                  <span className="font-mono text-sm tabular-nums">{rodSeats} {t("blok.seats")}</span>
+                  <span className="font-mono text-sm tabular-nums flex items-center gap-1.5">
+                    {rodSeats} {t("blok.seats")}
+                    <DeltaBadge delta={rodSeats - rodRefSeats} />
+                  </span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
                   <div className="h-full rounded-full bg-red-500 transition-all" style={{ width: `${(rodSeats / 179) * 100}%` }} />
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {ROD_BLOK.map(pk => (seats[pk] ?? 0) > 0 && (
-                    <span key={pk} className="text-xs font-mono px-2 py-0.5 rounded-full"
+                    <span key={pk} className="text-xs font-mono px-2 py-0.5 rounded-full flex items-center gap-1"
                       style={{ background: `${PARTIES[pk].color}22`, color: PARTIES[pk].color }}>
                       {PARTIES[pk].short} {seats[pk]}
+                      <DeltaBadge delta={seatDelta(pk)} />
                     </span>
                   ))}
                 </div>
@@ -129,7 +223,10 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
                   <span className="font-mono text-sm font-semibold" style={{ color: PARTIES.M.color }}>
                     M – {t("blok.neutral")}
                   </span>
-                  <span className="font-mono text-sm tabular-nums">{mSeats} {t("blok.seats")}</span>
+                  <span className="font-mono text-sm tabular-nums flex items-center gap-1.5">
+                    {mSeats} {t("blok.seats")}
+                    <DeltaBadge delta={mSeats - mRefSeats} />
+                  </span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
                   <div className="h-full rounded-full transition-all"
@@ -141,16 +238,20 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <span className="font-mono text-sm font-semibold text-blue-400">{t("blok.blue")}</span>
-                  <span className="font-mono text-sm tabular-nums">{blaaSeats} {t("blok.seats")}</span>
+                  <span className="font-mono text-sm tabular-nums flex items-center gap-1.5">
+                    {blaaSeats} {t("blok.seats")}
+                    <DeltaBadge delta={blaaSeats - blaaRefSeats} />
+                  </span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
                   <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${(blaaSeats / 179) * 100}%` }} />
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {BLAA_BLOK.map(pk => (seats[pk] ?? 0) > 0 && (
-                    <span key={pk} className="text-xs font-mono px-2 py-0.5 rounded-full"
+                    <span key={pk} className="text-xs font-mono px-2 py-0.5 rounded-full flex items-center gap-1"
                       style={{ background: `${PARTIES[pk].color}22`, color: PARTIES[pk].color }}>
                       {PARTIES[pk].short} {seats[pk]}
+                      <DeltaBadge delta={seatDelta(pk)} />
                     </span>
                   ))}
                 </div>
@@ -190,52 +291,6 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
           </div>
 
         </div>
-
-        {/* Pollster Ratings */}
-        <section>
-          <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-wider mb-4">
-            {t("pollster.title")}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Object.entries(POLLSTERS).map(([name, info]) => (
-              <div key={name} className="rounded-xl border border-border bg-card p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <span className="font-semibold font-mono text-sm">{name}</span>
-                    <span className="ml-2 text-xs font-mono text-muted-foreground">{info.client}</span>
-                  </div>
-                  <span
-                    className="text-lg font-bold font-mono"
-                    style={{ color: info.grade.startsWith("A") ? "#22c55e" : "#f59e0b" }}
-                  >
-                    {info.grade}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground font-mono leading-relaxed">{info.desc}</p>
-                <div className="flex flex-wrap gap-4 mt-3 text-xs font-mono text-muted-foreground">
-                  <span>{t("pollster.error")}: ±{info.avgError}%</span>
-                  <span>{info.sampleSize}</span>
-                  <span>{info.methodology}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Statsminister Banner */}
-        <section>
-          <Link
-            href="/statsminister"
-            className="block rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors p-6 text-center group"
-          >
-            <div className="text-4xl mb-3">🏛️</div>
-            <h2 className="font-semibold font-mono text-lg mb-1">{t("sm.banner.title")}</h2>
-            <p className="text-sm font-mono text-muted-foreground mb-3">{t("sm.banner.desc")}</p>
-            <span className="inline-flex items-center gap-1 text-sm font-mono text-primary group-hover:underline">
-              {t("sm.banner.cta")} →
-            </span>
-          </Link>
-        </section>
 
       </main>
 

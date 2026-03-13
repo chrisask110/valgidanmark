@@ -80,3 +80,30 @@ export function runMonteCarlo(
     blaaMedianSeats: blaaSeatsList[mid],
   };
 }
+
+/**
+ * Returns the probability (0–100) that a custom coalition of parties
+ * collectively reaches 90+ seats, given their current poll percentages.
+ * `fixedSeats` = FO/GL seats already assigned to this coalition.
+ */
+export function runCoalitionMonteCarlo(
+  partyPct: Record<string, number>,
+  coalitionParties: string[],
+  fixedSeats = 0,
+  simulations = 10000
+): number {
+  let count = 0;
+  for (let i = 0; i < simulations; i++) {
+    const systematic = randn() * 1.2;
+    const simPct: Record<string, number> = {};
+    for (const pk of PARTY_KEYS) {
+      simPct[pk] = Math.max(0, (partyPct[pk] || 0) + systematic * 0.3 + randn() * 0.9);
+    }
+    const total = (Object.values(simPct) as number[]).reduce((s, v) => s + v, 0);
+    if (total > 0) for (const pk of PARTY_KEYS) simPct[pk] = (simPct[pk] / total) * 100;
+    const seats = calcPartySeats(simPct);
+    const coalitionSeats = coalitionParties.reduce((s, pk) => s + (seats[pk] || 0), 0) + fixedSeats;
+    if (coalitionSeats >= 90) count++;
+  }
+  return (count / simulations) * 100;
+}

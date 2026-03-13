@@ -5,6 +5,7 @@ import {
   PARTIES, PARTY_KEYS, FALLBACK_POLLS,
   calcWeightedAverage, calcPartySeats, type Poll,
 } from "@/app/lib/data";
+import { runCoalitionMonteCarlo } from "@/app/lib/monte-carlo";
 import { ShareBar } from "@/app/components/ShareBar";
 
 // ─── FO / GL individual seat definitions ─────────────────────────────────────
@@ -309,6 +310,16 @@ export default function StatsministerPage() {
   const coalitionSeats = govSeats + supportSeats;
   const hasMajority    = coalitionSeats >= 90;
 
+  const allCoalitionParties = [...govParties, ...supportParties];
+  const allFixedSeats       = govFoGl.length + supportFoGl.length;
+  const coalitionProb = useMemo(
+    () => allCoalitionParties.length > 0
+      ? runCoalitionMonteCarlo(partyPct, allCoalitionParties, allFixedSeats)
+      : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(allCoalitionParties), allFixedSeats, partyPct]
+  );
+
   const selectPM = (pk: string) => {
     const next = selectedPM === pk ? null : pk;
     setSelectedPM(next);
@@ -577,10 +588,29 @@ export default function StatsministerPage() {
                 style={{ left: `${(90 / 179) * 100}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-5">
+            <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-4">
               <span>{coalitionSeats} mand.</span>
               <span>flertal ↑ 90</span>
             </div>
+
+            {/* Monte Carlo probability */}
+            {coalitionProb !== null && (
+              <div
+                className="flex items-center justify-between px-3 py-2 rounded-lg mb-4 text-xs font-mono"
+                style={{
+                  background: coalitionProb >= 50 ? "rgba(74,222,128,0.07)" : "rgba(100,116,139,0.08)",
+                  border: `1px solid ${coalitionProb >= 50 ? "rgba(74,222,128,0.2)" : "rgba(100,116,139,0.2)"}`,
+                }}
+              >
+                <span className="text-muted-foreground">Sandsynlighed for flertal</span>
+                <span
+                  className="font-bold tabular-nums"
+                  style={{ color: coalitionProb >= 50 ? "#4ade80" : "hsl(var(--muted-foreground))" }}
+                >
+                  {coalitionProb.toFixed(0)}%
+                </span>
+              </div>
+            )}
 
             {/* Breakdown */}
             <div className="space-y-1 text-xs font-mono">

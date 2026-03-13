@@ -98,6 +98,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "nav.statsminister": { da: "Simulator", en: "Simulator" },
   "nav.threshold": { da: "Spærregrænsen", en: "Threshold" },
   "nav.markets": { da: "Prediction Markets", en: "Prediction Markets" },
+  "nav.institutter": { da: "Institutter", en: "Pollsters" },
 
   // Spærregrænsen Tracker
   "threshold.title": { da: "Spærregrænsen Tracker", en: "Threshold Tracker" },

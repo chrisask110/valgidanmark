@@ -42,6 +42,17 @@ function IconMarkets({ active }: { active: boolean }) {
   );
 }
 
+function IconInstitutter({ active }: { active: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity={active ? 1 : 0.45}>
+      <circle cx="6" cy="7" r="2.5" />
+      <circle cx="14" cy="7" r="2.5" />
+      <path d="M1 18c0-2.76 2.24-5 5-5h2" />
+      <path d="M12 13h2c2.76 0 5 2.24 5 5" />
+    </svg>
+  );
+}
+
 export function SiteHeader() {
   const { t, lang, setLang } = useLanguage();
   const pathname = usePathname();
@@ -63,10 +74,11 @@ export function SiteHeader() {
   };
 
   const tabs = [
-    { href: "/",                    label: t("nav.polls"),        mobileLabel: t("nav.polls"),        Icon: IconPolls     },
-    { href: "/statsminister",       label: t("nav.statsminister"), mobileLabel: t("nav.statsminister"), Icon: IconPM      },
-    { href: "/spaerregraensen",     label: t("nav.threshold"),    mobileLabel: t("nav.threshold"),    Icon: IconThreshold },
-    { href: "/prediction-markets",  label: t("nav.markets"),      mobileLabel: "Markets",             Icon: IconMarkets   },
+    { href: "/",                    label: t("nav.polls"),         mobileLabel: t("nav.polls"),         Icon: IconPolls       },
+    { href: "/statsminister",       label: t("nav.statsminister"), mobileLabel: t("nav.statsminister"), Icon: IconPM          },
+    { href: "/spaerregraensen",     label: t("nav.threshold"),     mobileLabel: t("nav.threshold"),     Icon: IconThreshold   },
+    { href: "/prediction-markets",  label: t("nav.markets"),       mobileLabel: "Markets",              Icon: IconMarkets     },
+    { href: "/institutter",         label: t("nav.institutter"),   mobileLabel: "Inst.",                Icon: IconInstitutter },
   ];
 
   return (
@@ -82,6 +94,7 @@ export function SiteHeader() {
               {navLink("/statsminister", t("nav.statsminister"))}
               {navLink("/spaerregraensen", t("nav.threshold"))}
               {navLink("/prediction-markets", t("nav.markets"))}
+              {navLink("/institutter", t("nav.institutter"))}
             </nav>
           </div>
 

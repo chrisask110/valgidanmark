@@ -31,7 +31,8 @@ export const POLLSTERS: Record<string, { rating: number; grade: string; avgError
 export const PARTY_KEYS = ["A", "F", "V", "I", "Æ", "C", "Ø", "B", "O", "Å", "M", "H"] as const;
 export const ROD_BLOK  = ["A", "F", "Ø", "B", "Å"] as const;
 export const BLAA_BLOK = ["V", "I", "Æ", "C", "O", "H"] as const;
-export const ELECTION_DATE = new Date("2026-03-24T08:00:00+01:00");
+export const ELECTION_DATE      = new Date("2026-03-24T08:00:00+01:00");
+export const ANNOUNCEMENT_DATE  = "2026-02-26"; // Valgudskrivelsen
 
 export type Poll = {
   date: string;
