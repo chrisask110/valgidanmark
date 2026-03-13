@@ -136,11 +136,17 @@ function calcConcurrentRef(
   return wSum > 0 ? wValSum / wSum : null;
 }
 
+// Module-level cache so repeated calls within the same render cycle (12× per party) are free
+let _heCache: { key: string; result: Record<string, Record<string, number>> } | null = null;
+
 // House effects: pollster → partyKey → systematic bias (positive = reports higher than peers)
 export function calcHouseEffects(
   polls: Poll[],
   asOfDate?: string,
 ): Record<string, Record<string, number>> {
+  const cacheKey = `${polls.length}_${asOfDate ?? ""}`;
+  if (_heCache?.key === cacheKey) return _heCache.result;
+
   const now       = asOfDate ? new Date(asOfDate) : new Date();
   const LOOKBACK  = 180;
   const HALF_LIFE = 30;
@@ -168,6 +174,7 @@ export function calcHouseEffects(
       result[pollster][partyKey] = wSum > 0 ? wDiffSum / wSum : 0;
     }
   }
+  _heCache = { key: cacheKey, result };
   return result;
 }
 

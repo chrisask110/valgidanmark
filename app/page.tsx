@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "./components/LanguageContext";
 import { ForecastBanner } from "./components/ForecastBanner";
@@ -10,10 +10,17 @@ import { HemicycleCard } from "./components/HemicycleCard";
 import { LatestPollsTable } from "./components/LatestPollsTable";
 import { PredictionMarkets } from "./components/PredictionMarkets";
 import {
-  PARTIES, POLLSTERS, PARTY_KEYS, ROD_BLOK, BLAA_BLOK, FO_GL_SEATS,
-  FALLBACK_POLLS, calcWeightedAverage, calcPartySeats, type Poll,
+  PARTIES, POLLSTERS, ROD_BLOK, BLAA_BLOK, FO_GL_SEATS,
+  FALLBACK_POLLS, type Poll,
 } from "./lib/data";
-import { runMonteCarlo } from "./lib/monte-carlo";
+import type { MonteCarloResult } from "./lib/monte-carlo";
+
+interface ModelData {
+  polls: Poll[];
+  partyPct: Record<string, number>;
+  seats: Record<string, number>;
+  forecast: MonteCarloResult;
+}
 
 const DEFAULT_PARTIES = ["A", "F", "V", "I", "Æ", "C", "Ø", "B", "O", "Å", "M", "H"];
 
@@ -27,35 +34,22 @@ export default function Page() {
     );
   };
 
-  const [polls, setPolls] = useState<Poll[]>(FALLBACK_POLLS);
-  const [pollsReady, setPollsReady] = useState(false);
+  const [model, setModel]       = useState<ModelData | null>(null);
+  const [modelReady, setModelReady] = useState(false);
 
-  // Fetch live polls from DB on mount; fall back silently to FALLBACK_POLLS
+  // Fetch pre-computed model from server (cached 10 min on CDN)
   useEffect(() => {
-    fetch("/api/polls")
+    fetch("/api/model")
       .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data.polls) && data.polls.length > 0) setPolls(data.polls);
-      })
+      .then((data: ModelData) => setModel(data))
       .catch(() => {})
-      .finally(() => setPollsReady(true));
+      .finally(() => setModelReady(true));
   }, []);
 
-  // Current weighted averages
-  const partyPct = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const result: Record<string, number> = {};
-    for (const pk of PARTY_KEYS) {
-      result[pk] = calcWeightedAverage(polls, pk, today) ?? 0;
-    }
-    return result;
-  }, [polls]);
-
-  // Seat distribution
-  const seats = useMemo(() => calcPartySeats(partyPct), [partyPct]);
-
-  // Monte Carlo forecast
-  const forecast = useMemo(() => runMonteCarlo(partyPct), [partyPct]);
+  const polls    = model?.polls    ?? FALLBACK_POLLS;
+  const partyPct = model?.partyPct ?? {};
+  const seats    = model?.seats    ?? {};
+  const forecast = model?.forecast ?? { rodBlokChance: 0, blaaBlokChance: 0, rodMedianSeats: 0, blaaMedianSeats: 0 };
 
   // Blok seat totals
   const rodSeats = ROD_BLOK.reduce((s, pk) => s + (seats[pk] || 0), 0);
@@ -76,7 +70,7 @@ export default function Page() {
             rodMedianSeats={forecast.rodMedianSeats}
             blaaMedianSeats={forecast.blaaMedianSeats}
             seats={seats}
-            ready={pollsReady}
+            ready={modelReady}
           />
         </section>
 
