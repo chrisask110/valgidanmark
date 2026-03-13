@@ -57,14 +57,14 @@ function PlacementColumn({
           <p className="text-xs font-bold font-mono uppercase tracking-wider">{title}</p>
           <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{subtitle}</p>
         </div>
-        <div className="flex gap-3 shrink-0">
+        <div className="flex gap-1 shrink-0">
           <a href={pmUrl} target="_blank" rel="noopener noreferrer"
-            className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
+            className="w-12 flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
             <Image src="/Polymarket.png" alt="Polymarket" width={14} height={14} className="rounded-sm" />
             <span className="text-[8px] font-mono text-muted-foreground">PM</span>
           </a>
           <a href={kalshiUrl} target="_blank" rel="noopener noreferrer"
-            className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
+            className="w-12 flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
             <Image src="/Kalshi.png" alt="Kalshi" width={14} height={14} className="rounded-sm" />
             <span className="text-[8px] font-mono text-muted-foreground">Kal</span>
           </a>
