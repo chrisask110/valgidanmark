@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { PredictionMarkets } from "@/app/components/PredictionMarkets";
 import { KalshiMarkets } from "@/app/components/KalshiMarkets";
-import { FALLBACK_POLLS, PARTIES, PARTY_KEYS, calcWeightedAverage, calcPartySeats } from "@/app/lib/data";
+import { PlacementComparison } from "@/app/components/PlacementComparison";
+import { PartySeatsCard } from "@/app/components/PartySeatsCard";
+import { FALLBACK_POLLS, PARTY_KEYS, calcWeightedAverage, calcPartySeats } from "@/app/lib/data";
 import { getPolls } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -11,7 +13,6 @@ export const metadata: Metadata = {
 };
 
 export default async function PredictionMarketsPage() {
-  // Compute current projected seats from polls
   let polls = FALLBACK_POLLS;
   try {
     const dbPolls = await getPolls();
@@ -38,10 +39,10 @@ export default async function PredictionMarketsPage() {
       {/* Quick stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {[
-          { label: "Næste statsminister", sub: "Polymarket", href: "/prediction-markets#pm" },
-          { label: "Hvilke partier vinder mandater?", sub: "Kalshi", href: "/prediction-markets#gain" },
-          { label: "Andenplads & tredjeplads", sub: "Kalshi", href: "/prediction-markets#place" },
-          { label: "Socialdemokraternes mandattal", sub: "Kalshi", href: "/prediction-markets#socdem" },
+          { label: "Næste statsminister", sub: "Polymarket", href: "#pm" },
+          { label: "Hvilke partier vinder mandater?", sub: "Kalshi", href: "#gain" },
+          { label: "Andenplads & tredjeplads", sub: "Polymarket · Kalshi", href: "#place" },
+          { label: "Mandattal per parti", sub: "Polymarket · Kalshi", href: "#seats" },
         ].map((s) => (
           <a
             key={s.label}
@@ -63,9 +64,31 @@ export default async function PredictionMarketsPage() {
           <PredictionMarkets />
         </section>
 
-        {/* Kalshi markets */}
+        {/* Kalshi — gain seats */}
         <section id="gain">
           <KalshiMarkets currentSeats={currentSeats} />
+        </section>
+
+        {/* 2nd + 3rd place — Polymarket & Kalshi side by side */}
+        <section id="place">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Polymarket · Kalshi · Andenplads & tredjeplads</h2>
+          </div>
+          <PlacementComparison />
+        </section>
+
+        {/* Party seats — Polymarket tabbed + Kalshi socdem */}
+        <section id="seats">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Polymarket · Mandattal per parti</h2>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <PartySeatsCard currentSeats={currentSeats} />
+            {/* Kalshi — Social Democrats seats (separate section) */}
+            <div>
+              <KalshiMarkets currentSeats={currentSeats} socdemOnly />
+            </div>
+          </div>
         </section>
       </div>
     </main>

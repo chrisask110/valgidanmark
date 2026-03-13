@@ -279,7 +279,7 @@ function LoadingState() {
 }
 
 // ─── MAIN EXPORT ────────────────────────────────────────────────────────────
-export function KalshiMarkets({ currentSeats }: { currentSeats: Record<string, number> }) {
+export function KalshiMarkets({ currentSeats, socdemOnly = false }: { currentSeats: Record<string, number>; socdemOnly?: boolean }) {
   const [data, setData]   = useState<KalshiData | null>(null);
   const [error, setError] = useState(false);
 
@@ -312,43 +312,22 @@ export function KalshiMarkets({ currentSeats }: { currentSeats: Record<string, n
 
   return (
     <div className="space-y-6">
-      {/* Gain seats — full-width card */}
-      <div id="gain" className="rounded-xl border border-border bg-card p-5">
-        <KalshiHeader
-          title="Hvilke partier vinder mandater?"
-          subtitle="Sandsynlighed for at vinde mandater ift. 2022-valget"
-          url={gainUrl}
-        />
-        {!data ? <LoadingState /> : (
-          <GainSeatsGrid entries={data.gainSeats} url={gainUrl} currentSeats={currentSeats} />
-        )}
-        <CardFooter url={gainUrl} />
-      </div>
-
-      {/* 2nd + 3rd place side by side */}
-      <div id="place" className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-border bg-card p-5 flex flex-col">
+      {/* Gain seats — hidden when socdemOnly */}
+      {!socdemOnly && (
+        <div id="gain" className="rounded-xl border border-border bg-card p-5">
           <KalshiHeader
-            title="Andenplads"
-            subtitle="Flest stemmer efter Socialdemokraterne"
-            url={secondUrl}
+            title="Hvilke partier vinder mandater?"
+            subtitle="Sandsynlighed for at vinde mandater ift. 2022-valget"
+            url={gainUrl}
           />
-          {!data ? <LoadingState /> : <RankedList entries={data.secondPlace} url={secondUrl} />}
-          <CardFooter url={secondUrl} />
+          {!data ? <LoadingState /> : (
+            <GainSeatsGrid entries={data.gainSeats} url={gainUrl} currentSeats={currentSeats} />
+          )}
+          <CardFooter url={gainUrl} />
         </div>
+      )}
 
-        <div className="rounded-xl border border-border bg-card p-5 flex flex-col">
-          <KalshiHeader
-            title="Tredjeplads"
-            subtitle="Tredje flest stemmer ved valget"
-            url={thirdUrl}
-          />
-          {!data ? <LoadingState /> : <RankedList entries={data.thirdPlace} url={thirdUrl} />}
-          <CardFooter url={thirdUrl} />
-        </div>
-      </div>
-
-      {/* Socialdemokraterne seat count */}
+      {/* Socialdemokraterne seat count — Kalshi */}
       <div id="socdem" className="rounded-xl border border-border bg-card p-5">
         <KalshiHeader
           title="Socialdemokraternes mandattal"
