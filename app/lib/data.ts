@@ -111,6 +111,66 @@ export const FALLBACK_POLLS: Poll[] = [
   { date: "2025-01-12", pollster: "Voxmeter", n: 1002, A: 20.4, V: 8.4,  M: 4.1,  F: 14.9, Æ: 10.0, I: 12.3, C: 7.4, Ø: 6.8, B: 5.4, Å: 2.1, O: 5.4, H: 1.8 },
 ];
 
+// ---------------------------------------------------------------------------
+// Concurrent reference for house-effect computation (leave-one-out)
+// ±90-day window centred on refDate, 30-day half-life, excludes one pollster
+// ---------------------------------------------------------------------------
+function calcConcurrentRef(
+  polls: Poll[],
+  partyKey: string,
+  refDate: Date,
+  excludePollster: string,
+): number | null {
+  const HALF_LIFE = 30;
+  const WINDOW    = 90;
+  let wSum = 0, wValSum = 0;
+  for (const p of polls) {
+    if (p.pollster === excludePollster) continue;
+    if (p[partyKey] == null || p[partyKey] === "") continue;
+    const d = Math.abs((new Date(p.date).getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (d > WINDOW) continue;
+    const w = Math.exp(-d / HALF_LIFE) * (POLLSTERS[p.pollster]?.weight ?? 1.0);
+    wSum    += w;
+    wValSum += w * Number(p[partyKey]);
+  }
+  return wSum > 0 ? wValSum / wSum : null;
+}
+
+// House effects: pollster → partyKey → systematic bias (positive = reports higher than peers)
+export function calcHouseEffects(
+  polls: Poll[],
+  asOfDate?: string,
+): Record<string, Record<string, number>> {
+  const now       = asOfDate ? new Date(asOfDate) : new Date();
+  const LOOKBACK  = 180;
+  const HALF_LIFE = 30;
+  const result: Record<string, Record<string, number>> = {};
+
+  for (const pollster of Object.keys(POLLSTERS)) {
+    result[pollster] = {};
+    for (const partyKey of PARTY_KEYS) {
+      const pPolls = polls.filter(p => {
+        if (p.pollster !== pollster) return false;
+        if (p[partyKey] == null || p[partyKey] === "") return false;
+        const d = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
+        return d >= 0 && d <= LOOKBACK;
+      });
+      if (pPolls.length === 0) { result[pollster][partyKey] = 0; continue; }
+      let wSum = 0, wDiffSum = 0;
+      for (const p of pPolls) {
+        const d   = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
+        const ref = calcConcurrentRef(polls, partyKey, new Date(p.date), pollster);
+        if (ref == null) continue;
+        const w   = Math.exp(-d / HALF_LIFE);
+        wSum     += w;
+        wDiffSum += w * (Number(p[partyKey]) - ref);
+      }
+      result[pollster][partyKey] = wSum > 0 ? wDiffSum / wSum : 0;
+    }
+  }
+  return result;
+}
+
 export function calcWeightedAverage(polls: Poll[], partyKey: string, asOfDate?: string): number | null {
   const now = asOfDate ? new Date(asOfDate) : new Date();
 
@@ -136,7 +196,7 @@ export function calcWeightedAverage(polls: Poll[], partyKey: string, asOfDate?: 
   const MIN_POLLS = 8;
   const MAX_HALF_LIFE = 90;
   while (halfLife < MAX_HALF_LIFE) {
-    const effectiveWindow = halfLife * Math.LN10; // exp(-window/halfLife) = 0.10
+    const effectiveWindow = halfLife * Math.LN10;
     const inWindow = partyPolls.filter(p => {
       const d = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
       return d >= 0 && d <= effectiveWindow;
@@ -148,21 +208,67 @@ export function calcWeightedAverage(polls: Poll[], partyKey: string, asOfDate?: 
   // Hard stop extends with half-life if the floor loop pushed it above the base 60 days
   hardStop = Math.min(MAX_HALF_LIFE, Math.max(60, Math.ceil(halfLife * Math.LN10)));
 
+  // Change A: count polls per pollster within the effective window (for redundancy discount)
+  const effectiveWindow = halfLife * Math.LN10;
+  const pollsterCounts: Record<string, number> = {};
+  for (const p of partyPolls) {
+    const d = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
+    if (d >= 0 && d <= effectiveWindow) {
+      pollsterCounts[p.pollster] = (pollsterCounts[p.pollster] ?? 0) + 1;
+    }
+  }
+
+  // Change B: house effects (leave-one-out systematic bias per pollster)
+  const houseEffects = calcHouseEffects(polls, asOfDate);
+
   // Build weighted entries, dropping polls beyond hard stop or in the future
-  const relevant = partyPolls
+  type Entry = { pollster: string; value: number; weight: number };
+  const relevant: Entry[] = partyPolls
     .map(p => {
       const daysDiff = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
       if (daysDiff < 0 || daysDiff > hardStop) return null;
-      const recency = Math.exp(-daysDiff / halfLife);
-      const pollsterWeight = POLLSTERS[p.pollster]?.weight || 1.0;
-      const sizeWeight = Math.sqrt((p.n || 1000) / 1000);
-      return { value: Number(p[partyKey]), weight: recency * pollsterWeight * sizeWeight };
+      const recency        = Math.exp(-daysDiff / halfLife);
+      const pollsterWeight = POLLSTERS[p.pollster]?.weight ?? 1.0;
+      const sizeWeight     = Math.sqrt((p.n || 1000) / 1000);
+      // Change A: redundancy discount — 1/√k per pollster within the effective window
+      const k              = pollsterCounts[p.pollster] ?? 1;
+      const redundancy     = 1 / Math.sqrt(k);
+      const weight         = recency * pollsterWeight * sizeWeight * redundancy;
+      // Change B: subtract house effect from raw party figure
+      const he             = houseEffects[p.pollster]?.[partyKey] ?? 0;
+      const value          = Number(p[partyKey]) - he;
+      return { pollster: p.pollster, value, weight };
     })
-    .filter(Boolean) as { value: number; weight: number }[];
+    .filter(Boolean) as Entry[];
 
   if (relevant.length === 0) return null;
-  const totalWeight = relevant.reduce((s, r) => s + r.weight, 0);
-  return relevant.reduce((s, r) => s + r.value * r.weight, 0) / totalWeight;
+
+  // Change C: 40% pollster influence cap — iteratively scale down any pollster above the cap
+  const CAP = 0.40;
+  const weights = relevant.map(r => r.weight);
+  for (let iter = 0; iter < 10; iter++) {
+    const total = weights.reduce((s, w) => s + w, 0);
+    if (total === 0) break;
+    let changed = false;
+    const pollsterTotals: Record<string, number> = {};
+    for (let i = 0; i < relevant.length; i++) {
+      pollsterTotals[relevant[i].pollster] = (pollsterTotals[relevant[i].pollster] ?? 0) + weights[i];
+    }
+    for (const [pollster, share] of Object.entries(pollsterTotals)) {
+      if (share / total > CAP) {
+        const scale = (CAP * total) / share;
+        for (let i = 0; i < relevant.length; i++) {
+          if (relevant[i].pollster === pollster) weights[i] *= scale;
+        }
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+
+  const totalWeight = weights.reduce((s, w) => s + w, 0);
+  if (totalWeight === 0) return null;
+  return relevant.reduce((s, r, i) => s + r.value * weights[i], 0) / totalWeight;
 }
 
 export function calcPartySeats(partyPct: Record<string, number>): Record<string, number> {
