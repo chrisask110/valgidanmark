@@ -208,8 +208,7 @@ function SeatDistribution({
   currentSocdemSeats: number;
 }) {
   if (entries.length === 0) return <EmptyState />;
-  const color     = "#C8102E";
-  const maxProb   = Math.max(...entries.map((e) => e.probability));
+  const color = "#C8102E";
 
   return (
     <div>
@@ -224,7 +223,7 @@ function SeatDistribution({
       <div className="space-y-2">
         {entries.map((m) => {
           const pct      = Math.round(m.probability * 100);
-          const barWidth = maxProb > 0 ? (m.probability / maxProb) * 100 : 0;
+          const barWidth = m.probability * 100;
           const threshold = SEAT_THRESHOLDS[m.label] ?? null;
           // Highlight if the current projection is closest to this threshold
           const isClosest = threshold != null &&

@@ -49,8 +49,6 @@ function PlacementColumn({
     .sort((a, b) => b.avg - a.avg)
     .slice(0, 5);
 
-  const maxProb = Math.max(...rows.map(r => Math.max(r.pm ?? 0, r.kal ?? 0)), 0.01);
-
   return (
     <div className="flex-1 min-w-0 rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
@@ -99,11 +97,11 @@ function PlacementColumn({
               <div className="ml-[28px] space-y-0.5">
                 <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                   <div className="h-full rounded-full bg-violet-600 transition-all duration-500"
-                    style={{ width: pm != null ? `${(pm / maxProb) * 100}%` : "0%" }} />
+                    style={{ width: pm != null ? `${pm * 100}%` : "0%" }} />
                 </div>
                 <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                   <div className="h-full rounded-full bg-orange-400 transition-all duration-500"
-                    style={{ width: kal != null ? `${(kal / maxProb) * 100}%` : "0%" }} />
+                    style={{ width: kal != null ? `${kal * 100}%` : "0%" }} />
                 </div>
               </div>
             </div>

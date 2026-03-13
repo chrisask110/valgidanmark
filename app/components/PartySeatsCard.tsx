@@ -21,8 +21,6 @@ const PARTY_URLS: Record<PartyTab, string> = {
 function PartySeatsPanel({ entry, currentSeats }: { entry: PartySeatsEntry; currentSeats?: number }) {
   const party = PARTIES[entry.partyKey];
   if (!party) return null;
-  const maxProb = Math.max(...entry.ranges.map(r => r.probability), 0.01);
-
   return (
     <div className="space-y-2 py-3">
       {currentSeats != null && (
@@ -34,7 +32,7 @@ function PartySeatsPanel({ entry, currentSeats }: { entry: PartySeatsEntry; curr
       )}
       {entry.ranges.map(r => {
         const pct      = Math.round(r.probability * 100);
-        const barWidth = maxProb > 0 ? (r.probability / maxProb) * 100 : 0;
+        const barWidth = r.probability * 100;
         return (
           <a key={r.label} href={PARTY_URLS[entry.partyKey as PartyTab]} target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-3 group rounded-lg px-2 py-1 hover:bg-muted/30 transition-colors">
