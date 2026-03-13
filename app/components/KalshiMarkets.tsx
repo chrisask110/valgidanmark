@@ -279,7 +279,7 @@ function LoadingState() {
 }
 
 // ─── MAIN EXPORT ────────────────────────────────────────────────────────────
-export function KalshiMarkets({ currentSeats, socdemOnly = false }: { currentSeats: Record<string, number>; socdemOnly?: boolean }) {
+export function KalshiMarkets({ currentSeats, socdemOnly = false, gainOnly = false }: { currentSeats: Record<string, number>; socdemOnly?: boolean; gainOnly?: boolean }) {
   const [data, setData]   = useState<KalshiData | null>(null);
   const [error, setError] = useState(false);
 
@@ -312,7 +312,7 @@ export function KalshiMarkets({ currentSeats, socdemOnly = false }: { currentSea
 
   return (
     <div className="space-y-6">
-      {/* Gain seats — hidden when socdemOnly */}
+      {/* Gain seats — shown when not socdemOnly */}
       {!socdemOnly && (
         <div id="gain" className="rounded-xl border border-border bg-card p-5">
           <KalshiHeader
@@ -327,22 +327,24 @@ export function KalshiMarkets({ currentSeats, socdemOnly = false }: { currentSea
         </div>
       )}
 
-      {/* Socialdemokraterne seat count — Kalshi */}
-      <div id="socdem" className="rounded-xl border border-border bg-card p-5">
-        <KalshiHeader
-          title="Socialdemokraternes mandattal"
-          subtitle="Sandsynlighed for at opnå mindst X mandater den 24. marts"
-          url={socdemUrl}
-        />
-        {!data ? <LoadingState /> : (
-          <SeatDistribution
-            entries={data.socdemSeats}
+      {/* Socialdemokraterne seat count — hidden when gainOnly */}
+      {!gainOnly && (
+        <div id="socdem" className="rounded-xl border border-border bg-card p-5">
+          <KalshiHeader
+            title="Socialdemokraternes mandattal"
+            subtitle="Sandsynlighed for at opnå mindst X mandater den 24. marts"
             url={socdemUrl}
-            currentSocdemSeats={currentSocdemSeats}
           />
-        )}
-        <CardFooter url={socdemUrl} />
-      </div>
+          {!data ? <LoadingState /> : (
+            <SeatDistribution
+              entries={data.socdemSeats}
+              url={socdemUrl}
+              currentSocdemSeats={currentSocdemSeats}
+            />
+          )}
+          <CardFooter url={socdemUrl} />
+        </div>
+      )}
     </div>
   );
 }

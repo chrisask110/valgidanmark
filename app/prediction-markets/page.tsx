@@ -27,7 +27,6 @@ export default async function PredictionMarketsPage() {
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-8 pb-24 sm:pb-8">
-      {/* Page header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-sans tracking-tight">Prediction Markets</h1>
         <p className="text-sm font-mono text-muted-foreground mt-1 max-w-xl">
@@ -36,19 +35,15 @@ export default async function PredictionMarketsPage() {
         </p>
       </div>
 
-      {/* Quick stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         {[
-          { label: "Næste statsminister", sub: "Polymarket", href: "#pm" },
-          { label: "Hvilke partier vinder mandater?", sub: "Kalshi", href: "#gain" },
-          { label: "Andenplads & tredjeplads", sub: "Polymarket · Kalshi", href: "#place" },
-          { label: "Mandattal per parti", sub: "Polymarket · Kalshi", href: "#seats" },
+          { label: "Næste statsminister",         sub: "Polymarket",          href: "#pm" },
+          { label: "Andenplads & tredjeplads",    sub: "Polymarket · Kalshi", href: "#place" },
+          { label: "Mandattal per parti",          sub: "Polymarket · Kalshi", href: "#seats" },
+          { label: "Hvilke partier vinder mandater?", sub: "Kalshi",          href: "#gain" },
         ].map((s) => (
-          <a
-            key={s.label}
-            href={s.href}
-            className="rounded-lg border border-border bg-card p-3 hover:bg-muted/50 transition-colors group"
-          >
+          <a key={s.label} href={s.href}
+            className="rounded-lg border border-border bg-card p-3 hover:bg-muted/50 transition-colors group">
             <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">{s.sub}</p>
             <p className="text-xs font-semibold font-mono mt-1 group-hover:underline leading-tight">{s.label}</p>
           </a>
@@ -56,7 +51,7 @@ export default async function PredictionMarketsPage() {
       </div>
 
       <div className="space-y-10">
-        {/* Polymarket — Next PM */}
+        {/* 1. Polymarket — Next PM */}
         <section id="pm">
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Polymarket · Næste statsminister</h2>
@@ -64,12 +59,7 @@ export default async function PredictionMarketsPage() {
           <PredictionMarkets />
         </section>
 
-        {/* Kalshi — gain seats */}
-        <section id="gain">
-          <KalshiMarkets currentSeats={currentSeats} />
-        </section>
-
-        {/* 2nd + 3rd place — Polymarket & Kalshi side by side */}
+        {/* 2. 2nd + 3rd place — Polymarket & Kalshi side by side */}
         <section id="place">
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Polymarket · Kalshi · Andenplads & tredjeplads</h2>
@@ -77,18 +67,23 @@ export default async function PredictionMarketsPage() {
           <PlacementComparison />
         </section>
 
-        {/* Party seats — Polymarket tabbed + Kalshi socdem */}
+        {/* 3. Seat counts — Polymarket tabbed + Kalshi socdem */}
         <section id="seats">
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Polymarket · Mandattal per parti</h2>
+            <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Polymarket · Kalshi · Mandattal per parti</h2>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <PartySeatsCard currentSeats={currentSeats} />
-            {/* Kalshi — Social Democrats seats (separate section) */}
-            <div>
-              <KalshiMarkets currentSeats={currentSeats} socdemOnly />
-            </div>
+            <KalshiMarkets currentSeats={currentSeats} socdemOnly />
           </div>
+        </section>
+
+        {/* 4. Gain seats — Kalshi, moved to bottom */}
+        <section id="gain">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Kalshi · Hvilke partier vinder mandater?</h2>
+          </div>
+          <KalshiMarkets currentSeats={currentSeats} gainOnly />
         </section>
       </div>
     </main>
