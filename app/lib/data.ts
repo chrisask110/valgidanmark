@@ -279,6 +279,94 @@ export function calcWeightedAverage(polls: Poll[], partyKey: string, asOfDate?: 
   return relevant.reduce((s, r, i) => s + r.value * weights[i], 0) / totalWeight;
 }
 
+/** Returns each pollster's final share of total model weight (after redundancy discount + 40% cap).
+ *  Uses party A as representative since weight composition is nearly identical across parties. */
+export function calcPollsterWeightShares(polls: Poll[], asOfDate?: string): Record<string, number> {
+  const partyKey = "A";
+  const now = asOfDate ? new Date(asOfDate) : new Date();
+
+  const daysUntilElection = ELECTION_DATE
+    ? Math.max(0, (ELECTION_DATE.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+  let halfLife = daysUntilElection != null
+    ? Math.min(45, Math.max(14, 14 + 0.1 * daysUntilElection))
+    : 45;
+
+  const partyPolls = polls.filter(p => p[partyKey] != null && p[partyKey] !== "");
+  if (partyPolls.length === 0) return {};
+
+  const MIN_POLLS = 8, MAX_HALF_LIFE = 90;
+  while (halfLife < MAX_HALF_LIFE) {
+    const ew = halfLife * Math.LN10;
+    const inWindow = partyPolls.filter(p => {
+      const d = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
+      return d >= 0 && d <= ew;
+    }).length;
+    if (inWindow >= MIN_POLLS) break;
+    halfLife = Math.min(halfLife + 5, MAX_HALF_LIFE);
+  }
+
+  const hardStop = Math.min(MAX_HALF_LIFE, Math.max(60, Math.ceil(halfLife * Math.LN10)));
+  const effectiveWindow = halfLife * Math.LN10;
+
+  const pollsterCounts: Record<string, number> = {};
+  for (const p of partyPolls) {
+    const d = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
+    if (d >= 0 && d <= effectiveWindow) {
+      pollsterCounts[p.pollster] = (pollsterCounts[p.pollster] ?? 0) + 1;
+    }
+  }
+
+  type WEntry = { pollster: string; weight: number };
+  const relevant: WEntry[] = partyPolls
+    .map(p => {
+      const daysDiff = (now.getTime() - new Date(p.date).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff < 0 || daysDiff > hardStop) return null;
+      const recency        = Math.exp(-daysDiff / halfLife);
+      const pollsterWeight = POLLSTERS[p.pollster]?.weight ?? 1.0;
+      const sizeWeight     = Math.sqrt((p.n || 1000) / 1000);
+      const k              = pollsterCounts[p.pollster] ?? 1;
+      const redundancy     = 1 / Math.sqrt(k);
+      return { pollster: p.pollster, weight: recency * pollsterWeight * sizeWeight * redundancy };
+    })
+    .filter(Boolean) as WEntry[];
+
+  if (relevant.length === 0) return {};
+
+  const weights = relevant.map(r => r.weight);
+  const CAP = 0.40;
+  for (let iter = 0; iter < 10; iter++) {
+    const total = weights.reduce((s, w) => s + w, 0);
+    if (total === 0) break;
+    let changed = false;
+    const pollsterTotals: Record<string, number> = {};
+    for (let i = 0; i < relevant.length; i++) {
+      pollsterTotals[relevant[i].pollster] = (pollsterTotals[relevant[i].pollster] ?? 0) + weights[i];
+    }
+    for (const [pollster, share] of Object.entries(pollsterTotals)) {
+      if (share / total > CAP) {
+        const scale = (CAP * total) / share;
+        for (let i = 0; i < relevant.length; i++) {
+          if (relevant[i].pollster === pollster) weights[i] *= scale;
+        }
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+
+  const totalWeight = weights.reduce((s, w) => s + w, 0);
+  if (totalWeight === 0) return {};
+
+  const pollsterTotals: Record<string, number> = {};
+  for (let i = 0; i < relevant.length; i++) {
+    pollsterTotals[relevant[i].pollster] = (pollsterTotals[relevant[i].pollster] ?? 0) + weights[i];
+  }
+  return Object.fromEntries(
+    Object.entries(pollsterTotals).map(([p, w]) => [p, w / totalWeight])
+  );
+}
+
 export function calcPartySeats(partyPct: Record<string, number>): Record<string, number> {
   const TOTAL = 175; // Danish mainland seats only (Faroe Islands + Greenland = 4 separate)
   const qualifying = PARTY_KEYS.filter(pk => (partyPct[pk] || 0) >= 2);
