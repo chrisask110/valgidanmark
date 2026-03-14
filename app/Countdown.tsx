@@ -46,7 +46,8 @@ export default function Countdown() {
         color: "rgba(240,165,53,0.55)",
         fontFamily: "'JetBrains Mono', monospace",
       }}>
-        Nedtælling til Folketingsvalget &nbsp;·&nbsp; 24. marts 2026
+        <span style={{ display: "block" }}>Nedtælling til Folketingsvalget</span>
+        <span style={{ display: "block" }}>24. marts 2026</span>
       </p>
 
       {timeLeft === undefined ? null : timeLeft === null ? (

@@ -76,7 +76,7 @@ export function SiteHeader() {
   const tabs = [
     { href: "/",                    label: t("nav.polls"),         mobileLabel: t("nav.polls"),         Icon: IconPolls       },
     { href: "/statsminister",       label: t("nav.statsminister"), mobileLabel: t("nav.statsminister"), Icon: IconPM          },
-    { href: "/spaerregraensen",     label: t("nav.threshold"),     mobileLabel: t("nav.threshold"),     Icon: IconThreshold   },
+    { href: "/spaerregraensen",     label: t("nav.threshold"),     mobileLabel: "Grænse",               Icon: IconThreshold   },
     { href: "/prediction-markets",  label: t("nav.markets"),       mobileLabel: "Markets",              Icon: IconMarkets     },
     { href: "/institutter",         label: t("nav.institutter"),   mobileLabel: "Inst.",                Icon: IconInstitutter },
   ];
@@ -122,7 +122,7 @@ export function SiteHeader() {
               style={{ color: active ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}
             >
               <Icon active={active} />
-              <span className="text-[9px] font-mono leading-none text-center">{mobileLabel}</span>
+              <span className="text-[9px] font-mono leading-none text-center whitespace-nowrap">{mobileLabel}</span>
             </Link>
           );
         })}
