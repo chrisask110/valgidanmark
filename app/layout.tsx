@@ -27,24 +27,32 @@ export const metadata: Metadata = {
     template: "%s | ValgiDanmark",
   },
   description:
-    "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. ValgiDanmarks estimat, mandatfordeling, ValgiDanmarks simulation og statsministerkandidat-simulator.",
+    "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. ValgiDanmarks dagligt opdaterede estimat, mandatfordeling, blok-prognose og simulator: hvem bliver Danmarks næste statsminister?",
   keywords: [
-    "meningsmålinger",
-    "folketing",
-    "valg 2026",
-    "folketingsvalg",
-    "mandater",
-    "prognose",
-    "rød blok",
-    "blå blok",
-    "statsminister",
-    "valgprognose",
-    "dansk politik",
-    "danish election 2026",
-    "danish polls",
-    "denmark election forecast",
-    "folketing election",
-    "denmark opinion polls",
+    // Core
+    "meningsmålinger", "meningsmåling", "ny meningsmåling", "seneste meningsmåling", "dagens meningsmåling",
+    "folketing", "valg 2026", "valg 24 marts 2026", "folketingsvalg", "folketingsvalg 2026",
+    "valgprognose", "valgbarometer", "mandatfordeling", "mandater", "prognose",
+    // Blocs
+    "rød blok", "blå blok", "rød blok prognose", "blå blok prognose",
+    // PM question
+    "hvem bliver statsminister", "hvem vinder valget", "hvem vinder valget 2026",
+    "statsminister 2026", "statsminister", "statsministerkandidat",
+    // Parties
+    "socialdemokratiet meningsmåling", "venstre meningsmåling", "liberal alliance",
+    "dansk folkeparti", "SF socialistisk folkeparti", "enhedslisten", "radikale venstre",
+    "konservative folkeparti", "moderaterne", "danmarksdemokraterne", "alternativet",
+    // Leaders
+    "mette frederiksen", "troels lund poulsen", "alex vanopslagh", "inger støjberg", "pia olsen dyhr",
+    // Threshold
+    "spærregrænsen 2026", "hvem kommer i folketing", "partier under spærregrænsen",
+    // Pollsters
+    "verian meningsmåling", "epinion meningsmåling", "megafon meningsmåling", "voxmeter meningsmåling",
+    // General
+    "dansk politik", "politiske partier", "vælgere",
+    // English
+    "danish election 2026", "danish polls", "denmark election forecast",
+    "folketing election", "denmark opinion polls", "denmark prime minister 2026",
   ],
   authors: [{ name: "ValgiDanmark" }],
   creator: "ValgiDanmark",

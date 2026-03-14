@@ -13,11 +13,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${BASE_URL}/statsminister`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
+      changeFrequency: "daily",
+      priority: 0.9,
     },
     {
       url: `${BASE_URL}/spaerregraensen`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/prediction-markets`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/institutter`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.7,

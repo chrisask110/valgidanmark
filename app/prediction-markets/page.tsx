@@ -8,9 +8,25 @@ import { FALLBACK_POLLS, PARTY_KEYS, calcWeightedAverage, calcPartySeats } from 
 import { getPolls } from "@/lib/db";
 
 export const metadata: Metadata = {
-  title: "Prediction Markets",
+  title: "Prediction Markets – Polymarket & Kalshi odds på Folketing 2026",
   description:
-    "Implicitte sandsynligheder fra Polymarket og Kalshi for det danske Folketingsvalg 24. marts 2026.",
+    "Live odds og implicitte sandsynligheder fra Polymarket og Kalshi: hvem vinder Folketingsvalget 24. marts 2026 og hvem bliver Danmarks næste statsminister?",
+  keywords: [
+    "polymarket folketing 2026", "kalshi valg 2026", "odds næste statsminister",
+    "betting folketing", "hvem vinder valget odds", "prediction market valg",
+    "sandsynlighed statsminister", "mette frederiksen odds", "troels lund poulsen odds",
+  ],
+  alternates: {
+    canonical: "https://valgidanmark.dk/prediction-markets",
+  },
+  openGraph: {
+    title: "Prediction Markets – Polymarket & Kalshi | ValgiDanmark",
+    description:
+      "Live odds fra Polymarket og Kalshi på hvem der vinder Folketingsvalget 2026 og bliver Danmarks næste statsminister.",
+    url: "https://valgidanmark.dk/prediction-markets",
+    images: [{ url: "/opengraph-image", alt: "ValgiDanmark logo", width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
 };
 
 export default async function PredictionMarketsPage() {
