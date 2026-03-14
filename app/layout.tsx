@@ -68,12 +68,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/logo 32px.png", type: "image/png", sizes: "32x32" },
+      { url: "/logo 48px.png", type: "image/png", sizes: "48x48" },
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/favicon-32.png",
-    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+    shortcut: "/logo 32px.png",
+    apple: { url: "/logo 48px.png", sizes: "48x48" },
   },
   robots: {
     index: true,
@@ -144,7 +144,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 "@type": "Organization",
                 name: "ValgiDanmark",
                 url: "https://valgidanmark.dk",
-                logo: `https://valgidanmark.dk/Gemini_Generated_Image_47dy8447dy8447dy.png`,
+                logo: `https://valgidanmark.dk/logo%2048px.png`,
                 sameAs: [],
               },
             ]),
