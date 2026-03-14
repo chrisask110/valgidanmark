@@ -93,21 +93,9 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-10">
 
-        {/* Forecast Banner */}
-        <section>
-          <ForecastBanner
-            rodBlokChance={forecast.rodBlokChance}
-            blaaBlokChance={forecast.blaaBlokChance}
-            rodMedianSeats={forecast.rodMedianSeats}
-            blaaMedianSeats={forecast.blaaMedianSeats}
-            seats={seats}
-            ready={true}
-          />
-        </section>
-
         {/* "What changed" banner */}
         {latestPoll && prevPoll && topMovers.length > 0 && (
-          <div className="rounded-lg border border-border bg-muted/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono text-muted-foreground -mt-6">
+          <div className="rounded-lg border border-border bg-muted/40 px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono text-muted-foreground">
             <span className="text-foreground/70">
               {latestPoll.pollster} · {latestPoll.date}
             </span>
@@ -128,6 +116,18 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
             </span>
           </div>
         )}
+
+        {/* Forecast Banner */}
+        <section>
+          <ForecastBanner
+            rodBlokChance={forecast.rodBlokChance}
+            blaaBlokChance={forecast.blaaBlokChance}
+            rodMedianSeats={forecast.rodMedianSeats}
+            blaaMedianSeats={forecast.blaaMedianSeats}
+            seats={seats}
+            ready={true}
+          />
+        </section>
 
         {/* Polling Averages */}
         <section>

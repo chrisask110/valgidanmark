@@ -19,7 +19,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "forecast.rodblok": { da: "Rød Blok", en: "Red Bloc" },
   "forecast.blaablok": { da: "Blå Blok", en: "Blue Bloc" },
   "forecast.majority": { da: "Flertal ved 90 mandater", en: "Majority at 90 seats" },
-  "forecast.model": { da: "Monte Carlo-simulation", en: "Monte Carlo simulation" },
+  "forecast.model": { da: "ValgiDanmarks simulation", en: "ValgiDanmark's simulation" },
   "forecast.runs": { da: "5.000 simuleringer", en: "5,000 simulations" },
   "forecast.projected": { da: "Forventet:", en: "Projected:" },
 
@@ -39,7 +39,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "chart.allpolls": { da: "Alle målinger", en: "All polls" },
 
   // Polling averages
-  "avg.title": { da: "Nationalt vægtet gennemsnit", en: "National Polling Average" },
+  "avg.title": { da: "ValgiDanmarks estimat", en: "ValgiDanmark's estimate" },
   "avg.updated": { da: "Opdateret", en: "Updated" },
 
   // Hemicycle
@@ -56,7 +56,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "table.n": { da: "n", en: "n" },
 
   // Blok summary
-  "blok.title": { da: "Blok-oversigt", en: "Bloc Overview" },
+  "blok.title": { da: "Blok-prognose", en: "Bloc Forecast" },
   "blok.seats": { da: "mandater", en: "seats" },
   "blok.needed": { da: "Mangler", en: "Need" },
   "blok.majority": { da: "Flertal", en: "Majority" },

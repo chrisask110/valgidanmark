@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: "%s | ValgiDanmark",
   },
   description:
-    "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. Vægtet gennemsnit, mandatfordeling, Monte Carlo-prognose og statsministerkandidat-simulator.",
+    "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. ValgiDanmarks estimat, mandatfordeling, ValgiDanmarks simulation og statsministerkandidat-simulator.",
   keywords: [
     "meningsmålinger",
     "folketing",
@@ -55,13 +55,13 @@ export const metadata: Metadata = {
     siteName: "ValgiDanmark",
     title: "ValgiDanmark – Meningsmålinger & Prognose 2026",
     description:
-      "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. Vægtet gennemsnit, mandatfordeling og Monte Carlo-prognose.",
+      "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. ValgiDanmarks estimat, mandatfordeling og ValgiDanmarks simulation.",
   },
   twitter: {
     card: "summary_large_image",
     title: "ValgiDanmark – Meningsmålinger & Prognose 2026",
     description:
-      "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. Vægtet gennemsnit, mandatfordeling og Monte Carlo-prognose.",
+      "Følg meningsmålingerne til Folketingsvalget 24. marts 2026. ValgiDanmarks estimat, mandatfordeling og ValgiDanmarks simulation.",
   },
   alternates: {
     canonical: BASE_URL,
@@ -102,7 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 name: "ValgiDanmark",
                 url: "https://valgidanmark.dk",
                 description:
-                  "Vægtet meningsmålingsgennemsnit, mandatfordeling og Monte Carlo-prognose til Folketingsvalget 24. marts 2026.",
+                  "ValgiDanmarks estimat, mandatfordeling og ValgiDanmarks simulation til Folketingsvalget 24. marts 2026.",
                 inLanguage: "da-DK",
                 potentialAction: {
                   "@type": "SearchAction",

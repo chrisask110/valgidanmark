@@ -60,12 +60,12 @@ function PlacementColumn({
         <div className="flex gap-1 shrink-0">
           <a href={pmUrl} target="_blank" rel="noopener noreferrer"
             className="w-12 flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
-            <Image src="/Polymarket.png" alt="Polymarket" width={14} height={14} className="rounded-sm" />
+            <Image src="/Polymarket.png" alt="Polymarket" width={28} height={28} className="rounded-sm" />
             <span className="text-[8px] font-mono text-muted-foreground">PM</span>
           </a>
           <a href={kalshiUrl} target="_blank" rel="noopener noreferrer"
             className="w-12 flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
-            <Image src="/Kalshi.png" alt="Kalshi" width={14} height={14} className="rounded-sm" />
+            <Image src="/Kalshi.png" alt="Kalshi" width={28} height={28} className="rounded-sm" />
             <span className="text-[8px] font-mono text-muted-foreground">Kal</span>
           </a>
         </div>

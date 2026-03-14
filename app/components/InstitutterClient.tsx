@@ -47,7 +47,7 @@ function HouseEffectsRow({ pollster, effects }: { pollster: string; effects: Rec
       <svg
         viewBox={`0 0 ${W} ${svgH}`}
         className="flex-1 overflow-visible"
-        style={{ height: svgH * 0.5 + "px" }}
+        style={{ height: svgH * 0.85 + "px" }}
       >
         {/* tick marks */}
         {[-2, -1, 0, 1, 2].map(v => (
@@ -146,6 +146,38 @@ export function InstitutterClient({ houseEffects, weightShares }: Props) {
         ))}
       </div>
 
+      {/* ── House effects ── */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <p className="text-xs font-semibold font-mono uppercase tracking-widest text-foreground mb-1">
+          {da ? "Systematiske huseffekter" : "Systematic house effects"}
+        </p>
+        <p className="text-xs font-mono text-muted-foreground mb-5">
+          {da
+            ? "Procentpoint instituttet systematisk over- (+) eller undervurderer (−) hvert parti ift. konkurrenternes samtidige målinger."
+            : "Percentage-point systematic over- (+) or under-estimation (−) vs. concurrent polls from other houses."}
+        </p>
+        <div className="space-y-3">
+          {Object.keys(POLLSTERS).map(pollster => (
+            <HouseEffectsRow
+              key={pollster}
+              pollster={pollster}
+              effects={houseEffects[pollster] ?? {}}
+            />
+          ))}
+        </div>
+        <div className="mt-4 pt-3 border-t border-border flex flex-wrap gap-3">
+          {PARTY_KEYS.map(pk => (
+            <span key={pk} className="flex items-center gap-1 text-xs font-mono text-muted-foreground">
+              <span
+                className="inline-block w-3 h-3 rounded-full"
+                style={{ background: PARTIES[pk]?.color }}
+              />
+              {pk}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* ── Weight share pie ── */}
       <div className="rounded-xl border border-border bg-card p-5">
         <p className="text-xs font-semibold font-mono uppercase tracking-widest text-foreground mb-1">
@@ -184,41 +216,6 @@ export function InstitutterClient({ houseEffects, weightShares }: Props) {
             />
           </PieChart>
         </ResponsiveContainer>
-      </div>
-
-      {/* ── House effects ── */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <p className="text-xs font-semibold font-mono uppercase tracking-widest text-foreground mb-1">
-          {da ? "Systematiske huseffekter" : "Systematic house effects"}
-        </p>
-        <p className="text-xs font-mono text-muted-foreground mb-1">
-          {da
-            ? "Procentpoint instituttet systematisk over- (+) eller undervurderer (−) hvert parti ift. konkurrenternes samtidige målinger."
-            : "Percentage-point systematic over- (+) or under-estimation (−) vs. concurrent polls from other houses."}
-        </p>
-        <p className="text-xs font-mono text-muted-foreground mb-5">
-          {da ? "Hold musen over en prik for at se værdien." : "Hover a dot to see the value."}
-        </p>
-        <div className="space-y-3">
-          {Object.keys(POLLSTERS).map(pollster => (
-            <HouseEffectsRow
-              key={pollster}
-              pollster={pollster}
-              effects={houseEffects[pollster] ?? {}}
-            />
-          ))}
-        </div>
-        <div className="mt-4 pt-3 border-t border-border flex flex-wrap gap-3">
-          {PARTY_KEYS.map(pk => (
-            <span key={pk} className="flex items-center gap-1 text-xs font-mono text-muted-foreground">
-              <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{ background: PARTIES[pk]?.color }}
-              />
-              {pk}
-            </span>
-          ))}
-        </div>
       </div>
 
       {/* ── About ── */}
