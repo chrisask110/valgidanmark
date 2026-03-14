@@ -17,6 +17,8 @@ const RANGE = 2.5; // ±2.5 pp axis
 
 // ── Lollipop chart for one pollster ──────────────────────────────────────────
 function LollipopChart({ effects }: { effects: Record<string, number> }) {
+  const [hoveredPk, setHoveredPk] = useState<string | null>(null);
+
   const entries = PARTY_KEYS
     .map(pk => ({ pk, val: effects[pk] ?? 0 }))
     .sort((a, b) => b.val - a.val);
@@ -55,14 +57,29 @@ function LollipopChart({ effects }: { effects: Record<string, number> }) {
               />
               {/* Dot */}
               <div
-                className="absolute w-3 h-3 rounded-full"
+                className="absolute w-3 h-3 rounded-full cursor-pointer"
                 style={{
                   left: `${dotLeftPct}%`,
                   top: "50%",
                   transform: "translate(-50%, -50%)",
                   background: party?.color ?? "#888",
                 }}
+                onMouseEnter={() => setHoveredPk(pk)}
+                onMouseLeave={() => setHoveredPk(null)}
               />
+              {/* Tooltip */}
+              {hoveredPk === pk && (
+                <div
+                  className="absolute z-10 rounded border border-border bg-card px-2 py-1 text-xs font-mono whitespace-nowrap pointer-events-none shadow-sm"
+                  style={{
+                    left: `${dotLeftPct}%`,
+                    bottom: "calc(100% + 4px)",
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  {party?.name ?? pk}
+                </div>
+              )}
             </div>
 
             {/* Value */}
@@ -180,8 +197,15 @@ export function InstitutterClient({ houseEffects, weightShares }: Props) {
               ))}
             </Pie>
             <Tooltip
-              formatter={(v: number) => [`${v}%`, da ? "Andel" : "Share"]}
-              contentStyle={{ fontFamily: "monospace", fontSize: 12 }}
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const { name, value } = payload[0];
+                return (
+                  <div style={{ fontFamily: "monospace", fontSize: 12, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 6, padding: "6px 10px" }}>
+                    {name} {value}%
+                  </div>
+                );
+              }}
             />
             <Legend
               formatter={(value, entry) => (
