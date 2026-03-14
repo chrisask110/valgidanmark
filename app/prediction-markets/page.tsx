@@ -3,6 +3,7 @@ import { PredictionMarkets } from "@/app/components/PredictionMarkets";
 import { KalshiMarkets } from "@/app/components/KalshiMarkets";
 import { PlacementComparison } from "@/app/components/PlacementComparison";
 import { PartySeatsCard } from "@/app/components/PartySeatsCard";
+import { SiteFooter } from "@/app/components/SiteFooter";
 import { FALLBACK_POLLS, PARTY_KEYS, calcWeightedAverage, calcPartySeats } from "@/app/lib/data";
 import { getPolls } from "@/lib/db";
 
@@ -26,6 +27,7 @@ export default async function PredictionMarketsPage() {
   const currentSeats = calcPartySeats(partyPct);
 
   return (
+    <>
     <main className="max-w-5xl mx-auto px-4 py-8 pb-24 sm:pb-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-sans tracking-tight">Prediction Markets</h1>
@@ -89,5 +91,7 @@ export default async function PredictionMarketsPage() {
         </section>
       </div>
     </main>
+    <SiteFooter />
+    </>
   );
 }

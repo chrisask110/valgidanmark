@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { PARTIES, PARTY_KEYS, POLLSTERS, FALLBACK_POLLS, calcWeightedAverage, type Poll } from "@/app/lib/data";
 import { useLanguage } from "@/app/components/LanguageContext";
+import { SiteFooter } from "@/app/components/SiteFooter";
 
 // ─── Normal CDF ──────────────────────────────────────────────────────────────
 function normalCDF(z: number): number {
@@ -238,6 +239,7 @@ export default function SpaerregrænsenPage() {
   const fmtSign = (n: number) => (n >= 0 ? "+" : "") + fmt(n);
 
   return (
+    <>
     <main className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-6">
         <Link href="/" className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors">
@@ -464,5 +466,7 @@ export default function SpaerregrænsenPage() {
         </div>
       )}
     </main>
+    <SiteFooter />
+    </>
   );
 }

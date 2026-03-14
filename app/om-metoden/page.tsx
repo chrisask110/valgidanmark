@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/app/components/LanguageContext";
+import { SiteFooter } from "@/app/components/SiteFooter";
 
 export default function OmMetoden() {
   const { lang } = useLanguage();
   const da = lang === "da";
 
   return (
+    <>
     <main className="max-w-2xl mx-auto px-4 py-12 space-y-10">
       <div>
         <Link href="/" className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors">
@@ -174,5 +176,7 @@ export default function OmMetoden() {
         </div>
       </section>
     </main>
+    <SiteFooter />
+    </>
   );
 }

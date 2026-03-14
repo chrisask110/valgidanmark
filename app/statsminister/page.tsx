@@ -7,6 +7,7 @@ import {
 } from "@/app/lib/data";
 import { runCoalitionMonteCarlo } from "@/app/lib/monte-carlo";
 import { ShareBar } from "@/app/components/ShareBar";
+import { SiteFooter } from "@/app/components/SiteFooter";
 
 // ─── FO / GL individual seat definitions ─────────────────────────────────────
 const FO_GL_INDIVIDUAL = [
@@ -376,6 +377,7 @@ export default function StatsministerPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
+    <>
     <main className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
       {/* ── Page title ─────────────────────────────────────────────── */}
@@ -672,5 +674,7 @@ export default function StatsministerPage() {
       )}
 
     </main>
+    <SiteFooter />
+    </>
   );
 }
