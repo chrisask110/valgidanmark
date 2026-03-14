@@ -299,7 +299,7 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
         <div className="max-w-7xl mx-auto px-4 space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-muted-foreground">
             <div>
-              {t("footer.updated")}: {latestDate} &middot; {t("footer.source")}: Verian, Epinion, Megafon, Voxmeter
+              {t("footer.updated")}: {latestDate} &middot; {t("footer.source")}: Verian, Epinion, Megafon, Voxmeter, Polymarket, Kalshi
             </div>
             <div>
               <Link href="/om-metoden" className="hover:text-foreground transition-colors">

@@ -115,7 +115,7 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   "threshold.sigma": { da: "σ ≈ 1,0 % (måleusikkerhed)", en: "σ ≈ 1.0% (polling uncertainty)" },
 
   // Footer
-  "footer.source": { da: "Datakilde", en: "Data source" },
+  "footer.source": { da: "Datakilder", en: "Data sources" },
   "footer.updated": { da: "Senest opdateret", en: "Last updated" },
   "footer.method": { da: "Om metoden", en: "About the model" },
   "footer.disclaimer": { da: "Prognosen er baseret på offentligt tilgængelige meningsmålinger. Modellen er ikke tilknyttet nogen politisk organisation.", en: "Forecast is based on publicly available polls. The model is not affiliated with any political organization." },
