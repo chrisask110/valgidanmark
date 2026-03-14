@@ -68,12 +68,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/logo 32px.png", type: "image/png", sizes: "32x32" },
-      { url: "/logo 48px.png", type: "image/png", sizes: "48x48" },
+      { url: "/Logo.png", type: "image/png" },
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/logo 32px.png",
-    apple: { url: "/logo 48px.png", sizes: "48x48" },
+    shortcut: "/Logo.png",
+    apple: { url: "/Logo.png" },
   },
   robots: {
     index: true,
@@ -144,7 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 "@type": "Organization",
                 name: "ValgiDanmark",
                 url: "https://valgidanmark.dk",
-                logo: `https://valgidanmark.dk/logo%2048px.png`,
+                logo: `https://valgidanmark.dk/Logo.png`,
                 sameAs: [],
               },
             ]),
