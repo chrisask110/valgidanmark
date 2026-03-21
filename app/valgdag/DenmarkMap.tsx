@@ -268,7 +268,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
   // Fetch GeoJSON once on mount
   useEffect(() => {
     let cancelled = false;
-    fetch("https://dawa.aws.dk/kommuner?format=geojson&srid=4326")
+    fetch("/dk-kommuner.geojson")
       .then((r) => {
         if (!r.ok) throw new Error(`GeoJSON fetch failed: ${r.status}`);
         return r.json();
@@ -303,10 +303,10 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
     // Separate Bornholm from mainland for inset
     const bornholmCode = "400";
     const mainFeatures = geojson.features.filter(
-      (f: any) => parseInt(f.properties.kode).toString() !== bornholmCode
+      (f: any) => f.properties.lau_1 !== bornholmCode
     );
     const bornholmFeature = geojson.features.find(
-      (f: any) => parseInt(f.properties.kode).toString() === bornholmCode
+      (f: any) => f.properties.lau_1 === bornholmCode
     );
 
     const mainGeo = { type: "FeatureCollection", features: mainFeatures };
@@ -320,7 +320,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
     const path = d3.geoPath().projection(projection);
 
     function getFillColor(feature: any): string {
-      const key = parseInt(feature.properties.kode).toString();
+      const key = feature.properties.lau_1;
       const kommune = perKommune[key];
       if (kommune && kommune.partier && kommune.partier.length > 0) {
         const leader = getLeadingParty(kommune.partier);
@@ -332,7 +332,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
     }
 
     function getFillOpacity(feature: any): number {
-      const key = parseInt(feature.properties.kode).toString();
+      const key = feature.properties.lau_1;
       const kommune = perKommune[key];
       // Live data: full opacity. No data: dimmed to show it's 2022 reference
       if (kommune && kommune.partier && kommune.partier.length > 0) return 0.85;
@@ -353,7 +353,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
       .style("cursor", "pointer")
       .on("mouseenter", function (event: MouseEvent, d: any) {
         d3.select(this).attr("stroke-width", 1.5).attr("stroke", "#ffffff80");
-        const key  = parseInt(d.properties.kode).toString();
+        const key  = d.properties.lau_1;
         const kommune = perKommune[key];
         const leader  = kommune ? getLeadingParty(kommune.partier) : null;
         const rect = svgRef.current!.getBoundingClientRect();
@@ -361,7 +361,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
           x: event.clientX - rect.left,
           y: event.clientY - rect.top,
           kommuneKey: key,
-          navn: d.properties.navn,
+          navn: d.properties.label_dk,
         });
         // Store leader info for tooltip rendering
         (this as any)._tooltipLeader = leader;
@@ -377,10 +377,10 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
         setTooltip(null);
       })
       .on("click", function (_event: MouseEvent, d: any) {
-        const key = parseInt(d.properties.kode).toString();
+        const key = d.properties.lau_1;
         setSelectedKey(key);
         setSelectedData(perKommune[key] ?? null);
-        setSelectedNavn(d.properties.navn ?? "");
+        setSelectedNavn(d.properties.label_dk ?? "");
       });
 
     // Draw Bornholm inset (bottom-right corner)
@@ -419,7 +419,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
         .on("click", () => {
           setSelectedKey(bKey);
           setSelectedData(perKommune[bKey] ?? null);
-          setSelectedNavn(bornholmFeature.properties.navn ?? "Bornholm");
+          setSelectedNavn(bornholmFeature.properties.label_dk ?? "Bornholm");
         });
 
       insetSvg.append("text")
