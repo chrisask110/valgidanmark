@@ -678,9 +678,9 @@ export default function ValgdagPage() {
           }
         } else {
           const json = await res.json();
-          // API returns { data: AggregatedResults | null, timestamp: string | null }
-          const payload = json?.data ?? json;
-          setResults(payload ?? null);
+          // API always returns { data: AggregatedResults | null, timestamp: string | null }
+          const payload: AggregatedResults | null = json?.data ?? null;
+          setResults(payload);
           setResultsError(null);
         }
       } catch {
