@@ -1,0 +1,38 @@
+{
+  "IndenforParti": [
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123451", "PartiNavn": "Socialdemokraterne", "Bogstavbetegnelse": "A", "Stemmer": 578, "Partistemmer": 578, "StemmerDifferenceFraForrigeValg": -134, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123452", "PartiNavn": "SF – Socialistisk Folkeparti", "Bogstavbetegnelse": "F", "Stemmer": 428, "Partistemmer": 428, "StemmerDifferenceFraForrigeValg": 138, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123453", "PartiNavn": "Enhedslisten – De Rød-Grønne", "Bogstavbetegnelse": "Ø", "Stemmer": 318, "Partistemmer": 318, "StemmerDifferenceFraForrigeValg": 56, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123454", "PartiNavn": "Venstre, Danmarks Liberale Parti", "Bogstavbetegnelse": "V", "Stemmer": 308, "Partistemmer": 308, "StemmerDifferenceFraForrigeValg": -72, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123455", "PartiNavn": "Liberal Alliance", "Bogstavbetegnelse": "I", "Stemmer": 294, "Partistemmer": 294, "StemmerDifferenceFraForrigeValg": 70, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123456", "PartiNavn": "Danmarksdemokraterne", "Bogstavbetegnelse": "Æ", "Stemmer": 248, "Partistemmer": 248, "StemmerDifferenceFraForrigeValg": 18, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123457", "PartiNavn": "Dansk Folkeparti", "Bogstavbetegnelse": "O", "Stemmer": 208, "Partistemmer": 208, "StemmerDifferenceFraForrigeValg": 94, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123458", "PartiNavn": "Det Konservative Folkeparti", "Bogstavbetegnelse": "C", "Stemmer": 182, "Partistemmer": 182, "StemmerDifferenceFraForrigeValg": 20, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123459", "PartiNavn": "Moderaterne", "Bogstavbetegnelse": "M", "Stemmer": 162, "Partistemmer": 162, "StemmerDifferenceFraForrigeValg": -66, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123460", "PartiNavn": "Radikale Venstre", "Bogstavbetegnelse": "B", "Stemmer": 136, "Partistemmer": 136, "StemmerDifferenceFraForrigeValg": 16, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123461", "PartiNavn": "Alternativet", "Bogstavbetegnelse": "Å", "Stemmer": 88, "Partistemmer": 88, "StemmerDifferenceFraForrigeValg": -16, "Kandidater": null },
+    { "PartiId": "d7e8f9a0-b1c2-3456-efab-567890123462", "PartiNavn": "Borgernes Parti", "Bogstavbetegnelse": "H", "Stemmer": 52, "Partistemmer": 52, "StemmerDifferenceFraForrigeValg": 52, "Kandidater": null }
+  ],
+  "UdenforParti": [
+    { "Id": "e8f9a0b1-c2d3-4567-fabc-678901234561", "Stemmeseddelnavn": "Nye Borgerlige (D)", "Stemmer": 36 }
+  ],
+  "Valgdag": "24-03-2026",
+  "Valgart": "Folketingsvalg",
+  "FrigivelsesTidspunktUTC": "24-03-2026 21:30:00",
+  "Storkreds": "Fyn",
+  "Storkredsnummer": 8,
+  "Opstillingskreds": "Odense",
+  "OpstillingskredsDagiId": 8001,
+  "Kommune": "Odense",
+  "Kommunekode": 461,
+  "AfstemningsområdeNummer": 2,
+  "AfstemningsområdeDagiId": 461102,
+  "Afstemningsområde": "Odense Vest",
+  "Resultatart": "ForeløbigOptælling",
+  "AfgivneStemmer": 3052,
+  "GyldigeStemmer": 3002,
+  "UgyldigeStemmerUdoverBlanke": 14,
+  "BlankeUgyldigeFremmødteStemmer": 24,
+  "BlankeUgyldigeBrevstemmer": 12,
+  "AntalStemmeberettigedeVælgere": 4640
+}

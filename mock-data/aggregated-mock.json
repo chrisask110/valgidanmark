@@ -1,0 +1,234 @@
+{
+  "lastUpdated": "2026-03-24T21:45:00.000Z",
+  "totalAfstemningsomraader": 1384,
+  "optalteAfstemningsomraader": 347,
+  "optaltProcent": 25.07,
+  "national": {
+    "afgivneStemmer": 802400,
+    "gyldigeStemmer": 793900,
+    "stemmeberettigede": 4000000,
+    "valgdeltagelse": 20.06,
+    "partier": [
+      {
+        "bogstav": "A",
+        "navn": "Socialdemokraterne",
+        "stemmer": 171542,
+        "stemmeProcent": 21.6,
+        "antalMandater": 38,
+        "diffFraForrigeValg": -5.9
+      },
+      {
+        "bogstav": "F",
+        "navn": "SF – Socialistisk Folkeparti",
+        "stemmer": 107177,
+        "stemmeProcent": 13.5,
+        "antalMandater": 24,
+        "diffFraForrigeValg": 5.2
+      },
+      {
+        "bogstav": "V",
+        "navn": "Venstre, Danmarks Liberale Parti",
+        "stemmer": 85741,
+        "stemmeProcent": 10.8,
+        "antalMandater": 19,
+        "diffFraForrigeValg": -2.5
+      },
+      {
+        "bogstav": "I",
+        "navn": "Liberal Alliance",
+        "stemmer": 79390,
+        "stemmeProcent": 10.0,
+        "antalMandater": 18,
+        "diffFraForrigeValg": 2.1
+      },
+      {
+        "bogstav": "Æ",
+        "navn": "Danmarksdemokraterne",
+        "stemmer": 67482,
+        "stemmeProcent": 8.5,
+        "antalMandater": 15,
+        "diffFraForrigeValg": 0.4
+      },
+      {
+        "bogstav": "O",
+        "navn": "Dansk Folkeparti",
+        "stemmer": 54779,
+        "stemmeProcent": 6.9,
+        "antalMandater": 12,
+        "diffFraForrigeValg": 4.3
+      },
+      {
+        "bogstav": "C",
+        "navn": "Det Konservative Folkeparti",
+        "stemmer": 53985,
+        "stemmeProcent": 6.8,
+        "antalMandater": 12,
+        "diffFraForrigeValg": 1.3
+      },
+      {
+        "bogstav": "Ø",
+        "navn": "Enhedslisten – De Rød-Grønne",
+        "stemmer": 53985,
+        "stemmeProcent": 6.8,
+        "antalMandater": 12,
+        "diffFraForrigeValg": 1.5
+      },
+      {
+        "bogstav": "M",
+        "navn": "Moderaterne",
+        "stemmer": 46046,
+        "stemmeProcent": 5.8,
+        "antalMandater": 10,
+        "diffFraForrigeValg": -3.5
+      },
+      {
+        "bogstav": "B",
+        "navn": "Radikale Venstre",
+        "stemmer": 38107,
+        "stemmeProcent": 4.8,
+        "antalMandater": 8,
+        "diffFraForrigeValg": 1.1
+      },
+      {
+        "bogstav": "Å",
+        "navn": "Alternativet",
+        "stemmer": 17466,
+        "stemmeProcent": 2.2,
+        "antalMandater": 4,
+        "diffFraForrigeValg": -1.1
+      },
+      {
+        "bogstav": "H",
+        "navn": "Borgernes Parti",
+        "stemmer": 14290,
+        "stemmeProcent": 1.8,
+        "antalMandater": null,
+        "diffFraForrigeValg": 1.8
+      }
+    ],
+    "udenforParti": [
+      {
+        "navn": "D – Nye Borgerlige",
+        "stemmer": 10321
+      }
+
+    ]
+  },
+  "perStorkreds": {
+    "1": {
+      "navn": "København",
+      "nummer": 1,
+      "afgivneStemmer": 148600,
+      "gyldigeStemmer": 146900,
+      "stemmeberettigede": 520000,
+      "optalteAfstemningsomraader": 62,
+      "totalAfstemningsomraader": 248,
+      "partier": [
+        { "bogstav": "A", "navn": "Socialdemokraterne", "stemmer": 28140, "stemmeProcent": 19.2 },
+        { "bogstav": "F", "navn": "SF – Socialistisk Folkeparti", "stemmer": 25330, "stemmeProcent": 17.3 },
+        { "bogstav": "Ø", "navn": "Enhedslisten – De Rød-Grønne", "stemmer": 18080, "stemmeProcent": 12.3 },
+        { "bogstav": "B", "navn": "Radikale Venstre", "stemmer": 11750, "stemmeProcent": 8.0 },
+        { "bogstav": "I", "navn": "Liberal Alliance", "stemmer": 11600, "stemmeProcent": 7.9 },
+        { "bogstav": "V", "navn": "Venstre, Danmarks Liberale Parti", "stemmer": 10540, "stemmeProcent": 7.2 },
+        { "bogstav": "M", "navn": "Moderaterne", "stemmer": 8790, "stemmeProcent": 5.99 },
+        { "bogstav": "C", "navn": "Det Konservative Folkeparti", "stemmer": 8500, "stemmeProcent": 5.79 },
+        { "bogstav": "Å", "navn": "Alternativet", "stemmer": 5720, "stemmeProcent": 3.9 },
+        { "bogstav": "Æ", "navn": "Danmarksdemokraterne", "stemmer": 7320, "stemmeProcent": 4.99 },
+        { "bogstav": "O", "navn": "Dansk Folkeparti", "stemmer": 4540, "stemmeProcent": 3.09 },
+        { "bogstav": "H", "navn": "Borgernes Parti", "stemmer": 2790, "stemmeProcent": 1.9 }
+      ]
+    },
+    "2": {
+      "navn": "Nordsjælland",
+      "nummer": 2,
+      "afgivneStemmer": 89200,
+      "gyldigeStemmer": 88300,
+      "stemmeberettigede": 310000,
+      "optalteAfstemningsomraader": 28,
+      "totalAfstemningsomraader": 112,
+      "partier": [
+        { "bogstav": "A", "navn": "Socialdemokraterne", "stemmer": 17220, "stemmeProcent": 19.5 },
+        { "bogstav": "V", "navn": "Venstre, Danmarks Liberale Parti", "stemmer": 13380, "stemmeProcent": 15.2 },
+        { "bogstav": "I", "navn": "Liberal Alliance", "stemmer": 11596, "stemmeProcent": 13.1 },
+        { "bogstav": "C", "navn": "Det Konservative Folkeparti", "stemmer": 8918, "stemmeProcent": 10.1 },
+        { "bogstav": "F", "navn": "SF – Socialistisk Folkeparti", "stemmer": 8474, "stemmeProcent": 9.6 },
+        { "bogstav": "M", "navn": "Moderaterne", "stemmer": 6244, "stemmeProcent": 7.07 },
+        { "bogstav": "Æ", "navn": "Danmarksdemokraterne", "stemmer": 5358, "stemmeProcent": 6.07 },
+        { "bogstav": "Ø", "navn": "Enhedslisten – De Rød-Grønne", "stemmer": 4716, "stemmeProcent": 5.34 },
+        { "bogstav": "B", "navn": "Radikale Venstre", "stemmer": 4272, "stemmeProcent": 4.84 },
+        { "bogstav": "O", "navn": "Dansk Folkeparti", "stemmer": 4006, "stemmeProcent": 4.54 },
+        { "bogstav": "Å", "navn": "Alternativet", "stemmer": 1946, "stemmeProcent": 2.2 },
+        { "bogstav": "H", "navn": "Borgernes Parti", "stemmer": 1328, "stemmeProcent": 1.5 }
+      ]
+    },
+    "4": {
+      "navn": "Østjylland",
+      "nummer": 4,
+      "afgivneStemmer": 102400,
+      "gyldigeStemmer": 101200,
+      "stemmeberettigede": 355000,
+      "optalteAfstemningsomraader": 31,
+      "totalAfstemningsomraader": 124,
+      "partier": [
+        { "bogstav": "A", "navn": "Socialdemokraterne", "stemmer": 22124, "stemmeProcent": 21.9 },
+        { "bogstav": "F", "navn": "SF – Socialistisk Folkeparti", "stemmer": 14168, "stemmeProcent": 14.0 },
+        { "bogstav": "V", "navn": "Venstre, Danmarks Liberale Parti", "stemmer": 10120, "stemmeProcent": 10.0 },
+        { "bogstav": "I", "navn": "Liberal Alliance", "stemmer": 9108, "stemmeProcent": 9.0 },
+        { "bogstav": "Æ", "navn": "Danmarksdemokraterne", "stemmer": 8096, "stemmeProcent": 8.0 },
+        { "bogstav": "Ø", "navn": "Enhedslisten – De Rød-Grønne", "stemmer": 7588, "stemmeProcent": 7.5 },
+        { "bogstav": "C", "navn": "Det Konservative Folkeparti", "stemmer": 6576, "stemmeProcent": 6.5 },
+        { "bogstav": "O", "navn": "Dansk Folkeparti", "stemmer": 6576, "stemmeProcent": 6.5 },
+        { "bogstav": "M", "navn": "Moderaterne", "stemmer": 5564, "stemmeProcent": 5.5 },
+        { "bogstav": "B", "navn": "Radikale Venstre", "stemmer": 4552, "stemmeProcent": 4.5 },
+        { "bogstav": "Å", "navn": "Alternativet", "stemmer": 2024, "stemmeProcent": 2.0 },
+        { "bogstav": "H", "navn": "Borgernes Parti", "stemmer": 1720, "stemmeProcent": 1.7 }
+      ]
+    },
+    "5": {
+      "navn": "Vestjylland",
+      "nummer": 5,
+      "afgivneStemmer": 67800,
+      "gyldigeStemmer": 67100,
+      "stemmeberettigede": 235000,
+      "optalteAfstemningsomraader": 22,
+      "totalAfstemningsomraader": 88,
+      "partier": [
+        { "bogstav": "A", "navn": "Socialdemokraterne", "stemmer": 14898, "stemmeProcent": 22.2 },
+        { "bogstav": "V", "navn": "Venstre, Danmarks Liberale Parti", "stemmer": 11826, "stemmeProcent": 17.6 },
+        { "bogstav": "Æ", "navn": "Danmarksdemokraterne", "stemmer": 8040, "stemmeProcent": 12.0 },
+        { "bogstav": "I", "navn": "Liberal Alliance", "stemmer": 6110, "stemmeProcent": 9.1 },
+        { "bogstav": "O", "navn": "Dansk Folkeparti", "stemmer": 5712, "stemmeProcent": 8.5 },
+        { "bogstav": "C", "navn": "Det Konservative Folkeparti", "stemmer": 4824, "stemmeProcent": 7.19 },
+        { "bogstav": "F", "navn": "SF – Socialistisk Folkeparti", "stemmer": 4690, "stemmeProcent": 6.99 },
+        { "bogstav": "M", "navn": "Moderaterne", "stemmer": 3752, "stemmeProcent": 5.6 },
+        { "bogstav": "Ø", "navn": "Enhedslisten – De Rød-Grønne", "stemmer": 3350, "stemmeProcent": 4.99 },
+        { "bogstav": "B", "navn": "Radikale Venstre", "stemmer": 2010, "stemmeProcent": 2.99 },
+        { "bogstav": "Å", "navn": "Alternativet", "stemmer": 938, "stemmeProcent": 1.4 },
+        { "bogstav": "H", "navn": "Borgernes Parti", "stemmer": 804, "stemmeProcent": 1.2 }
+      ]
+    },
+    "6": {
+      "navn": "Sydøstjylland",
+      "nummer": 6,
+      "afgivneStemmer": 74600,
+      "gyldigeStemmer": 73800,
+      "stemmeberettigede": 258000,
+      "optalteAfstemningsomraader": 24,
+      "totalAfstemningsomraader": 96,
+      "partier": [
+        { "bogstav": "A", "navn": "Socialdemokraterne", "stemmer": 16386, "stemmeProcent": 22.2 },
+        { "bogstav": "V", "navn": "Venstre, Danmarks Liberale Parti", "stemmer": 11190, "stemmeProcent": 15.17 },
+        { "bogstav": "Æ", "navn": "Danmarksdemokraterne", "stemmer": 8862, "stemmeProcent": 12.01 },
+        { "bogstav": "I", "navn": "Liberal Alliance", "stemmer": 7386, "stemmeProcent": 10.01 },
+        { "bogstav": "F", "navn": "SF – Socialistisk Folkeparti", "stemmer": 6642, "stemmeProcent": 9.0 },
+        { "bogstav": "O", "navn": "Dansk Folkeparti", "stemmer": 5904, "stemmeProcent": 8.0 },
+        { "bogstav": "C", "navn": "Det Konservative Folkeparti", "stemmer": 5166, "stemmeProcent": 7.0 },
+        { "bogstav": "Ø", "navn": "Enhedslisten – De Rød-Grønne", "stemmer": 4428, "stemmeProcent": 6.0 },
+        { "bogstav": "M", "navn": "Moderaterne", "stemmer": 3690, "stemmeProcent": 5.0 },
+        { "bogstav": "B", "navn": "Radikale Venstre", "stemmer": 2214, "stemmeProcent": 3.0 },
+        { "bogstav": "Å", "navn": "Alternativet", "stemmer": 1108, "stemmeProcent": 1.5 },
+        { "bogstav": "H", "navn": "Borgernes Parti", "stemmer": 886, "stemmeProcent": 1.2 }
+      ]
+    }
+  }
+}
