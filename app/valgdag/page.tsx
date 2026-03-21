@@ -7,7 +7,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import DenmarkMap from "./DenmarkMap";
+import dynamic from "next/dynamic";
+
+const DenmarkMap = dynamic(() => import("./DenmarkMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+      Indlæser kort...
+    </div>
+  ),
+});
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

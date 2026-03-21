@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import { GeoPermissibleObjects } from "d3-geo";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -276,7 +275,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
     // Projection fitted to mainland
     const projection = d3.geoMercator().fitExtent(
       [[20, 20], [W - 20, H - 20]],
-      mainGeo as GeoPermissibleObjects
+      mainGeo as any
     );
 
     const path = d3.geoPath().projection(projection);
@@ -351,7 +350,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
 
       const insetProjection = d3.geoMercator().fitExtent(
         [[5, 5], [IW - 5, IH - 5]],
-        bornholmFeature as GeoPermissibleObjects
+        bornholmFeature as any
       );
       const insetPath = d3.geoPath().projection(insetProjection);
 
