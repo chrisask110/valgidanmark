@@ -87,6 +87,22 @@ interface PartyKommune {
   stemmeProcent: number;
 }
 
+interface PartyAfstemningsomraade {
+  bogstav: string;
+  stemmer: number;
+  stemmeProcent: number;
+}
+
+interface AfstemningsomraadeSummary {
+  nummer: number;
+  navn: string;
+  dagiId: number;
+  resultatart: string;
+  afgivneStemmer: number;
+  stemmeberettigede: number;
+  partier: PartyAfstemningsomraade[];
+}
+
 interface StorkredsSummary {
   navn: string;
   nummer: number;
@@ -107,6 +123,7 @@ interface KommuneSummary {
   stemmeberettigede: number;
   optalteAfstemningsomraader: number;
   partier: PartyKommune[];
+  afstemningsomraader: AfstemningsomraadeSummary[];
 }
 
 interface AggregatedResults {
@@ -235,6 +252,7 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
       optalte: number;
       partyVotes: Record<string, number>;
       partyNames: Record<string, string>;
+      afstemningsomraader: AfstemningsomraadeSummary[];
     }
   > = {};
 
@@ -281,6 +299,7 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
         optalte: 0,
         partyVotes: {},
         partyNames: {},
+        afstemningsomraader: [],
       };
     }
     const kkData = kommuneByKode[kk];
@@ -309,6 +328,28 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
       udenforVotes[id] = (udenforVotes[id] ?? 0) + (u.Stemmer ?? 0);
       udenforNames[id] = u.Stemmeseddelnavn;
     }
+
+    // Build afstemningsomraade entry for this file
+    const gyldige = file.GyldigeStemmer ?? 0;
+    const omraadePartier: PartyAfstemningsomraade[] = (file.IndenforParti ?? [])
+      .map((parti) => ({
+        bogstav: parti.Bogstavbetegnelse,
+        stemmer: parti.Stemmer ?? 0,
+        stemmeProcent: gyldige > 0 ? ((parti.Stemmer ?? 0) / gyldige) * 100 : 0,
+      }))
+      .sort((a, b) => b.stemmeProcent - a.stemmeProcent);
+
+    const omraadeSummary: AfstemningsomraadeSummary = {
+      nummer: file.AfstemningsområdeNummer,
+      navn: file.Afstemningsområde,
+      dagiId: file.AfstemningsområdeDagiId,
+      resultatart: file.Resultatart,
+      afgivneStemmer: file.AfgivneStemmer ?? 0,
+      stemmeberettigede: file.AntalStemmeberettigedeVælgere ?? 0,
+      partier: omraadePartier,
+    };
+
+    kkData.afstemningsomraader.push(omraadeSummary);
   }
 
   // Compute valgdeltagelse
@@ -384,6 +425,11 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
       }))
       .sort((a, b) => b.stemmer - a.stemmer);
 
+    // Sort afstemningsomraader by nummer for stable ordering
+    const sortedOmraader = kkData.afstemningsomraader
+      .slice()
+      .sort((a, b) => a.nummer - b.nummer);
+
     perKommune[key] = {
       navn: kkData.navn,
       kommunekode: kkData.kommunekode,
@@ -393,6 +439,7 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
       stemmeberettigede: kkData.stemmeberettigede,
       optalteAfstemningsomraader: kkData.optalte,
       partier: kkPartier,
+      afstemningsomraader: sortedOmraader,
     };
   }
 

@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import dynamic from "next/dynamic";
+import Countdown from "@/app/Countdown";
 
 const DenmarkMap = dynamic(() => import("./DenmarkMap"), {
   ssr: false,
@@ -20,13 +21,14 @@ const DenmarkMap = dynamic(() => import("./DenmarkMap"), {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface PartiResult {
-  bogstav: string;
+interface AfstemningsomraadeResult {
+  nummer: number;
   navn: string;
-  stemmer: number;
-  stemmeProcent: number;
-  antalMandater: number | null;
-  diffFraForrigeValg: number | null;
+  dagiId: number;
+  resultatart: string;
+  afgivneStemmer: number;
+  stemmeberettigede: number;
+  partier: Array<{ bogstav: string; stemmer: number; stemmeProcent: number }>;
 }
 
 interface KommuneData {
@@ -38,6 +40,16 @@ interface KommuneData {
   stemmeberettigede: number;
   optalteAfstemningsomraader: number;
   partier: Array<{ bogstav: string; navn: string; stemmer: number; stemmeProcent: number }>;
+  afstemningsomraader: AfstemningsomraadeResult[];
+}
+
+interface PartiResult {
+  bogstav: string;
+  navn: string;
+  stemmer: number;
+  stemmeProcent: number;
+  antalMandater: number | null;
+  diffFraForrigeValg: number | null;
 }
 
 interface AggregatedResults {
@@ -69,27 +81,35 @@ interface PMData {
   markets: PMMarket[];
   secondPlace: Array<{ partyKey: string; probability: number }>;
   thirdPlace: Array<{ partyKey: string; probability: number }>;
-  partySeats: Array<{
-    partyKey: string;
-    ranges: Array<{ label: string; probability: number }>;
-  }>;
+  partySeats: Array<{ partyKey: string; ranges: Array<{ label: string; probability: number }> }>;
+}
+
+interface Election2022Party {
+  bogstav: string;
+  navn: string;
+  stemmer: number;
+  stemmePct: number;
+  mandater: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PARTIES: Record<string, { name: string; color: string; bloc: "red" | "blue"; result2022: number; seats2022: number }> = {
-  A: { name: "Socialdemokraterne",             color: "#C8102E", bloc: "red",  result2022: 27.5, seats2022: 50 },
-  F: { name: "SF – Socialistisk Folkeparti",   color: "#E4007C", bloc: "red",  result2022: 8.3,  seats2022: 15 },
-  V: { name: "Venstre",                        color: "#254B8E", bloc: "blue", result2022: 13.3, seats2022: 23 },
-  I: { name: "Liberal Alliance",               color: "#00B0CA", bloc: "blue", result2022: 7.9,  seats2022: 14 },
-  Æ: { name: "Danmarksdemokraterne",           color: "#005F6B", bloc: "blue", result2022: 8.1,  seats2022: 14 },
-  C: { name: "Det Konservative Folkeparti",    color: "#00583C", bloc: "blue", result2022: 5.5,  seats2022: 10 },
-  Ø: { name: "Enhedslisten",                  color: "#991B1E", bloc: "red",  result2022: 5.3,  seats2022: 9  },
-  B: { name: "Radikale Venstre",              color: "#733280", bloc: "red",  result2022: 3.7,  seats2022: 7  },
-  O: { name: "Dansk Folkeparti",              color: "#E4B828", bloc: "blue", result2022: 2.6,  seats2022: 5  },
-  Å: { name: "Alternativet",                  color: "#2ECC71", bloc: "red",  result2022: 3.3,  seats2022: 6  },
-  M: { name: "Moderaterne",                   color: "#8B5CF6", bloc: "blue", result2022: 9.3,  seats2022: 16 },
-  H: { name: "Borgernes Parti",               color: "#0084FF", bloc: "blue", result2022: 0.0,  seats2022: 0  },
+const POLLS_CLOSE = new Date("2026-03-24T20:00:00+01:00");
+
+const PARTIES: Record<string, { name: string; color: string; bloc: "red" | "blue" }> = {
+  A: { name: "Socialdemokraterne",           color: "#C8102E", bloc: "red"  },
+  F: { name: "SF – Socialistisk Folkeparti", color: "#E4007C", bloc: "red"  },
+  V: { name: "Venstre",                      color: "#254B8E", bloc: "blue" },
+  I: { name: "Liberal Alliance",             color: "#00B0CA", bloc: "blue" },
+  Æ: { name: "Danmarksdemokraterne",         color: "#005F6B", bloc: "blue" },
+  C: { name: "Det Konservative Folkeparti",  color: "#00583C", bloc: "blue" },
+  Ø: { name: "Enhedslisten",                color: "#991B1E", bloc: "red"  },
+  B: { name: "Radikale Venstre",            color: "#733280", bloc: "red"  },
+  O: { name: "Dansk Folkeparti",            color: "#E4B828", bloc: "blue" },
+  Å: { name: "Alternativet",               color: "#2ECC71", bloc: "red"  },
+  M: { name: "Moderaterne",                color: "#8B5CF6", bloc: "blue" },
+  H: { name: "Borgernes Parti",            color: "#0084FF", bloc: "blue" },
+  D: { name: "Nye Borgerlige",             color: "#FF6B35", bloc: "blue" },
 };
 
 const FORECAST: Record<string, number> = {
@@ -99,10 +119,30 @@ const FORECAST: Record<string, number> = {
 };
 
 const RED_BLOC   = ["A", "F", "Ø", "B", "Å"];
-const BLUE_BLOC  = ["V", "I", "Æ", "C", "O", "M", "H"];
+const BLUE_BLOC  = ["V", "I", "Æ", "C", "O", "M", "H", "D"];
 const FO_GL_SEATS = 4;
-const MAJORITY   = 90;
+const MAJORITY    = 90;
 const TOTAL_SEATS = 179;
+
+// Hardcoded North Atlantic — update manually via git commit
+const NORDATLANTISK = {
+  FO: {
+    navn: "Færøerne",
+    mandater: 2,
+    resultater: [
+      { parti: "Javnaðarflokkurin", bogstav: "JF",    stemmer: null as number | null, pct: null as number | null },
+      { parti: "Sambandsflokkurin", bogstav: "SF_FO",  stemmer: null as number | null, pct: null as number | null },
+    ],
+  },
+  GL: {
+    navn: "Grønland",
+    mandater: 2,
+    resultater: [
+      { parti: "Siumut",              bogstav: "SIU", stemmer: null as number | null, pct: null as number | null },
+      { parti: "Inuit Ataqatigiit",   bogstav: "IA",  stemmer: null as number | null, pct: null as number | null },
+    ],
+  },
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -118,8 +158,8 @@ function formatNumber(n: number): string {
   return n.toLocaleString("da-DK");
 }
 
-function sign(n: number): string {
-  return n > 0 ? `+${n.toFixed(1)}` : n.toFixed(1);
+function sign(n: number, decimals = 1): string {
+  return n > 0 ? `+${n.toFixed(decimals)}` : n.toFixed(decimals);
 }
 
 function getBlocSeats(partier: PartiResult[], bloc: "red" | "blue"): number {
@@ -141,101 +181,151 @@ function PartyDot({ bogstav }: { bogstav: string }) {
   );
 }
 
-// STATUS BAR
-function StatusBar({ data }: { data: AggregatedResults }) {
-  const isLive = data.optaltProcent > 0 && data.optaltProcent < 100;
+// STICKY STATUS BAR
+function StickyStatusBar({
+  data,
+  isComplete,
+}: {
+  data: AggregatedResults;
+  isComplete: boolean;
+}) {
+  const isLive = !isComplete && data.optaltProcent > 0;
   return (
-    <div className="mb-6">
-      <div className="flex flex-wrap items-center gap-3 mb-2 text-sm text-muted-foreground">
-        {isLive && (
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-green-400 font-medium">Live optælling</span>
+    <div
+      className="bg-background/95 backdrop-blur border-b border-border"
+      style={{ position: "sticky", top: 0, zIndex: 40 }}
+    >
+      <div className="max-w-5xl mx-auto px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm mb-1.5">
+          {isLive && (
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-green-400 font-semibold text-xs">LIVE</span>
+            </span>
+          )}
+          {isComplete && (
+            <span className="bg-primary/10 border border-primary/30 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
+              Endeligt resultat
+            </span>
+          )}
+          <span className="text-muted-foreground">
+            {data.optalteAfstemningsomraader} af {data.totalAfstemningsomraader} afstemningsområder optalt
           </span>
-        )}
-        <span>
-          {data.optalteAfstemningsomraader} af {data.totalAfstemningsomraader} afstemningsområder optalt
-        </span>
-        <span>·</span>
-        <span>Senest opdateret kl. {formatTime(data.lastUpdated)}</span>
-        <span>·</span>
-        <span className="font-semibold text-foreground">{data.optaltProcent.toFixed(1)}% optalt</span>
-      </div>
-      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-        <div
-          className="h-full bg-primary rounded-full transition-all duration-700"
-          style={{ width: `${Math.min(data.optaltProcent, 100)}%` }}
-        />
+          <span className="text-muted-foreground hidden sm:inline">·</span>
+          <span className="text-muted-foreground hidden sm:inline">
+            Senest opdateret kl. {formatTime(data.lastUpdated)}
+          </span>
+          <span className="font-semibold text-foreground ml-auto">
+            {data.optaltProcent.toFixed(1)}% optalt
+          </span>
+        </div>
+        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-700"
+            style={{ width: `${Math.min(data.optaltProcent, 100)}%` }}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
 // BLOC BAROMETER
-function BlocBarometer({ partier }: { partier: PartiResult[] }) {
-  const redSeats   = getBlocSeats(partier, "red") + FO_GL_SEATS;
-  const blueSeats  = getBlocSeats(partier, "blue");
-  const totalUsed  = redSeats + blueSeats;
-  const redPct     = (redSeats  / TOTAL_SEATS) * 100;
-  const bluePct    = (blueSeats / TOTAL_SEATS) * 100;
-  const majorityPct = (MAJORITY / TOTAL_SEATS) * 100;
-  const redWins    = redSeats  >= MAJORITY;
-  const blueWins   = blueSeats >= MAJORITY;
+function BlocBarometer({
+  partier,
+  isComplete,
+}: {
+  partier: PartiResult[];
+  isComplete: boolean;
+}) {
+  const redSeatsBase  = getBlocSeats(partier, "red");
+  const blueSeatsBase = getBlocSeats(partier, "blue");
+  const redSeats      = redSeatsBase + FO_GL_SEATS;
+  const blueSeats     = blueSeatsBase;
+  const totalUsed     = redSeats + blueSeats;
+  const redPct        = (redSeats  / TOTAL_SEATS) * 100;
+  const bluePct       = (blueSeats / TOTAL_SEATS) * 100;
+  const majorityPct   = (MAJORITY / TOTAL_SEATS) * 100; // 50.28%
+  const redWins       = redSeats  >= MAJORITY;
+  const blueWins      = blueSeats >= MAJORITY;
 
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Mandatbarometer</CardTitle>
         <p className="text-sm text-muted-foreground">
-          {MAJORITY} mandater kræves for flertal · {totalUsed} tildelt
+          {MAJORITY} mandater kræves for flertal · {totalUsed} af {TOTAL_SEATS} tildelt
         </p>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-between mb-3">
-          <div className="text-center">
-            <div className="text-3xl font-bold" style={{ color: "#dc2626" }}>{redSeats}</div>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <div className="text-4xl font-bold" style={{ color: "#dc2626" }}>
+              {redSeats}
+            </div>
             <div className="text-xs text-muted-foreground mt-0.5">
-              Rød blok {redWins && <span className="text-green-400 font-semibold ml-1">FLERTAL</span>}
+              Rød blok
+              {redWins && (
+                <span className="text-green-400 font-semibold ml-1.5">FLERTAL</span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              inkl. FO/GL ({FO_GL_SEATS})
             </div>
           </div>
-          <div className="text-center">
-            <div className="text-xl font-semibold text-muted-foreground">{MAJORITY}</div>
+          <div className="text-center px-4">
+            <div className="text-lg font-semibold text-muted-foreground">{MAJORITY}</div>
             <div className="text-xs text-muted-foreground">flertal</div>
           </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold" style={{ color: "#1d4ed8" }}>{blueSeats}</div>
+          <div className="text-right">
+            <div className="text-4xl font-bold" style={{ color: "#1d4ed8" }}>
+              {blueSeats}
+            </div>
             <div className="text-xs text-muted-foreground mt-0.5">
-              Blå blok {blueWins && <span className="text-green-400 font-semibold ml-1">FLERTAL</span>}
+              Blå blok
+              {blueWins && (
+                <span className="text-green-400 font-semibold ml-1.5">FLERTAL</span>
+              )}
             </div>
           </div>
         </div>
-        <div className="relative w-full h-10 rounded-lg overflow-hidden flex">
+
+        {/* Stacked bar */}
+        <div className="relative w-full h-12 rounded-lg overflow-hidden flex">
           <div
-            className="h-full transition-all duration-700 flex items-center justify-end pr-2"
+            className="h-full flex items-center justify-end pr-2 transition-all duration-700"
             style={{ width: `${redPct}%`, backgroundColor: "#dc2626" }}
           >
-            {redPct > 8 && <span className="text-white text-xs font-bold">{redSeats}</span>}
+            {redPct > 10 && (
+              <span className="text-white text-sm font-bold">{redSeats}</span>
+            )}
           </div>
           <div
-            className="h-full transition-all duration-700 flex items-center justify-start pl-2"
+            className="h-full flex items-center justify-start pl-2 transition-all duration-700"
             style={{ width: `${bluePct}%`, backgroundColor: "#1d4ed8" }}
           >
-            {bluePct > 8 && <span className="text-white text-xs font-bold">{blueSeats}</span>}
+            {bluePct > 10 && (
+              <span className="text-white text-sm font-bold">{blueSeats}</span>
+            )}
           </div>
-          {totalUsed < TOTAL_SEATS && <div className="h-full bg-muted" style={{ flex: 1 }} />}
+          {totalUsed < TOTAL_SEATS && (
+            <div className="h-full bg-muted/50" style={{ flex: 1 }} />
+          )}
+          {/* Majority line at 90/179 = 50.28% */}
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
             style={{ left: `${majorityPct}%` }}
           >
-            <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-xs text-white/80 whitespace-nowrap font-semibold">
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-white/70 font-semibold whitespace-nowrap">
               90
             </div>
           </div>
         </div>
+
         <div className="flex flex-wrap gap-4 mt-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: "#dc2626" }} />
-            Rød blok: {RED_BLOC.join(", ")} + FO/GL
+            Rød blok: {RED_BLOC.join(", ")} + FO/GL (4 faste mandater)
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: "#1d4ed8" }} />
@@ -247,67 +337,163 @@ function BlocBarometer({ partier }: { partier: PartiResult[] }) {
   );
 }
 
-// PARTY RESULTS TABLE
-function PartyResultsTable({ partier }: { partier: PartiResult[] }) {
+// ENHANCED PARTY RESULTS TABLE (live)
+function PartyResultsTable({
+  partier,
+  election2022,
+  isComplete,
+}: {
+  partier: PartiResult[];
+  election2022: Election2022Party[];
+  isComplete: boolean;
+}) {
+  const map2022: Record<string, Election2022Party> = {};
+  for (const p of election2022) {
+    map2022[p.bogstav] = p;
+  }
+
+  // Build list: live parties + forecast-only parties
+  const liveKeys = new Set(partier.map((p) => p.bogstav));
+  const forecastKeys = Object.keys(FORECAST).filter((k) => !liveKeys.has(k));
+
   const sorted = [...partier].sort((a, b) => b.stemmeProcent - a.stemmeProcent);
+
+  // Forecast-only rows sorted by forecast
+  const forecastOnly = forecastKeys.sort((a, b) => (FORECAST[b] ?? 0) - (FORECAST[a] ?? 0));
+
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Partiresultater</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Sorteret efter stemmeprocent · Prognose fra meningsmålingsgennemsnit
+        </p>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left py-2 px-4 font-medium text-muted-foreground w-8"></th>
-                <th className="text-left py-2 px-4 font-medium text-muted-foreground">Parti</th>
-                <th className="text-right py-2 px-4 font-medium text-muted-foreground">%</th>
-                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden sm:table-cell">Stemmer</th>
-                <th className="text-right py-2 px-4 font-medium text-muted-foreground">Mandater</th>
-                <th className="text-right py-2 px-4 font-medium text-muted-foreground hidden md:table-cell">Ændring</th>
+                <th className="text-left py-2 px-3 font-medium text-muted-foreground">Parti</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">
+                  Prognose
+                </th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground">Resultat</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden sm:table-cell">
+                  Diff
+                </th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden lg:table-cell">
+                  Stemmer
+                </th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground">Mandater</th>
+                <th className="text-right py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">
+                  Ændring vs. 2022
+                </th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((p, i) => {
-                const party          = PARTIES[p.bogstav];
-                const nearThreshold  = p.stemmeProcent > 0 && p.stemmeProcent < 2.5;
+                const party      = PARTIES[p.bogstav];
+                const forecast   = FORECAST[p.bogstav] ?? null;
+                const p2022      = map2022[p.bogstav];
+                const diffForecast = forecast !== null ? p.stemmeProcent - forecast : null;
+                const diff2022   = p2022 ? p.stemmeProcent - p2022.stemmePct : null;
+                const belowThreshold = p.stemmeProcent > 0 && p.stemmeProcent < 2.0;
+                const nearThreshold  = p.stemmeProcent >= 2.0 && p.stemmeProcent < 2.5;
+
                 return (
                   <tr
                     key={p.bogstav}
-                    className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+                    className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${
+                      i % 2 === 1 ? "bg-muted/10" : ""
+                    }`}
                   >
-                    <td className="py-2.5 px-4">
-                      <div className="flex items-center gap-1.5">
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-2">
                         <PartyDot bogstav={p.bogstav} />
-                        <span className="font-bold text-xs" style={{ color: party?.color ?? "#888" }}>
+                        <span className="font-bold text-xs w-5" style={{ color: party?.color ?? "#888" }}>
                           {p.bogstav}
+                        </span>
+                        <span className="font-medium hidden sm:inline">
+                          {p.navn || party?.name || p.bogstav}
+                        </span>
+                        {belowThreshold && (
+                          <span className="ml-1 text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full">
+                            Under 2%
+                          </span>
+                        )}
+                        {nearThreshold && (
+                          <span className="ml-1 text-xs bg-yellow-500/15 text-yellow-300 border border-yellow-500/25 px-1.5 py-0.5 rounded-full">
+                            Nær spærregrænse
+                          </span>
+                        )}
+                        {isComplete && (
+                          <span className="ml-1 text-xs bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full hidden md:inline">
+                            Endeligt
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-muted-foreground hidden md:table-cell">
+                      {forecast !== null ? `~${forecast.toFixed(1)}%` : "—"}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-foreground">
+                      {p.stemmeProcent.toFixed(1)}%
+                    </td>
+                    <td className="py-2.5 px-3 text-right hidden sm:table-cell">
+                      {diffForecast !== null ? (
+                        <span className={diffForecast >= 0 ? "text-green-400" : "text-red-400"}>
+                          {sign(diffForecast)} pp
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-muted-foreground hidden lg:table-cell">
+                      {formatNumber(p.stemmer)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-semibold">
+                      {p.antalMandater !== null ? p.antalMandater : "—"}
+                    </td>
+                    <td className="py-2.5 px-3 text-right hidden md:table-cell">
+                      {diff2022 !== null ? (
+                        <span className={diff2022 >= 0 ? "text-green-400" : "text-red-400"}>
+                          {sign(diff2022)} pp
+                        </span>
+                      ) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* Forecast-only parties (no live data yet) */}
+              {forecastOnly.map((bogstav) => {
+                const party    = PARTIES[bogstav];
+                const forecast = FORECAST[bogstav] ?? 0;
+                const p2022    = map2022[bogstav];
+                return (
+                  <tr
+                    key={`forecast-${bogstav}`}
+                    className="border-b border-border/30 opacity-50"
+                  >
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <PartyDot bogstav={bogstav} />
+                        <span className="font-bold text-xs w-5" style={{ color: party?.color ?? "#888" }}>
+                          {bogstav}
+                        </span>
+                        <span className="text-muted-foreground hidden sm:inline">
+                          {party?.name ?? bogstav}
                         </span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-4">
-                      <span className="font-medium">{p.navn || party?.name || p.bogstav}</span>
-                      {nearThreshold && (
-                        <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full">
-                          Nær spærregrænse
-                        </span>
-                      )}
+                    <td className="py-2 px-3 text-right text-muted-foreground hidden md:table-cell">
+                      ~{forecast.toFixed(1)}%
                     </td>
-                    <td className="py-2.5 px-4 text-right font-mono font-semibold">
-                      {p.stemmeProcent.toFixed(1)}%
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-muted-foreground hidden sm:table-cell">
-                      {formatNumber(p.stemmer)}
-                    </td>
-                    <td className="py-2.5 px-4 text-right font-semibold">
-                      {p.antalMandater !== null ? p.antalMandater : "—"}
-                    </td>
-                    <td className="py-2.5 px-4 text-right hidden md:table-cell">
-                      {p.diffFraForrigeValg !== null ? (
-                        <span className={p.diffFraForrigeValg >= 0 ? "text-green-400" : "text-red-400"}>
-                          {sign(p.diffFraForrigeValg)} pp
-                        </span>
-                      ) : "—"}
+                    <td className="py-2 px-3 text-right text-muted-foreground italic text-xs">Ingen data</td>
+                    <td className="py-2 px-3 hidden sm:table-cell" />
+                    <td className="py-2 px-3 hidden lg:table-cell" />
+                    <td className="py-2 px-3 text-right text-muted-foreground">—</td>
+                    <td className="py-2 px-3 hidden md:table-cell text-right text-muted-foreground">
+                      {p2022 ? `${p2022.stemmePct.toFixed(1)}% i 2022` : "—"}
                     </td>
                   </tr>
                 );
@@ -323,7 +509,7 @@ function PartyResultsTable({ partier }: { partier: PartiResult[] }) {
 // SPÆRREGRÆNSE TRACKER
 function SpaerregraenseTracker({ partier }: { partier: PartiResult[] }) {
   const tracked = partier
-    .filter((p) => p.stemmeProcent >= 0.5 && p.stemmeProcent <= 3.5)
+    .filter((p) => p.stemmeProcent >= 0 && p.stemmeProcent <= 3.5)
     .sort((a, b) => b.stemmeProcent - a.stemmeProcent);
 
   if (tracked.length === 0) return null;
@@ -332,35 +518,36 @@ function SpaerregraenseTracker({ partier }: { partier: PartiResult[] }) {
     <Card className="mb-6">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Spærregrænse-tracker</CardTitle>
-        <p className="text-sm text-muted-foreground">Partier tæt på 2%-spærregrænsen</p>
+        <p className="text-sm text-muted-foreground">
+          Partier mellem 0% og 3,5% — spærregrænsen er 2%
+        </p>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         {tracked.map((p) => {
           const party        = PARTIES[p.bogstav];
           const above        = p.stemmeProcent >= 2.0;
-          const barPct       = Math.min((p.stemmeProcent / 3.5) * 100, 100);
-          const thresholdPct = (2.0 / 3.5) * 100;
+          const maxScale     = 3.5;
+          const barPct       = Math.min((p.stemmeProcent / maxScale) * 100, 100);
+          const thresholdPct = (2.0 / maxScale) * 100;
+
           return (
             <div key={p.bogstav}>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2 text-sm">
                   <PartyDot bogstav={p.bogstav} />
-                  <span className="font-medium" style={{ color: party?.color ?? "#888" }}>
+                  <span className="font-semibold" style={{ color: party?.color ?? "#888" }}>
                     {p.bogstav}
                   </span>
                   <span className="text-muted-foreground text-xs hidden sm:inline">
                     {p.navn || party?.name}
                   </span>
                 </div>
-                <span className={`text-sm font-bold ${above ? "text-green-400" : "text-red-400"}`}>
+                <span className={`text-sm font-bold tabular-nums ${above ? "text-green-400" : "text-red-400"}`}>
                   {p.stemmeProcent.toFixed(2)}%
+                  {above ? " ✓" : " ✗"}
                 </span>
               </div>
               <div className="relative w-full h-3 bg-muted rounded-full overflow-visible">
-                <div
-                  className="absolute top-0 bottom-0 w-0.5 bg-white/50 z-10"
-                  style={{ left: `${thresholdPct}%` }}
-                />
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
@@ -368,10 +555,15 @@ function SpaerregraenseTracker({ partier }: { partier: PartiResult[] }) {
                     backgroundColor: above ? "#22c55e" : "#ef4444",
                   }}
                 />
+                {/* Threshold line */}
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-white/60 z-10"
+                  style={{ left: `${thresholdPct}%` }}
+                />
               </div>
               <div
                 className="text-xs text-muted-foreground mt-0.5"
-                style={{ marginLeft: `${thresholdPct}%` }}
+                style={{ paddingLeft: `${thresholdPct}%` }}
               >
                 2%
               </div>
@@ -383,93 +575,132 @@ function SpaerregraenseTracker({ partier }: { partier: PartiResult[] }) {
   );
 }
 
-// MODEL VS REALITY
-function ModelVsReality({ partier }: { partier: PartiResult[] }) {
-  const keys = Object.keys(FORECAST).sort(
-    (a, b) => (FORECAST[b] ?? 0) - (FORECAST[a] ?? 0),
-  );
-  const actualMap: Record<string, number> = {};
-  for (const p of partier) {
-    actualMap[p.bogstav] = p.stemmeProcent;
-  }
+// NORTH ATLANTIC MANDATER
+function NordatlantiskeMandater() {
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Model vs. Virkelighed</CardTitle>
+        <CardTitle className="text-lg">Nordatlantiske mandater</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Meningsmålinger (gennemsnit) sammenlignet med faktiske resultater
+          4 mandater indgår i mandatopgørelsen · Opdateres manuelt
         </p>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {keys.map((bogstav) => {
-            const forecast = FORECAST[bogstav] ?? 0;
-            const actual   = actualMap[bogstav] ?? null;
-            const party    = PARTIES[bogstav];
-            const diff     = actual !== null ? actual - forecast : null;
-            const maxPct   = 30;
-            return (
-              <div key={bogstav}>
-                <div className="flex items-center gap-2 mb-1">
-                  <PartyDot bogstav={bogstav} />
-                  <span className="text-xs font-bold w-5" style={{ color: party?.color ?? "#888" }}>
-                    {bogstav}
-                  </span>
-                  <span className="text-xs text-muted-foreground flex-1 hidden sm:inline truncate">
-                    {party?.name}
-                  </span>
-                  <div className="flex items-center gap-3 ml-auto">
-                    <span className="text-xs text-muted-foreground w-14 text-right">
-                      Model: {forecast.toFixed(1)}%
-                    </span>
-                    {actual !== null ? (
-                      <>
-                        <span className="text-xs font-semibold w-16 text-right">
-                          Faktisk: {actual.toFixed(1)}%
-                        </span>
-                        {diff !== null && (
-                          <span className={`text-xs w-14 text-right ${diff >= 0 ? "text-green-400" : "text-red-400"}`}>
-                            {sign(diff)} pp
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-xs text-muted-foreground w-32 text-right">Ingen data endnu</span>
-                    )}
+      <CardContent className="space-y-4">
+        {(["FO", "GL"] as const).map((key) => {
+          const territory = NORDATLANTISK[key];
+          const flag = key === "FO" ? "🇫🇴" : "🇬🇱";
+          return (
+            <div key={key} className="border border-border/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">{flag}</span>
+                <div>
+                  <div className="font-semibold">{territory.navn}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {territory.mandater} mandater
                   </div>
                 </div>
-                <div className="relative w-full h-4 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="absolute top-0 bottom-0 left-0 rounded-full opacity-30"
-                    style={{
-                      width: `${Math.min((forecast / maxPct) * 100, 100)}%`,
-                      backgroundColor: party?.color ?? "#888",
-                    }}
-                  />
-                  {actual !== null && (
-                    <div
-                      className="absolute top-1 bottom-1 left-0 rounded-full"
-                      style={{
-                        width: `${Math.min((actual / maxPct) * 100, 100)}%`,
-                        backgroundColor: party?.color ?? "#888",
-                      }}
-                    />
-                  )}
-                </div>
               </div>
-            );
-          })}
-        </div>
-        <p className="text-xs text-muted-foreground mt-4">
-          Lys: Model-prognose · Mørk: Faktisk resultat
+              <div className="text-sm text-muted-foreground italic">
+                Resultater ikke tilgængelige endnu
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+// FORECAST TABLE (pre-election state)
+function ForecastTable({ election2022 }: { election2022: Election2022Party[] }) {
+  const map2022: Record<string, Election2022Party> = {};
+  for (const p of election2022) {
+    map2022[p.bogstav] = p;
+  }
+
+  const keys = Object.keys(FORECAST).sort(
+    (a, b) => (FORECAST[b] ?? 0) - (FORECAST[a] ?? 0),
+  );
+
+  return (
+    <Card className="mb-6">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">Meningsmålinger — prognose</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Vægtet gennemsnit af seneste meningsmålinger (pr. valgdag)
         </p>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 px-4 font-medium text-muted-foreground">Parti</th>
+                <th className="text-right py-2 px-4 font-medium text-muted-foreground">Prognose %</th>
+                <th className="text-right py-2 px-4 font-medium text-muted-foreground hidden sm:table-cell">
+                  2022 %
+                </th>
+                <th className="text-right py-2 px-4 font-medium text-muted-foreground hidden md:table-cell">
+                  Ændring
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {keys.map((bogstav, i) => {
+                const pct    = FORECAST[bogstav] ?? 0;
+                const party  = PARTIES[bogstav];
+                const p2022  = map2022[bogstav];
+                const pct2022 = p2022?.stemmePct ?? null;
+                const diff   = pct2022 !== null ? pct - pct2022 : null;
+
+                return (
+                  <tr
+                    key={bogstav}
+                    className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${
+                      i % 2 === 1 ? "bg-muted/10" : ""
+                    }`}
+                  >
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <PartyDot bogstav={bogstav} />
+                        <span className="font-bold text-xs w-5" style={{ color: party?.color ?? "#888" }}>
+                          {bogstav}
+                        </span>
+                        <span className="font-medium">{party?.name ?? bogstav}</span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-mono font-semibold">
+                      {pct.toFixed(1)}%
+                    </td>
+                    <td className="py-2.5 px-4 text-right text-muted-foreground hidden sm:table-cell">
+                      {pct2022 !== null ? `${pct2022.toFixed(1)}%` : "—"}
+                    </td>
+                    <td className="py-2.5 px-4 text-right hidden md:table-cell">
+                      {diff !== null ? (
+                        <span className={diff >= 0 ? "text-green-400" : "text-red-400"}>
+                          {sign(diff)} pp
+                        </span>
+                      ) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
 // PREDICTION MARKETS
-function PredictionMarkets({ pmData, loading }: { pmData: PMData | null; loading: boolean }) {
+function PredictionMarkets({
+  pmData,
+  loading,
+}: {
+  pmData: PMData | null;
+  loading: boolean;
+}) {
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
@@ -488,7 +719,6 @@ function PredictionMarkets({ pmData, loading }: { pmData: PMData | null; loading
           </p>
         ) : (
           <div className="space-y-6">
-            {/* Statsminister candidates */}
             {pmData.markets.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -498,8 +728,10 @@ function PredictionMarkets({ pmData, loading }: { pmData: PMData | null; loading
                   {[...pmData.markets]
                     .sort((a, b) => b.probability - a.probability)
                     .map((market) => {
-                      const color = market.partyKey ? (PARTIES[market.partyKey]?.color ?? "#888") : "#888";
-                      const pct   = Math.round(market.probability * 100);
+                      const color = market.partyKey
+                        ? (PARTIES[market.partyKey]?.color ?? "#888")
+                        : "#888";
+                      const pct = Math.round(market.probability * 100);
                       return (
                         <div key={market.candidate}>
                           <div className="flex items-center justify-between mb-1">
@@ -551,7 +783,6 @@ function PredictionMarkets({ pmData, loading }: { pmData: PMData | null; loading
               </div>
             )}
 
-            {/* Party seats ranges if available */}
             {pmData.partySeats && pmData.partySeats.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -559,8 +790,10 @@ function PredictionMarkets({ pmData, loading }: { pmData: PMData | null; loading
                 </h4>
                 <div className="space-y-2">
                   {pmData.partySeats.map((entry) => {
-                    const color = PARTIES[entry.partyKey]?.color ?? "#888";
-                    const topRange = [...entry.ranges].sort((a, b) => b.probability - a.probability)[0];
+                    const color   = PARTIES[entry.partyKey]?.color ?? "#888";
+                    const topRange = [...entry.ranges].sort(
+                      (a, b) => b.probability - a.probability,
+                    )[0];
                     if (!topRange) return null;
                     return (
                       <div key={entry.partyKey} className="flex items-center gap-2 text-xs">
@@ -572,7 +805,7 @@ function PredictionMarkets({ pmData, loading }: { pmData: PMData | null; loading
                           {entry.partyKey}
                         </span>
                         <span className="text-muted-foreground flex-1">{topRange.label}</span>
-                        <span className="font-semibold text-foreground">
+                        <span className="font-semibold">
                           {Math.round(topRange.probability * 100)}%
                         </span>
                       </div>
@@ -588,65 +821,99 @@ function PredictionMarkets({ pmData, loading }: { pmData: PMData | null; loading
   );
 }
 
-// FORECAST TABLE (waiting state)
-function ForecastTable() {
+// MODEL VS. VIRKELIGHED
+function ModelVsVirkelighed({ partier }: { partier: PartiResult[] }) {
   const keys = Object.keys(FORECAST).sort(
     (a, b) => (FORECAST[b] ?? 0) - (FORECAST[a] ?? 0),
   );
+  const actualMap: Record<string, number> = {};
+  for (const p of partier) {
+    actualMap[p.bogstav] = p.stemmeProcent;
+  }
+  const maxScale = 30;
+
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Meningsmålinger — prognose</CardTitle>
+        <CardTitle className="text-lg">Model vs. Virkelighed</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Vægtet gennemsnit af seneste meningsmålinger (pr. valgdag)
+          Meningsmålingsgennemsnit sammenlignet med faktiske resultater
         </p>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-2 px-4 font-medium text-muted-foreground w-8"></th>
-                <th className="text-left py-2 px-4 font-medium text-muted-foreground">Parti</th>
-                <th className="text-right py-2 px-4 font-medium text-muted-foreground">Prognose %</th>
-                <th className="text-right py-2 px-4 font-medium text-muted-foreground hidden sm:table-cell">2022 %</th>
-                <th className="text-right py-2 px-4 font-medium text-muted-foreground hidden md:table-cell">Ændring</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keys.map((bogstav, i) => {
-                const pct   = FORECAST[bogstav] ?? 0;
-                const party = PARTIES[bogstav];
-                const diff  = pct - (party?.result2022 ?? 0);
-                return (
-                  <tr
-                    key={bogstav}
-                    className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+      <CardContent>
+        <div className="space-y-3">
+          {keys.map((bogstav) => {
+            const forecast = FORECAST[bogstav] ?? 0;
+            const actual   = actualMap[bogstav] ?? null;
+            const party    = PARTIES[bogstav];
+            const diff     = actual !== null ? actual - forecast : null;
+
+            return (
+              <div key={bogstav}>
+                <div className="flex items-center gap-2 mb-1">
+                  <PartyDot bogstav={bogstav} />
+                  <span
+                    className="text-xs font-bold w-5 flex-shrink-0"
+                    style={{ color: party?.color ?? "#888" }}
                   >
-                    <td className="py-2.5 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <PartyDot bogstav={bogstav} />
-                        <span className="font-bold text-xs" style={{ color: party?.color ?? "#888" }}>
-                          {bogstav}
+                    {bogstav}
+                  </span>
+                  <span className="text-xs text-muted-foreground flex-1 hidden sm:block truncate">
+                    {party?.name}
+                  </span>
+                  <div className="flex items-center gap-3 ml-auto text-xs">
+                    <span className="text-muted-foreground w-16 text-right">
+                      Model: {forecast.toFixed(1)}%
+                    </span>
+                    {actual !== null ? (
+                      <>
+                        <span className="font-semibold w-18 text-right">
+                          Faktisk: {actual.toFixed(1)}%
                         </span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-4 font-medium">{party?.name ?? bogstav}</td>
-                    <td className="py-2.5 px-4 text-right font-mono font-semibold">{pct.toFixed(1)}%</td>
-                    <td className="py-2.5 px-4 text-right text-muted-foreground hidden sm:table-cell">
-                      {party?.result2022.toFixed(1)}%
-                    </td>
-                    <td className="py-2.5 px-4 text-right hidden md:table-cell">
-                      <span className={diff >= 0 ? "text-green-400" : "text-red-400"}>
-                        {sign(diff)} pp
+                        {diff !== null && (
+                          <span
+                            className={`w-14 text-right ${
+                              diff >= 0 ? "text-green-400" : "text-red-400"
+                            }`}
+                          >
+                            {sign(diff)} pp
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground w-32 text-right">
+                        Ingen data endnu
                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    )}
+                  </div>
+                </div>
+                <div className="relative w-full h-4 bg-muted rounded-full overflow-hidden">
+                  {/* Forecast bar (light) */}
+                  <div
+                    className="absolute top-0 bottom-0 left-0 rounded-full opacity-30"
+                    style={{
+                      width: `${Math.min((forecast / maxScale) * 100, 100)}%`,
+                      backgroundColor: party?.color ?? "#888",
+                    }}
+                  />
+                  {/* Actual bar (solid) */}
+                  {actual !== null && (
+                    <div
+                      className="absolute top-1 bottom-1 left-0 rounded-full"
+                      style={{
+                        width: `${Math.min((actual / maxScale) * 100, 100)}%`,
+                        backgroundColor: party?.color ?? "#888",
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
+        <p className="text-xs text-muted-foreground mt-4">
+          Lys: Prognose · Mørk: Faktisk resultat
+        </p>
       </CardContent>
     </Card>
   );
@@ -655,14 +922,16 @@ function ForecastTable() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ValgdagPage() {
-  const [results, setResults]           = useState<AggregatedResults | null>(null);
-  const [resultsError, setResultsError] = useState<string | null>(null);
+  const [results, setResults]               = useState<AggregatedResults | null>(null);
+  const [resultsError, setResultsError]     = useState<string | null>(null);
   const [resultsLoading, setResultsLoading] = useState(true);
 
   const [pmData, setPmData]       = useState<PMData | null>(null);
   const [pmLoading, setPmLoading] = useState(true);
 
-  // Fetch election results every 15 seconds
+  const [election2022, setElection2022] = useState<Election2022Party[]>([]);
+
+  // Poll election results every 15 seconds
   useEffect(() => {
     let cancelled = false;
 
@@ -678,7 +947,6 @@ export default function ValgdagPage() {
           }
         } else {
           const json = await res.json();
-          // API always returns { data: AggregatedResults | null, timestamp: string | null }
           const payload: AggregatedResults | null = json?.data ?? null;
           setResults(payload);
           setResultsError(null);
@@ -703,7 +971,7 @@ export default function ValgdagPage() {
     let cancelled = false;
     fetch("/api/prediction-markets")
       .then((r) => {
-        if (!r.ok) throw new Error(`PM fetch failed: ${r.status}`);
+        if (!r.ok) throw new Error(`${r.status}`);
         return r.json();
       })
       .then((data: PMData) => {
@@ -721,21 +989,45 @@ export default function ValgdagPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const isWaiting  = results === null;
-  const isCounting = results !== null && results.optaltProcent > 0 && results.optaltProcent < 100;
-  const isComplete = results !== null && results.optaltProcent >= 100;
+  // Fetch 2022 results once on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/election-2022")
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
+      .then((data: { national: Election2022Party[]; source: string }) => {
+        if (!cancelled) setElection2022(data.national ?? []);
+      })
+      .catch(() => {
+        // silently fail — 2022 data is optional
+      });
+    return () => { cancelled = true; };
+  }, []);
 
-  const partier = results?.national.partier ?? [];
+  // ── State derivations ──
+  const pollsClosed  = Date.now() >= POLLS_CLOSE.getTime();
+  const hasLiveData  = results !== null && results.optalteAfstemningsomraader > 0;
+  const isComplete   = results !== null && results.optaltProcent >= 100;
+  const showCounting = hasLiveData;
+  const partier      = results?.national.partier ?? [];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+
+      {/* Sticky status bar — shown only when live data is available */}
+      {hasLiveData && results && (
+        <StickyStatusBar data={results} isComplete={isComplete} />
+      )}
+
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Page header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center flex-wrap gap-3 mb-2">
             <h1 className="text-3xl font-bold">Valgresultater – 24. marts 2026</h1>
-            {isCounting && (
+            {hasLiveData && !isComplete && (
               <span className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-semibold px-2.5 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                 LIVE
@@ -743,66 +1035,127 @@ export default function ValgdagPage() {
             )}
             {isComplete && (
               <span className="bg-primary/10 border border-primary/30 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
-                ENDELIGT RESULTAT
+                Endeligt resultat
               </span>
             )}
           </div>
           <p className="text-muted-foreground">Folketingsvalg · 24. marts 2026</p>
         </div>
 
-        {/* ── WAITING STATE ── */}
-        {isWaiting && (
+        {/* Complete banner */}
+        {isComplete && results && (
+          <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 px-5 py-4 flex items-center gap-3">
+            <div className="flex-1">
+              <div className="font-semibold text-primary mb-0.5">
+                Optællingen er afsluttet
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Alle {results.totalAfstemningsomraader} afstemningsområder er optalt. Officielle
+                resultater offentliggøres af Indenrigsministeriet.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── COUNTDOWN — visible when polls not yet closed and no live data ── */}
+        {!(pollsClosed && hasLiveData) && (
+          <div className="mb-6">
+            <Countdown />
+          </div>
+        )}
+
+        {/* ── PRE-ELECTION / WAITING STATE ── */}
+        {!showCounting && (
           <>
-            <Card className="mb-6 border-primary/20 bg-card">
-              <CardContent className="py-10 text-center">
-                {resultsLoading ? (
-                  <>
-                    <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-muted-foreground">Forbinder til valgresultater...</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-5xl mb-4">🗳️</div>
-                    <h2 className="text-xl font-semibold mb-2">Venter på valgresultater...</h2>
-                    <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                      Optællingen er endnu ikke begyndt. Siden opdateres automatisk hvert 15. sekund,
-                      når resultaterne begynder at komme ind.
-                    </p>
-                    {resultsError && (
-                      <p className="text-red-400 text-xs mt-3">{resultsError}</p>
-                    )}
-                  </>
-                )}
+            {/* Loading / waiting card */}
+            {!pollsClosed && (
+              <Card className="mb-6 border-border/50">
+                <CardContent className="py-8 text-center">
+                  {resultsLoading ? (
+                    <>
+                      <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+                      <p className="text-muted-foreground">Forbinder til valgresultater...</p>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-xl font-semibold mb-2">Optællingen er endnu ikke begyndt</h2>
+                      <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                        Siden opdateres automatisk hvert 15. sekund når resultaterne begynder at komme ind.
+                        Afstemning slutter kl. 20:00.
+                      </p>
+                      {resultsError && (
+                        <p className="text-red-400 text-xs mt-3">{resultsError}</p>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pre-election forecast table */}
+            <ForecastTable election2022={election2022} />
+
+            {/* Map with 2022 fallback */}
+            <Card className="mb-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Kort over Danmark</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Viser 2022-resultater · Opdateres når optællingen begynder
+                </p>
+              </CardHeader>
+              <CardContent>
+                <DenmarkMap perKommune={{}} hasData={false} results2022={election2022} />
               </CardContent>
             </Card>
 
-            <ForecastTable />
+            {/* Prediction markets */}
             <PredictionMarkets pmData={pmData} loading={pmLoading} />
           </>
         )}
 
-        {/* ── COUNTING / COMPLETE STATE ── */}
-        {results && (
+        {/* ── LIVE COUNTING / COMPLETE STATE ── */}
+        {showCounting && results && (
           <>
-            {/* 1. Status bar */}
-            <StatusBar data={results} />
+            {/* 1. Bloc barometer */}
+            <BlocBarometer partier={partier} isComplete={isComplete} />
 
-            {/* 2. Bloc barometer */}
-            <BlocBarometer partier={partier} />
+            {/* 2. Enhanced party results table */}
+            <PartyResultsTable
+              partier={partier}
+              election2022={election2022}
+              isComplete={isComplete}
+            />
 
-            {/* 3. Party results table */}
-            <PartyResultsTable partier={partier} />
-
-            {/* 4. Spærregrænse tracker */}
+            {/* 3. Spærregrænse tracker */}
             <SpaerregraenseTracker partier={partier} />
 
-            {/* 6. Model vs Reality */}
-            <ModelVsReality partier={partier} />
+            {/* 4. North Atlantic mandater */}
+            <NordatlantiskeMandater />
 
-            {/* 7. Prediction markets */}
+            {/* 5. Map */}
+            <Card className="mb-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Resultater per kommune</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {results.optaltProcent.toFixed(1)}% optalt · Klik på en kommune for detaljer
+                </p>
+              </CardHeader>
+              <CardContent>
+                <DenmarkMap
+                  perKommune={results.perKommune}
+                  hasData={hasLiveData}
+                  results2022={election2022}
+                />
+              </CardContent>
+            </Card>
+
+            {/* 6. Prediction markets */}
             <PredictionMarkets pmData={pmData} loading={pmLoading} />
 
-            {/* 8. Valgdeltagelse sidebar-style row */}
+            {/* 7. Model vs. virkelighed */}
+            <ModelVsVirkelighed partier={partier} />
+
+            {/* Valgdeltagelse */}
             {results.national.valgdeltagelse > 0 && (
               <Card className="mb-6">
                 <CardHeader className="pb-3">
@@ -825,40 +1178,8 @@ export default function ValgdagPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Complete state summary */}
-            {isComplete && (
-              <Card className="mt-4 border-primary/20">
-                <CardContent className="py-6 text-center">
-                  <div className="text-4xl mb-3">🏁</div>
-                  <h2 className="text-xl font-semibold mb-1">Optællingen er afsluttet</h2>
-                  <p className="text-muted-foreground text-sm">
-                    Alle {results.totalAfstemningsomraader} afstemningsområder er optalt.
-                    Officielle resultater offentliggøres af Indenrigsministeriet.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
           </>
         )}
-
-        {/* ── MAP — always visible ── */}
-        <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Resultater per kommune</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {results
-                ? `${results.optaltProcent.toFixed(1)}% optalt · Klik på en kommune for detaljer`
-                : "0% optalt · Viser 2022-resultater · Opdateres når optællingen begynder"}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <DenmarkMap
-              perKommune={results?.perKommune ?? {}}
-              hasData={(results?.optalteAfstemningsomraader ?? 0) > 0}
-            />
-          </CardContent>
-        </Card>
 
       </div>
     </div>
