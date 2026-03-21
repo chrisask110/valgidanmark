@@ -796,22 +796,6 @@ export default function ValgdagPage() {
             {/* 4. Spærregrænse tracker */}
             <SpaerregraenseTracker partier={partier} />
 
-            {/* 5. Denmark map */}
-            <Card className="mb-6">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Resultater per kommune</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Klik på en kommune for detaljer · Farve angiver ledende parti
-                </p>
-              </CardHeader>
-              <CardContent>
-                <DenmarkMap
-                  perKommune={results.perKommune ?? {}}
-                  hasData={results.optalteAfstemningsomraader > 0}
-                />
-              </CardContent>
-            </Card>
-
             {/* 6. Model vs Reality */}
             <ModelVsReality partier={partier} />
 
@@ -857,6 +841,25 @@ export default function ValgdagPage() {
             )}
           </>
         )}
+
+        {/* ── MAP — always visible ── */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Resultater per kommune</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {results
+                ? `${results.optaltProcent.toFixed(1)}% optalt · Klik på en kommune for detaljer`
+                : "0% optalt · Viser 2022-resultater · Opdateres når optællingen begynder"}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <DenmarkMap
+              perKommune={results?.perKommune ?? {}}
+              hasData={(results?.optalteAfstemningsomraader ?? 0) > 0}
+            />
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );

@@ -69,21 +69,26 @@ function formatNumber(n: number): string {
 // ─── Detail Panel ─────────────────────────────────────────────────────────────
 
 function KommuneDetailPanel({
-  kommuneKey,
+  navn,
   data,
   onClose,
 }: {
-  kommuneKey: string;
+  navn: string;
   data: KommuneData | null;
   onClose: () => void;
 }) {
-  if (!data) return null;
 
-  const topPartier = [...data.partier]
+  const topPartier = [...(data?.partier ?? [])]
     .sort((a, b) => b.stemmeProcent - a.stemmeProcent)
     .slice(0, 8);
 
   const maxPct = topPartier[0]?.stemmeProcent ?? 1;
+
+  // 2022 national results as fallback when no live data
+  const results2022Partier = Object.entries(RESULTS_2022)
+    .sort(([, a], [, b]) => b - a)
+    .map(([bogstav, pct]) => ({ bogstav, stemmeProcent: pct }));
+  const max2022 = results2022Partier[0]?.stemmeProcent ?? 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
@@ -93,8 +98,8 @@ function KommuneDetailPanel({
         {/* Header */}
         <div className="sticky top-0 bg-[#0f172a] border-b border-white/10 px-5 py-4 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-white">{data.navn}</h3>
-            <p className="text-xs text-gray-400 mt-0.5">{data.storkreds}</p>
+            <h3 className="text-lg font-bold text-white">{data?.navn ?? navn}</h3>
+            <p className="text-xs text-gray-400 mt-0.5">{data?.storkreds ?? "Ingen data endnu"}</p>
           </div>
           <button
             onClick={onClose}
@@ -107,34 +112,40 @@ function KommuneDetailPanel({
 
         <div className="px-5 py-4 space-y-5">
           {/* Optalt info */}
-          <div className="bg-white/5 rounded-lg p-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">Optalt</span>
-              <span className="font-semibold text-white">
-                {data.optalteAfstemningsomraader > 0
-                  ? `${data.optalteAfstemningsomraader} afstemningsområder`
-                  : "Ingen data endnu"}
-              </span>
+          {data ? (
+            <div className="bg-white/5 rounded-lg p-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-400">Optalt</span>
+                <span className="font-semibold text-white">
+                  {data.optalteAfstemningsomraader > 0
+                    ? `${data.optalteAfstemningsomraader} afstemningsområder`
+                    : "Ingen data endnu"}
+                </span>
+              </div>
+              {data.afgivneStemmer > 0 && (
+                <div className="flex items-center justify-between text-sm mt-1.5">
+                  <span className="text-gray-400">Afgivne stemmer</span>
+                  <span className="font-semibold text-white">{formatNumber(data.afgivneStemmer)}</span>
+                </div>
+              )}
+              {data.stemmeberettigede > 0 && (
+                <div className="flex items-center justify-between text-sm mt-1.5">
+                  <span className="text-gray-400">Stemmeberettigede</span>
+                  <span className="font-semibold text-white">{formatNumber(data.stemmeberettigede)}</span>
+                </div>
+              )}
             </div>
-            {data.afgivneStemmer > 0 && (
-              <div className="flex items-center justify-between text-sm mt-1.5">
-                <span className="text-gray-400">Afgivne stemmer</span>
-                <span className="font-semibold text-white">{formatNumber(data.afgivneStemmer)}</span>
-              </div>
-            )}
-            {data.stemmeberettigede > 0 && (
-              <div className="flex items-center justify-between text-sm mt-1.5">
-                <span className="text-gray-400">Stemmeberettigede</span>
-                <span className="font-semibold text-white">{formatNumber(data.stemmeberettigede)}</span>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-xs text-yellow-400">
+              Ingen optælling endnu for denne kommune
+            </div>
+          )}
 
-          {/* Party bars */}
-          {topPartier.length > 0 ? (
+          {/* Party bars — live data or 2022 fallback */}
+          {data && data.partier.length > 0 ? (
             <div>
               <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                Partiresultater
+                Partiresultater (foreløbige)
               </h4>
               <div className="space-y-2">
                 {topPartier.map((p) => {
@@ -177,7 +188,34 @@ function KommuneDetailPanel({
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">Ingen partidata tilgængelig</p>
+            <div>
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                2022-resultater (nationale)
+              </h4>
+              <div className="space-y-2">
+                {results2022Partier.map(({ bogstav, stemmeProcent }) => {
+                  const party = PARTIES[bogstav];
+                  const color = party?.color ?? "#888";
+                  const barW = (stemmeProcent / max2022) * 100;
+                  return (
+                    <div key={bogstav}>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                          <span className="font-semibold" style={{ color }}>{bogstav}</span>
+                          <span className="text-gray-400 truncate max-w-[140px]">{party?.name}</span>
+                        </div>
+                        <span className="font-mono font-semibold text-white">{stemmeProcent.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${barW}%`, backgroundColor: color, opacity: 0.7 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-500 mt-3 italic">Kommunedata for 2026 ikke tilgængeligt endnu</p>
+            </div>
           )}
 
           {/* 2022 national reference */}
@@ -225,6 +263,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
   const [tooltip, setTooltip]           = useState<TooltipState | null>(null);
   const [selectedKey, setSelectedKey]   = useState<string | null>(null);
   const [selectedData, setSelectedData] = useState<KommuneData | null>(null);
+  const [selectedNavn, setSelectedNavn] = useState<string>("");
 
   // Fetch GeoJSON once on mount
   useEffect(() => {
@@ -283,17 +322,21 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
     function getFillColor(feature: any): string {
       const key = parseInt(feature.properties.kode).toString();
       const kommune = perKommune[key];
-      if (!kommune || !kommune.partier || kommune.partier.length === 0) return NO_DATA_COLOR;
-      const leader = getLeadingParty(kommune.partier);
-      if (!leader) return NO_DATA_COLOR;
-      return PARTIES[leader.bogstav]?.color ?? NO_DATA_COLOR;
+      if (kommune && kommune.partier && kommune.partier.length > 0) {
+        const leader = getLeadingParty(kommune.partier);
+        if (leader) return PARTIES[leader.bogstav]?.color ?? NO_DATA_COLOR;
+      }
+      // No live data — show 2022 national winner (A) dimmed as reference
+      const winner2022 = Object.entries(RESULTS_2022).sort(([, a], [, b]) => b - a)[0]?.[0];
+      return winner2022 ? PARTIES[winner2022]?.color ?? NO_DATA_COLOR : NO_DATA_COLOR;
     }
 
     function getFillOpacity(feature: any): number {
       const key = parseInt(feature.properties.kode).toString();
       const kommune = perKommune[key];
-      if (!kommune || !kommune.partier || kommune.partier.length === 0) return 1;
-      return 0.85;
+      // Live data: full opacity. No data: dimmed to show it's 2022 reference
+      if (kommune && kommune.partier && kommune.partier.length > 0) return 0.85;
+      return 0.25;
     }
 
     // Draw mainland municipalities
@@ -337,6 +380,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
         const key = parseInt(d.properties.kode).toString();
         setSelectedKey(key);
         setSelectedData(perKommune[key] ?? null);
+        setSelectedNavn(d.properties.navn ?? "");
       });
 
     // Draw Bornholm inset (bottom-right corner)
@@ -375,6 +419,7 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
         .on("click", () => {
           setSelectedKey(bKey);
           setSelectedData(perKommune[bKey] ?? null);
+          setSelectedNavn(bornholmFeature.properties.navn ?? "Bornholm");
         });
 
       insetSvg.append("text")
@@ -425,13 +470,10 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
           <svg ref={insetRef} className="w-full" />
         </div>
 
-        {/* No-data overlay */}
+        {/* No-data badge */}
         {!hasData && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
-            <div className="text-center">
-              <p className="text-white font-semibold text-lg">Venter på data...</p>
-              <p className="text-gray-400 text-sm mt-1">Kommunekortet opdateres, når optællingen begynder</p>
-            </div>
+          <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1.5 text-xs text-gray-300">
+            0% optalt · Farver viser 2022-resultater
           </div>
         )}
 
@@ -482,9 +524,9 @@ export default function DenmarkMap({ perKommune, hasData }: DenmarkMapProps) {
       {/* Detail panel modal */}
       {selectedKey !== null && (
         <KommuneDetailPanel
-          kommuneKey={selectedKey}
+          navn={selectedNavn}
           data={selectedData}
-          onClose={() => { setSelectedKey(null); setSelectedData(null); }}
+          onClose={() => { setSelectedKey(null); setSelectedData(null); setSelectedNavn(""); }}
         />
       )}
     </div>
