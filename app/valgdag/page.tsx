@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import DenmarkMap from "./DenmarkMap";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +18,17 @@ interface PartiResult {
   stemmeProcent: number;
   antalMandater: number | null;
   diffFraForrigeValg: number | null;
+}
+
+interface KommuneData {
+  navn: string;
+  kommunekode: number;
+  storkreds: string;
+  afgivneStemmer: number;
+  gyldigeStemmer: number;
+  stemmeberettigede: number;
+  optalteAfstemningsomraader: number;
+  partier: Array<{ bogstav: string; navn: string; stemmer: number; stemmeProcent: number }>;
 }
 
 interface AggregatedResults {
@@ -32,15 +44,25 @@ interface AggregatedResults {
     partier: PartiResult[];
     udenforParti: Array<{ navn: string; stemmer: number }>;
   };
-  perStorkreds: Record<string, {
-    navn: string;
-    nummer: number;
-    afgivneStemmer: number;
-    gyldigeStemmer: number;
-    stemmeberettigede: number;
-    optalteAfstemningsomraader: number;
-    totalAfstemningsomraader: number;
-    partier: Array<{ bogstav: string; navn: string; stemmer: number; stemmeProcent: number }>;
+  perStorkreds: Record<string, any>;
+  perKommune: Record<string, KommuneData>;
+}
+
+interface PMMarket {
+  candidate: string;
+  partyKey: string | null;
+  probability: number;
+  change: number | null;
+  url: string;
+}
+
+interface PMData {
+  markets: PMMarket[];
+  secondPlace: Array<{ partyKey: string; probability: number }>;
+  thirdPlace: Array<{ partyKey: string; probability: number }>;
+  partySeats: Array<{
+    partyKey: string;
+    ranges: Array<{ label: string; probability: number }>;
   }>;
 }
 
@@ -61,26 +83,17 @@ const PARTIES: Record<string, { name: string; color: string; bloc: "red" | "blue
   H: { name: "Borgernes Parti",               color: "#0084FF", bloc: "blue", result2022: 0.0,  seats2022: 0  },
 };
 
-// Pre-election polling averages
 const FORECAST: Record<string, number> = {
   A: 21.6, F: 13.5, V: 10.8, I: 10.0, Æ: 8.5,
   M: 5.8,  C: 6.8,  Ø: 6.8,  B: 4.8,  O: 6.9,
   Å: 2.2,  H: 1.8,
 };
 
-const RED_BLOC  = ["A", "F", "Ø", "B", "Å"];
-const BLUE_BLOC = ["V", "I", "Æ", "C", "O", "M", "H"];
-const FO_GL_SEATS = 4; // Fixed Færøerne + Grønland seats for rød blok
-const MAJORITY = 90;
+const RED_BLOC   = ["A", "F", "Ø", "B", "Å"];
+const BLUE_BLOC  = ["V", "I", "Æ", "C", "O", "M", "H"];
+const FO_GL_SEATS = 4;
+const MAJORITY   = 90;
 const TOTAL_SEATS = 179;
-
-const PREDICTION_MARKETS_PM = [
-  { label: "Mette Frederiksen (A)",        pct: 45 },
-  { label: "Lars Løkke Rasmussen (M)",     pct: 18 },
-  { label: "Jakob Ellemann-Jensen (V)",    pct: 12 },
-  { label: "Søren Pape Poulsen (C)",       pct: 8  },
-  { label: "Andet",                        pct: 17 },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -103,7 +116,7 @@ function sign(n: number): string {
 function getBlocSeats(partier: PartiResult[], bloc: "red" | "blue"): number {
   const keys = bloc === "red" ? RED_BLOC : BLUE_BLOC;
   return partier
-    .filter(p => keys.includes(p.bogstav) && p.antalMandater !== null)
+    .filter((p) => keys.includes(p.bogstav) && p.antalMandater !== null)
     .reduce((sum, p) => sum + (p.antalMandater ?? 0), 0);
 }
 
@@ -151,17 +164,14 @@ function StatusBar({ data }: { data: AggregatedResults }) {
 
 // BLOC BAROMETER
 function BlocBarometer({ partier }: { partier: PartiResult[] }) {
-  const redSeats  = getBlocSeats(partier, "red") + FO_GL_SEATS;
-  const blueSeats = getBlocSeats(partier, "blue");
-  const totalUsed = redSeats + blueSeats;
-
-  // proportional widths relative to TOTAL_SEATS
-  const redPct  = (redSeats  / TOTAL_SEATS) * 100;
-  const bluePct = (blueSeats / TOTAL_SEATS) * 100;
+  const redSeats   = getBlocSeats(partier, "red") + FO_GL_SEATS;
+  const blueSeats  = getBlocSeats(partier, "blue");
+  const totalUsed  = redSeats + blueSeats;
+  const redPct     = (redSeats  / TOTAL_SEATS) * 100;
+  const bluePct    = (blueSeats / TOTAL_SEATS) * 100;
   const majorityPct = (MAJORITY / TOTAL_SEATS) * 100;
-
-  const redWins  = redSeats  >= MAJORITY;
-  const blueWins = blueSeats >= MAJORITY;
+  const redWins    = redSeats  >= MAJORITY;
+  const blueWins   = blueSeats >= MAJORITY;
 
   return (
     <Card className="mb-6">
@@ -172,7 +182,6 @@ function BlocBarometer({ partier }: { partier: PartiResult[] }) {
         </p>
       </CardHeader>
       <CardContent>
-        {/* Seat numbers */}
         <div className="flex justify-between mb-3">
           <div className="text-center">
             <div className="text-3xl font-bold" style={{ color: "#dc2626" }}>{redSeats}</div>
@@ -191,33 +200,20 @@ function BlocBarometer({ partier }: { partier: PartiResult[] }) {
             </div>
           </div>
         </div>
-
-        {/* Bar */}
         <div className="relative w-full h-10 rounded-lg overflow-hidden flex">
           <div
             className="h-full transition-all duration-700 flex items-center justify-end pr-2"
             style={{ width: `${redPct}%`, backgroundColor: "#dc2626" }}
           >
-            {redPct > 8 && (
-              <span className="text-white text-xs font-bold">{redSeats}</span>
-            )}
+            {redPct > 8 && <span className="text-white text-xs font-bold">{redSeats}</span>}
           </div>
           <div
             className="h-full transition-all duration-700 flex items-center justify-start pl-2"
             style={{ width: `${bluePct}%`, backgroundColor: "#1d4ed8" }}
           >
-            {bluePct > 8 && (
-              <span className="text-white text-xs font-bold">{blueSeats}</span>
-            )}
+            {bluePct > 8 && <span className="text-white text-xs font-bold">{blueSeats}</span>}
           </div>
-          {/* Remaining (unassigned) */}
-          {totalUsed < TOTAL_SEATS && (
-            <div
-              className="h-full bg-muted"
-              style={{ flex: 1 }}
-            />
-          )}
-          {/* 90-seat majority line */}
+          {totalUsed < TOTAL_SEATS && <div className="h-full bg-muted" style={{ flex: 1 }} />}
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
             style={{ left: `${majorityPct}%` }}
@@ -227,8 +223,6 @@ function BlocBarometer({ partier }: { partier: PartiResult[] }) {
             </div>
           </div>
         </div>
-
-        {/* Legend */}
         <div className="flex flex-wrap gap-4 mt-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: "#dc2626" }} />
@@ -247,7 +241,6 @@ function BlocBarometer({ partier }: { partier: PartiResult[] }) {
 // PARTY RESULTS TABLE
 function PartyResultsTable({ partier }: { partier: PartiResult[] }) {
   const sorted = [...partier].sort((a, b) => b.stemmeProcent - a.stemmeProcent);
-
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
@@ -268,8 +261,8 @@ function PartyResultsTable({ partier }: { partier: PartiResult[] }) {
             </thead>
             <tbody>
               {sorted.map((p, i) => {
-                const party = PARTIES[p.bogstav];
-                const nearThreshold = p.stemmeProcent > 0 && p.stemmeProcent < 2.5;
+                const party          = PARTIES[p.bogstav];
+                const nearThreshold  = p.stemmeProcent > 0 && p.stemmeProcent < 2.5;
                 return (
                   <tr
                     key={p.bogstav}
@@ -287,7 +280,7 @@ function PartyResultsTable({ partier }: { partier: PartiResult[] }) {
                       <span className="font-medium">{p.navn || party?.name || p.bogstav}</span>
                       {nearThreshold && (
                         <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full">
-                          ⚠ Nær spærregrænse
+                          Nær spærregrænse
                         </span>
                       )}
                     </td>
@@ -321,7 +314,7 @@ function PartyResultsTable({ partier }: { partier: PartiResult[] }) {
 // SPÆRREGRÆNSE TRACKER
 function SpaerregraenseTracker({ partier }: { partier: PartiResult[] }) {
   const tracked = partier
-    .filter(p => p.stemmeProcent >= 0.5 && p.stemmeProcent <= 3.5)
+    .filter((p) => p.stemmeProcent >= 0.5 && p.stemmeProcent <= 3.5)
     .sort((a, b) => b.stemmeProcent - a.stemmeProcent);
 
   if (tracked.length === 0) return null;
@@ -333,12 +326,11 @@ function SpaerregraenseTracker({ partier }: { partier: PartiResult[] }) {
         <p className="text-sm text-muted-foreground">Partier tæt på 2%-spærregrænsen</p>
       </CardHeader>
       <CardContent className="space-y-3">
-        {tracked.map(p => {
-          const party  = PARTIES[p.bogstav];
-          const above  = p.stemmeProcent >= 2.0;
-          const barPct = Math.min((p.stemmeProcent / 3.5) * 100, 100);
+        {tracked.map((p) => {
+          const party        = PARTIES[p.bogstav];
+          const above        = p.stemmeProcent >= 2.0;
+          const barPct       = Math.min((p.stemmeProcent / 3.5) * 100, 100);
           const thresholdPct = (2.0 / 3.5) * 100;
-
           return (
             <div key={p.bogstav}>
               <div className="flex items-center justify-between mb-1">
@@ -356,12 +348,10 @@ function SpaerregraenseTracker({ partier }: { partier: PartiResult[] }) {
                 </span>
               </div>
               <div className="relative w-full h-3 bg-muted rounded-full overflow-visible">
-                {/* Threshold line */}
                 <div
                   className="absolute top-0 bottom-0 w-0.5 bg-white/50 z-10"
                   style={{ left: `${thresholdPct}%` }}
                 />
-                {/* Bar */}
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
@@ -384,76 +374,15 @@ function SpaerregraenseTracker({ partier }: { partier: PartiResult[] }) {
   );
 }
 
-// PREDICTION MARKETS
-function PredictionMarkets() {
-  return (
-    <Card className="mb-6">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Forudsigelsesmarkeder</CardTitle>
-        <p className="text-sm text-muted-foreground">Polymarket & Kalshi (pr. 24. marts 2026)</p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Næste statsminister */}
-        <div>
-          <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-            Næste statsminister
-          </h4>
-          <div className="space-y-2">
-            {PREDICTION_MARKETS_PM.map(item => (
-              <div key={item.label}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>{item.label}</span>
-                  <span className="font-semibold">{item.pct}%</span>
-                </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full"
-                    style={{ width: `${item.pct}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Blok-vinder */}
-        <div>
-          <h4 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-            Blok-vinder
-          </h4>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border p-3 text-center">
-              <div className="text-2xl font-bold" style={{ color: "#dc2626" }}>58%</div>
-              <div className="text-sm text-muted-foreground mt-1">Rød blok</div>
-              <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: "58%", backgroundColor: "#dc2626" }} />
-              </div>
-            </div>
-            <div className="rounded-lg border border-border p-3 text-center">
-              <div className="text-2xl font-bold" style={{ color: "#1d4ed8" }}>42%</div>
-              <div className="text-sm text-muted-foreground mt-1">Blå blok</div>
-              <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: "42%", backgroundColor: "#1d4ed8" }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 // MODEL VS REALITY
 function ModelVsReality({ partier }: { partier: PartiResult[] }) {
   const keys = Object.keys(FORECAST).sort(
     (a, b) => (FORECAST[b] ?? 0) - (FORECAST[a] ?? 0),
   );
-
   const actualMap: Record<string, number> = {};
   for (const p of partier) {
     actualMap[p.bogstav] = p.stemmeProcent;
   }
-
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
@@ -464,13 +393,12 @@ function ModelVsReality({ partier }: { partier: PartiResult[] }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {keys.map(bogstav => {
+          {keys.map((bogstav) => {
             const forecast = FORECAST[bogstav] ?? 0;
             const actual   = actualMap[bogstav] ?? null;
             const party    = PARTIES[bogstav];
             const diff     = actual !== null ? actual - forecast : null;
             const maxPct   = 30;
-
             return (
               <div key={bogstav}>
                 <div className="flex items-center gap-2 mb-1">
@@ -502,7 +430,6 @@ function ModelVsReality({ partier }: { partier: PartiResult[] }) {
                   </div>
                 </div>
                 <div className="relative w-full h-4 bg-muted rounded-full overflow-hidden">
-                  {/* Forecast bar (full opacity) */}
                   <div
                     className="absolute top-0 bottom-0 left-0 rounded-full opacity-30"
                     style={{
@@ -510,7 +437,6 @@ function ModelVsReality({ partier }: { partier: PartiResult[] }) {
                       backgroundColor: party?.color ?? "#888",
                     }}
                   />
-                  {/* Actual bar (full opacity, narrower) */}
                   {actual !== null && (
                     <div
                       className="absolute top-1 bottom-1 left-0 rounded-full"
@@ -533,12 +459,131 @@ function ModelVsReality({ partier }: { partier: PartiResult[] }) {
   );
 }
 
-// WAITING STATE forecast table
+// PREDICTION MARKETS
+function PredictionMarkets({ pmData, loading }: { pmData: PMData | null; loading: boolean }) {
+  return (
+    <Card className="mb-6">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">Forudsigelsesmarkeder</CardTitle>
+        <p className="text-sm text-muted-foreground">Polymarket (opdateret løbende)</p>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+            <div className="w-4 h-4 border-2 border-muted border-t-foreground rounded-full animate-spin" />
+            Indlæser markedsdata...
+          </div>
+        ) : pmData === null ? (
+          <p className="text-sm text-muted-foreground py-2">
+            Markedsdata er ikke tilgængelig i øjeblikket.
+          </p>
+        ) : (
+          <div className="space-y-6">
+            {/* Statsminister candidates */}
+            {pmData.markets.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  Næste statsminister
+                </h4>
+                <div className="space-y-2.5">
+                  {[...pmData.markets]
+                    .sort((a, b) => b.probability - a.probability)
+                    .map((market) => {
+                      const color = market.partyKey ? (PARTIES[market.partyKey]?.color ?? "#888") : "#888";
+                      const pct   = Math.round(market.probability * 100);
+                      return (
+                        <div key={market.candidate}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span
+                                className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: color }}
+                              />
+                              <a
+                                href={market.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline text-foreground"
+                              >
+                                {market.candidate}
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {market.change !== null && (
+                                <span
+                                  className={`text-xs ${
+                                    market.change > 0
+                                      ? "text-green-400"
+                                      : market.change < 0
+                                      ? "text-red-400"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {market.change > 0 ? "+" : ""}
+                                  {(market.change * 100).toFixed(1)} pp
+                                </span>
+                              )}
+                              <span className="font-semibold text-sm w-10 text-right">{pct}%</span>
+                            </div>
+                          </div>
+                          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, backgroundColor: color }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Klik på et navn for at se på Polymarket
+                </p>
+              </div>
+            )}
+
+            {/* Party seats ranges if available */}
+            {pmData.partySeats && pmData.partySeats.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  Mandatprognoser
+                </h4>
+                <div className="space-y-2">
+                  {pmData.partySeats.map((entry) => {
+                    const color = PARTIES[entry.partyKey]?.color ?? "#888";
+                    const topRange = [...entry.ranges].sort((a, b) => b.probability - a.probability)[0];
+                    if (!topRange) return null;
+                    return (
+                      <div key={entry.partyKey} className="flex items-center gap-2 text-xs">
+                        <span
+                          className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="font-semibold w-5" style={{ color }}>
+                          {entry.partyKey}
+                        </span>
+                        <span className="text-muted-foreground flex-1">{topRange.label}</span>
+                        <span className="font-semibold text-foreground">
+                          {Math.round(topRange.probability * 100)}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// FORECAST TABLE (waiting state)
 function ForecastTable() {
   const keys = Object.keys(FORECAST).sort(
     (a, b) => (FORECAST[b] ?? 0) - (FORECAST[a] ?? 0),
   );
-
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
@@ -601,45 +646,77 @@ function ForecastTable() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ValgdagPage() {
-  const [data, setData]       = useState<AggregatedResults | null>(null);
-  const [error, setError]     = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [results, setResults]           = useState<AggregatedResults | null>(null);
+  const [resultsError, setResultsError] = useState<string | null>(null);
+  const [resultsLoading, setResultsLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch("/api/valgresultater", { cache: "no-store" });
-      if (!res.ok) {
-        if (res.status === 404 || res.status === 204) {
-          // No data yet — stay in waiting state
-          setData(null);
+  const [pmData, setPmData]       = useState<PMData | null>(null);
+  const [pmLoading, setPmLoading] = useState(true);
+
+  // Fetch election results every 15 seconds
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchResults() {
+      try {
+        const res = await fetch("/api/valgresultater", { cache: "no-store" });
+        if (cancelled) return;
+        if (!res.ok) {
+          if (res.status === 404 || res.status === 204) {
+            setResults(null);
+          } else {
+            setResultsError(`Fejl ved indlæsning: ${res.status}`);
+          }
         } else {
-          setError(`Fejl ved indlæsning: ${res.status}`);
+          const json = await res.json();
+          // API returns { data: AggregatedResults | null, timestamp: string | null }
+          const payload = json?.data ?? json;
+          setResults(payload ?? null);
+          setResultsError(null);
         }
-      } else {
-        const json = await res.json();
-        setData(json);
-        setError(null);
+      } catch {
+        if (!cancelled) setResults(null);
+      } finally {
+        if (!cancelled) setResultsLoading(false);
       }
-    } catch (e) {
-      // Network error or no data — stay in waiting state silently
-      setData(null);
-    } finally {
-      setLoading(false);
     }
+
+    fetchResults();
+    const interval = setInterval(fetchResults, 15_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
+  // Fetch prediction markets once on mount
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 15_000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    let cancelled = false;
+    fetch("/api/prediction-markets")
+      .then((r) => {
+        if (!r.ok) throw new Error(`PM fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then((data: PMData) => {
+        if (!cancelled) {
+          setPmData(data);
+          setPmLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPmData(null);
+          setPmLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
 
-  // Determine page state
-  const isWaiting  = data === null;
-  const isCounting = data !== null && data.optaltProcent > 0 && data.optaltProcent < 100;
-  const isComplete = data !== null && data.optaltProcent >= 100;
+  const isWaiting  = results === null;
+  const isCounting = results !== null && results.optaltProcent > 0 && results.optaltProcent < 100;
+  const isComplete = results !== null && results.optaltProcent >= 100;
 
-  const partier = data?.national.partier ?? [];
+  const partier = results?.national.partier ?? [];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -648,7 +725,7 @@ export default function ValgdagPage() {
         {/* Page header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">Valgnat 2026</h1>
+            <h1 className="text-3xl font-bold">Valgresultater – 24. marts 2026</h1>
             {isCounting && (
               <span className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-semibold px-2.5 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -661,9 +738,7 @@ export default function ValgdagPage() {
               </span>
             )}
           </div>
-          <p className="text-muted-foreground">
-            Folketingsvalg · 24. marts 2026
-          </p>
+          <p className="text-muted-foreground">Folketingsvalg · 24. marts 2026</p>
         </div>
 
         {/* ── WAITING STATE ── */}
@@ -671,7 +746,7 @@ export default function ValgdagPage() {
           <>
             <Card className="mb-6 border-primary/20 bg-card">
               <CardContent className="py-10 text-center">
-                {loading ? (
+                {resultsLoading ? (
                   <>
                     <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-muted-foreground">Forbinder til valgresultater...</p>
@@ -684,73 +759,79 @@ export default function ValgdagPage() {
                       Optællingen er endnu ikke begyndt. Siden opdateres automatisk hvert 15. sekund,
                       når resultaterne begynder at komme ind.
                     </p>
-                    {error && (
-                      <p className="text-red-400 text-xs mt-3">{error}</p>
+                    {resultsError && (
+                      <p className="text-red-400 text-xs mt-3">{resultsError}</p>
                     )}
                   </>
                 )}
               </CardContent>
             </Card>
 
-            {/* Pre-election forecast */}
             <ForecastTable />
-
-            {/* Prediction markets always shown */}
-            <PredictionMarkets />
+            <PredictionMarkets pmData={pmData} loading={pmLoading} />
           </>
         )}
 
         {/* ── COUNTING / COMPLETE STATE ── */}
-        {data && (
+        {results && (
           <>
-            {/* Status bar */}
-            <StatusBar data={data} />
+            {/* 1. Status bar */}
+            <StatusBar data={results} />
 
-            {/* Bloc barometer */}
+            {/* 2. Bloc barometer */}
             <BlocBarometer partier={partier} />
 
-            {/* Two-column layout on larger screens */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                {/* Party results table */}
-                <PartyResultsTable partier={partier} />
+            {/* 3. Party results table */}
+            <PartyResultsTable partier={partier} />
 
-                {/* Model vs Reality */}
-                <ModelVsReality partier={partier} />
-              </div>
+            {/* 4. Spærregrænse tracker */}
+            <SpaerregraenseTracker partier={partier} />
 
-              <div className="lg:col-span-1">
-                {/* Spærregrænse tracker */}
-                <SpaerregraenseTracker partier={partier} />
+            {/* 5. Denmark map */}
+            <Card className="mb-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Resultater per kommune</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Klik på en kommune for detaljer · Farve angiver ledende parti
+                </p>
+              </CardHeader>
+              <CardContent>
+                <DenmarkMap
+                  perKommune={results.perKommune ?? {}}
+                  hasData={results.optalteAfstemningsomraader > 0}
+                />
+              </CardContent>
+            </Card>
 
-                {/* Prediction markets */}
-                <PredictionMarkets />
+            {/* 6. Model vs Reality */}
+            <ModelVsReality partier={partier} />
 
-                {/* Turnout card */}
-                {data.national.valgdeltagelse > 0 && (
-                  <Card className="mb-6">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">Valgdeltagelse</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold text-primary mb-1">
-                        {data.national.valgdeltagelse.toFixed(1)}%
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {formatNumber(data.national.afgivneStemmer)} stemmer afgivet af{" "}
-                        {formatNumber(data.national.stemmeberettigede)} stemmeberettigede
-                      </p>
-                      <div className="w-full h-2 bg-muted rounded-full mt-3 overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all duration-700"
-                          style={{ width: `${Math.min(data.national.valgdeltagelse, 100)}%` }}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
+            {/* 7. Prediction markets */}
+            <PredictionMarkets pmData={pmData} loading={pmLoading} />
+
+            {/* 8. Valgdeltagelse sidebar-style row */}
+            {results.national.valgdeltagelse > 0 && (
+              <Card className="mb-6">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Valgdeltagelse</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-primary mb-1">
+                    {results.national.valgdeltagelse.toFixed(1)}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {formatNumber(results.national.afgivneStemmer)} stemmer afgivet af{" "}
+                    {formatNumber(results.national.stemmeberettigede)} stemmeberettigede
+                  </p>
+                  <div className="w-full h-2 bg-muted rounded-full mt-3 overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-700"
+                      style={{ width: `${Math.min(results.national.valgdeltagelse, 100)}%` }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Complete state summary */}
             {isComplete && (
@@ -759,7 +840,7 @@ export default function ValgdagPage() {
                   <div className="text-4xl mb-3">🏁</div>
                   <h2 className="text-xl font-semibold mb-1">Optællingen er afsluttet</h2>
                   <p className="text-muted-foreground text-sm">
-                    Alle {data.totalAfstemningsomraader} afstemningsområder er optalt.
+                    Alle {results.totalAfstemningsomraader} afstemningsområder er optalt.
                     Officielle resultater offentliggøres af Indenrigsministeriet.
                   </p>
                 </CardContent>

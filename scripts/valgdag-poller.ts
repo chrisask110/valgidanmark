@@ -80,6 +80,13 @@ interface PartyStorkreds {
   stemmeProcent: number;
 }
 
+interface PartyKommune {
+  bogstav: string;
+  navn: string;
+  stemmer: number;
+  stemmeProcent: number;
+}
+
 interface StorkredsSummary {
   navn: string;
   nummer: number;
@@ -89,6 +96,17 @@ interface StorkredsSummary {
   optalteAfstemningsomraader: number;
   totalAfstemningsomraader: number;
   partier: PartyStorkreds[];
+}
+
+interface KommuneSummary {
+  navn: string;
+  kommunekode: number;
+  storkreds: string;
+  afgivneStemmer: number;
+  gyldigeStemmer: number;
+  stemmeberettigede: number;
+  optalteAfstemningsomraader: number;
+  partier: PartyKommune[];
 }
 
 interface AggregatedResults {
@@ -105,6 +123,7 @@ interface AggregatedResults {
     udenforParti: Array<{ navn: string; stemmer: number }>;
   };
   perStorkreds: Record<string, StorkredsSummary>;
+  perKommune: Record<string, KommuneSummary>;
 }
 
 // ---------------------------------------------------------------------------
@@ -203,6 +222,22 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
     }
   > = {};
 
+  // per kommune accumulators
+  const kommuneByKode: Record<
+    number,
+    {
+      navn: string;
+      kommunekode: number;
+      storkreds: string;
+      afgivne: number;
+      gyldige: number;
+      stemmeberettigede: number;
+      optalte: number;
+      partyVotes: Record<string, number>;
+      partyNames: Record<string, string>;
+    }
+  > = {};
+
   for (const file of files) {
     const isOptalt = file.Resultatart !== "IngenResultater";
     if (isOptalt) optalte += 1;
@@ -233,6 +268,27 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
     skData.total += 1;
     if (isOptalt) skData.optalte += 1;
 
+    // Init kommune bucket
+    const kk = file.Kommunekode;
+    if (!kommuneByKode[kk]) {
+      kommuneByKode[kk] = {
+        navn: file.Kommune,
+        kommunekode: kk,
+        storkreds: file.Storkreds,
+        afgivne: 0,
+        gyldige: 0,
+        stemmeberettigede: 0,
+        optalte: 0,
+        partyVotes: {},
+        partyNames: {},
+      };
+    }
+    const kkData = kommuneByKode[kk];
+    kkData.afgivne += file.AfgivneStemmer ?? 0;
+    kkData.gyldige += file.GyldigeStemmer ?? 0;
+    kkData.stemmeberettigede += file.AntalStemmeberettigedeVælgere ?? 0;
+    if (isOptalt) kkData.optalte += 1;
+
     // Accumulate party votes
     for (const parti of file.IndenforParti ?? []) {
       const b = parti.Bogstavbetegnelse;
@@ -242,6 +298,9 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
 
       skData.partyVotes[b] = (skData.partyVotes[b] ?? 0) + (parti.Stemmer ?? 0);
       skData.partyNames[b] = parti.PartiNavn;
+
+      kkData.partyVotes[b] = (kkData.partyVotes[b] ?? 0) + (parti.Stemmer ?? 0);
+      kkData.partyNames[b] = parti.PartiNavn;
     }
 
     // Accumulate udenfor parti votes
@@ -311,6 +370,32 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
     };
   }
 
+  // Build perKommune
+  const perKommune: Record<string, KommuneSummary> = {};
+  for (const kkData of Object.values(kommuneByKode)) {
+    const key = String(kkData.kommunekode);
+    const kkPartier: PartyKommune[] = Object.entries(kkData.partyVotes)
+      .map(([b, stemmer]) => ({
+        bogstav: b,
+        navn: kkData.partyNames[b] ?? b,
+        stemmer,
+        stemmeProcent:
+          kkData.gyldige > 0 ? (stemmer / kkData.gyldige) * 100 : 0,
+      }))
+      .sort((a, b) => b.stemmer - a.stemmer);
+
+    perKommune[key] = {
+      navn: kkData.navn,
+      kommunekode: kkData.kommunekode,
+      storkreds: kkData.storkreds,
+      afgivneStemmer: kkData.afgivne,
+      gyldigeStemmer: kkData.gyldige,
+      stemmeberettigede: kkData.stemmeberettigede,
+      optalteAfstemningsomraader: kkData.optalte,
+      partier: kkPartier,
+    };
+  }
+
   const optaltProcent =
     CONFIG.TOTAL_AFSTEMNINGSOMRAADER > 0
       ? (optalte / CONFIG.TOTAL_AFSTEMNINGSOMRAADER) * 100
@@ -330,6 +415,7 @@ function aggregateResults(files: SFTPResultFile[]): AggregatedResults {
       udenforParti,
     },
     perStorkreds,
+    perKommune,
   };
 }
 
@@ -526,6 +612,7 @@ function logSummary(result: AggregatedResults): void {
       `Valgdeltagelse: ${result.national.valgdeltagelse.toFixed(1)}%`
   );
   log(`Top 3 partier: ${top3Str}`);
+  log(`Kommuner med data: ${Object.keys(result.perKommune).length}`);
 }
 
 // ---------------------------------------------------------------------------
