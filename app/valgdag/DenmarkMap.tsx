@@ -33,10 +33,25 @@ interface Election2022Party {
   mandater: number;
 }
 
+interface Kommune2022Summary {
+  kommunekode: string;
+  kommune_navn: string;
+  storkreds: string;
+  winner: string;
+  partier: { bogstav: string; navn: string; stemmePct: number }[];
+}
+
 interface DenmarkMapProps {
   perKommune: Record<string, KommuneData>;
   hasData: boolean;
   results2022?: Election2022Party[];
+  /** Controls which data is visualised:
+   *  - "waiting"  → all kommuner gray (before election, 2026 slot)
+   *  - "2022"     → color by 2022 winner per kommune
+   *  - "live"     → color by leading party from live data (gray = not yet counted)
+   */
+  mode?: "waiting" | "2022" | "live";
+  results2022Kommuner?: Record<string, Kommune2022Summary>;
 }
 
 interface TooltipState {
@@ -69,8 +84,8 @@ const RESULTS_2022: Record<string, number> = {
   M: 9.3,  H: 0.0,
 };
 
-const NO_DATA_COLOR = "#374151";
-const STROKE_COLOR  = "#111827";
+const NO_DATA_COLOR = "#9ca3af";
+const STROKE_COLOR  = "rgba(0,0,0,0.25)";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -399,7 +414,7 @@ function KommuneDetailPanel({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function DenmarkMap({ perKommune, hasData, results2022 }: DenmarkMapProps) {
+export default function DenmarkMap({ perKommune, hasData, results2022, mode = "live", results2022Kommuner }: DenmarkMapProps) {
   const svgRef       = useRef<SVGSVGElement>(null);
   const insetRef     = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -520,19 +535,28 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
 
     function getFillColor(feature: any): string {
       const key = feature.properties.lau_1;
+      if (mode === "waiting") return NO_DATA_COLOR;
+      if (mode === "2022") {
+        const winner = results2022Kommuner?.[key]?.winner ?? winner2022;
+        return winner ? (PARTIES[winner]?.color ?? NO_DATA_COLOR) : NO_DATA_COLOR;
+      }
+      // mode === "live"
       const kommune = perKommune[key];
       if (kommune && kommune.partier && kommune.partier.length > 0) {
         const leader = getLeadingParty(kommune.partier);
         if (leader) return PARTIES[leader.bogstav]?.color ?? NO_DATA_COLOR;
       }
-      return winner2022 ? PARTIES[winner2022]?.color ?? NO_DATA_COLOR : NO_DATA_COLOR;
+      return NO_DATA_COLOR;
     }
 
     function getFillOpacity(feature: any): number {
+      if (mode === "waiting") return 0.6;
+      if (mode === "2022") return 0.85;
+      // mode === "live"
       const key = feature.properties.lau_1;
       const kommune = perKommune[key];
       if (kommune && kommune.partier && kommune.partier.length > 0) return 0.85;
-      return 0.25;
+      return 0.45;
     }
 
     const g = svg.append("g");
@@ -601,21 +625,31 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
 
       const bKey   = bornholmFeature.properties.lau_1;
       const bKomm  = perKommune[bKey];
-      const bLeader = bKomm ? getLeadingParty(bKomm.partier) : null;
-      const bColor  = bLeader
-        ? (PARTIES[bLeader.bogstav]?.color ?? NO_DATA_COLOR)
-        : (winner2022 ? PARTIES[winner2022]?.color ?? NO_DATA_COLOR : NO_DATA_COLOR);
+      let bColor: string;
+      let bOpacity: number;
+      if (mode === "waiting") {
+        bColor = NO_DATA_COLOR;
+        bOpacity = 0.6;
+      } else if (mode === "2022") {
+        const bWinner = results2022Kommuner?.[bKey]?.winner ?? winner2022;
+        bColor = bWinner ? (PARTIES[bWinner]?.color ?? NO_DATA_COLOR) : NO_DATA_COLOR;
+        bOpacity = 0.85;
+      } else {
+        const bLeader = bKomm ? getLeadingParty(bKomm.partier) : null;
+        bColor = bLeader ? (PARTIES[bLeader.bogstav]?.color ?? NO_DATA_COLOR) : NO_DATA_COLOR;
+        bOpacity = bKomm && bKomm.partier.length > 0 ? 0.85 : 0.45;
+      }
 
       insetSvg.append("rect")
         .attr("width", IW).attr("height", IH)
-        .attr("fill", "#1e293b")
+        .attr("fill", "transparent")
         .attr("rx", 4);
 
       insetSvg.append("path")
         .datum(bornholmFeature)
         .attr("d", (d: any) => insetPath(d) ?? "")
         .attr("fill", bColor)
-        .attr("fill-opacity", bKomm && bKomm.partier.length > 0 ? 0.85 : 0.25)
+        .attr("fill-opacity", bOpacity)
         .attr("stroke", STROKE_COLOR)
         .attr("stroke-width", 0.5)
         .style("cursor", "pointer")
@@ -635,15 +669,15 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
         .attr("fill", "#9ca3af")
         .text("Bornholm");
     }
-  }, [geojson, perKommune, winner2022]);
+  }, [geojson, perKommune, winner2022, mode, results2022Kommuner]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (loadingGeo) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-400">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-8 h-8 border-2 border-muted-foreground/20 border-t-muted-foreground/60 rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm">Indlæser kortdata...</p>
         </div>
       </div>
@@ -652,7 +686,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
 
   if (geoError) {
     return (
-      <div className="flex items-center justify-center h-48 text-gray-500 text-sm">
+      <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
         Kortdata kunne ikke indlæses: {geoError}
       </div>
     );
@@ -688,7 +722,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
             onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
             placeholder="Find kommune eller afstemningssted..."
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-8 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/30 focus:bg-white/8 transition-colors"
+            className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring focus:bg-muted/70 transition-colors"
           />
           {searchQuery && (
             <button
@@ -698,7 +732,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
                 setHighlightedKeys(new Set());
                 setShowDropdown(false);
               }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors text-base leading-none"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors text-base leading-none"
               aria-label="Ryd søgning"
             >
               ×
@@ -707,17 +741,17 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
         </div>
 
         {showDropdown && searchResults.length > 0 && (
-          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#1e293b] border border-white/10 rounded-lg shadow-xl overflow-hidden">
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-xl overflow-hidden">
             {searchResults.map((item) => (
               <button
                 key={item.key}
                 onMouseDown={() => handleSearchSelect(item)}
-                className="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-white/10 transition-colors flex items-center justify-between"
+                className="w-full text-left px-3 py-2 text-sm text-popover-foreground hover:bg-accent transition-colors flex items-center justify-between"
               >
                 <span>{item.navn}</span>
-                {perKommune[item.key] && (
-                  <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                    {perKommune[item.key].storkreds}
+                {(perKommune[item.key] || results2022Kommuner?.[item.key]) && (
+                  <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                    {perKommune[item.key]?.storkreds ?? results2022Kommuner?.[item.key]?.storkreds}
                   </span>
                 )}
               </button>
@@ -738,30 +772,48 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
             />
 
             {/* Bornholm inset */}
-            <div className="absolute bottom-10 right-4 w-24 shadow-xl rounded overflow-hidden border border-white/10">
+            <div className="absolute bottom-10 right-4 w-24 shadow-xl rounded overflow-hidden border border-border bg-card">
               <svg ref={insetRef} className="w-full" />
             </div>
 
             {/* No-data badge */}
-            {!hasData && (
-              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1.5 text-xs text-gray-300">
-                0% optalt · Farver viser 2022-resultater
+            {mode === "waiting" && (
+              <div className="absolute top-3 left-3 bg-background/80 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 text-xs text-muted-foreground">
+                Ingen data endnu · Opdateres automatisk
+              </div>
+            )}
+            {mode === "2022" && (
+              <div className="absolute top-3 left-3 bg-background/80 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 text-xs text-muted-foreground">
+                Resultater fra Folketingsvalget 2022
               </div>
             )}
 
             {/* Tooltip */}
             {tooltip && (
               <div
-                className="absolute z-30 pointer-events-none bg-[#1e293b] border border-white/10 rounded-lg px-3 py-2 shadow-xl text-xs max-w-[220px]"
+                className="absolute z-30 pointer-events-none bg-popover border border-border rounded-lg px-3 py-2 shadow-xl text-xs max-w-[220px]"
                 style={{
                   left: Math.min(tooltip.x + 12, 460),
                   top: tooltip.y - 8,
                   transform: tooltip.x > 400 ? "translateX(-110%)" : undefined,
                 }}
               >
-                <div className="font-semibold text-white mb-0.5">{tooltip.navn}</div>
-                {tooltipLeader ? (
-                  <div className="flex items-center gap-1.5 text-gray-300">
+                <div className="font-semibold text-popover-foreground mb-0.5">{tooltip.navn}</div>
+                {mode === "waiting" ? (
+                  <div className="text-muted-foreground">Ingen data endnu</div>
+                ) : mode === "2022" ? (() => {
+                  const k2022 = results2022Kommuner?.[tooltip.kommuneKey];
+                  const winner = k2022?.winner ?? ref2022Winner?.[0];
+                  const topPct = k2022?.partier[0]?.stemmePct ?? ref2022Winner?.[1];
+                  return winner ? (
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <span className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: PARTIES[winner]?.color ?? "#888" }} />
+                      <span>2022: {winner} {topPct != null ? topPct.toFixed(1) : "–"}%</span>
+                    </div>
+                  ) : <div className="text-muted-foreground">Ingen data</div>;
+                })() : tooltipLeader ? (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
                     <span
                       className="inline-block w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: PARTIES[tooltipLeader.bogstav]?.color ?? "#888" }}
@@ -772,17 +824,15 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
                     </span>
                   </div>
                 ) : (
-                  <div className="text-gray-500">
-                    2022: {ref2022Winner?.[0] ?? "A"} {ref2022Winner ? ref2022Winner[1].toFixed(1) : "27.5"}% (nationalt)
-                  </div>
+                  <div className="text-muted-foreground">Ikke optalt endnu</div>
                 )}
               </div>
             )}
           </div>
 
           {/* Legend */}
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-400 px-1">
-            <span className="font-medium text-gray-300 mr-1">Ledende parti:</span>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground px-1">
+            <span className="font-medium text-foreground mr-1">Ledende parti:</span>
             {Object.entries(PARTIES).map(([key, party]) => (
               <span key={key} className="flex items-center gap-1">
                 <span
@@ -803,7 +853,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022 }: Denmark
         {selectedKey !== null && (
           <div
             ref={panelRef}
-            className="sm:w-2/5 sm:pl-4 border-t sm:border-t-0 sm:border-l border-white/10 mt-4 sm:mt-0 transition-all duration-300"
+            className="sm:w-2/5 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border mt-4 sm:mt-0 transition-all duration-300"
             style={{ minHeight: "200px", maxHeight: "700px" }}
           >
             <KommuneDetailPanel

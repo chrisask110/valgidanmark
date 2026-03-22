@@ -28,3 +28,16 @@ CREATE TABLE IF NOT EXISTS simulator_submissions (
 
 CREATE INDEX IF NOT EXISTS sim_created_idx ON simulator_submissions (created_at DESC);
 CREATE INDEX IF NOT EXISTS sim_pm_idx      ON simulator_submissions (pm_party);
+
+-- Per-municipality 2022 election results (for historical map and comparisons)
+CREATE TABLE IF NOT EXISTS election_results_2022_kommune (
+  kommunekode   VARCHAR(10)    NOT NULL,
+  kommune_navn  VARCHAR(100)   NOT NULL,
+  storkreds     VARCHAR(100),
+  parti_bogstav VARCHAR(5)     NOT NULL,
+  parti_navn    VARCHAR(100)   NOT NULL,
+  stemmer       INTEGER        NOT NULL DEFAULT 0,
+  stemmer_pct   NUMERIC(6,2),
+  PRIMARY KEY (kommunekode, parti_bogstav)
+);
+CREATE INDEX IF NOT EXISTS res_2022_kom_idx ON election_results_2022_kommune (kommunekode);

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import dynamic from "next/dynamic";
-import Countdown from "@/app/Countdown";
+import ResultsTable from "./ResultsTable";
 
 const DenmarkMap = dynamic(() => import("./DenmarkMap"), {
   ssr: false,
@@ -90,6 +90,14 @@ interface Election2022Party {
   stemmer: number;
   stemmePct: number;
   mandater: number;
+}
+
+interface Kommune2022Summary {
+  kommunekode: string;
+  kommune_navn: string;
+  storkreds: string;
+  winner: string;
+  partier: { bogstav: string; navn: string; stemmePct: number }[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -980,6 +988,8 @@ export default function ValgdagPage() {
   const [pmLoading, setPmLoading] = useState(true);
 
   const [election2022, setElection2022] = useState<Election2022Party[]>([]);
+  const [election2022Kommuner, setElection2022Kommuner] = useState<Record<string, Kommune2022Summary>>({});
+  const [show2022Map, setShow2022Map] = useState(false);
 
   // Poll election results every 15 seconds
   useEffect(() => {
@@ -1039,7 +1049,7 @@ export default function ValgdagPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Fetch 2022 results once on mount
+  // Fetch 2022 national results once on mount
   useEffect(() => {
     let cancelled = false;
     fetch("/api/election-2022")
@@ -1052,6 +1062,23 @@ export default function ValgdagPage() {
       })
       .catch(() => {
         // silently fail — 2022 data is optional
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fetch 2022 per-kommune results once on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/election-2022-kommuner")
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
+      .then((data: Record<string, Kommune2022Summary>) => {
+        if (!cancelled) setElection2022Kommuner(data);
+      })
+      .catch(() => {
+        // silently fail — falls back to no per-kommune coloring
       });
     return () => { cancelled = true; };
   }, []);
@@ -1107,56 +1134,71 @@ export default function ValgdagPage() {
           </div>
         )}
 
-        {/* ── COUNTDOWN — visible when polls not yet closed and no live data ── */}
-        {!(pollsClosed && hasLiveData) && (
-          <div className="mb-6">
-            <Countdown />
-          </div>
-        )}
-
         {/* ── PRE-ELECTION / WAITING STATE ── */}
         {!showCounting && (
           <>
-            {/* Loading / waiting card */}
-            {!pollsClosed && (
-              <Card className="mb-6 border-border/50">
-                <CardContent className="py-8 text-center">
-                  {resultsLoading ? (
-                    <>
-                      <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-                      <p className="text-muted-foreground">Forbinder til valgresultater...</p>
-                    </>
-                  ) : (
-                    <>
-                      <h2 className="text-xl font-semibold mb-2">Optællingen er endnu ikke begyndt</h2>
-                      <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                        Siden opdateres automatisk hvert 15. sekund når resultaterne begynder at komme ind.
-                        Afstemning slutter kl. 20:00.
-                      </p>
-                      {resultsError && (
-                        <p className="text-red-400 text-xs mt-3">{resultsError}</p>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
             {/* Pre-election forecast table */}
             <ForecastTable election2022={election2022} />
 
-            {/* Map with 2022 fallback */}
+            {/* Map section: 2026 waiting map + optional 2022 comparison */}
             <Card className="mb-6">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Kort over Danmark</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Viser 2022-resultater · Opdateres når optællingen begynder
-                </p>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <CardTitle className="text-lg">Valgkort 2026</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {show2022Map
+                        ? "Venstre: 2026 live · Højre: 2022 resultater"
+                        : "Opdateres automatisk når stemmeoptællingen begynder"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShow2022Map((v) => !v)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      show2022Map
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-transparent text-muted-foreground border-border hover:border-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {show2022Map ? "Skjul 2022" : "Sammenlign med 2022"}
+                  </button>
+                </div>
               </CardHeader>
               <CardContent>
-                <DenmarkMap perKommune={{}} hasData={false} results2022={election2022} />
+                <div className={`grid gap-4 ${show2022Map ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+                  <div>
+                    {show2022Map && (
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        2026 – Ingen data endnu
+                      </p>
+                    )}
+                    <DenmarkMap
+                      perKommune={{}}
+                      hasData={false}
+                      mode="waiting"
+                      results2022Kommuner={election2022Kommuner}
+                    />
+                  </div>
+                  {show2022Map && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        2022 – Resultater
+                      </p>
+                      <DenmarkMap
+                        perKommune={{}}
+                        hasData={false}
+                        mode="2022"
+                        results2022={election2022}
+                        results2022Kommuner={election2022Kommuner}
+                      />
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
+
+            {/* Results table (2022 data pre-election) */}
+            <ResultsTable results={null} results2022Kommuner={election2022Kommuner} />
 
             {/* Prediction markets */}
             <PredictionMarkets pmData={pmData} loading={pmLoading} />
@@ -1194,15 +1236,20 @@ export default function ValgdagPage() {
                 <DenmarkMap
                   perKommune={results.perKommune}
                   hasData={hasLiveData}
+                  mode="live"
                   results2022={election2022}
+                  results2022Kommuner={election2022Kommuner}
                 />
               </CardContent>
             </Card>
 
-            {/* 6. Prediction markets */}
+            {/* 6. Drilldown results table */}
+            <ResultsTable results={results} results2022Kommuner={election2022Kommuner} />
+
+            {/* 8. Prediction markets */}
             <PredictionMarkets pmData={pmData} loading={pmLoading} />
 
-            {/* 7. Model vs. virkelighed */}
+            {/* 9. Model vs. virkelighed */}
             <ModelVsVirkelighed partier={partier} />
 
             {/* Valgdeltagelse */}
