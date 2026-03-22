@@ -58,7 +58,10 @@ export function PageClient({ initialModel }: { initialModel: ModelData }) {
 
   const seatDelta = (pk: string) => (seats[pk] || 0) - (refSeats[pk] || 0);
   const rodRefSeats  = ROD_BLOK.reduce((s, pk)  => s + (refSeats[pk] || 0), 0);
-  const blaaRefSeats = BLAA_BLOK.reduce((s, pk) => s + (refSeats[pk] || 0), 0);
+  // Nye Borgerlige (D) had 6 mandater i 2022 men stiller ikke op i 2026 —
+  // tilføj dem til Blå Bloks 2022-baseline for en retvisende sammenligning.
+  const blaaRefSeats = BLAA_BLOK.reduce((s, pk) => s + (refSeats[pk] || 0), 0)
+    + (deltaRef === "2022" ? 6 : 0);
   const mRefSeats    = refSeats["M"] || 0;
 
   function DeltaBadge({ delta }: { delta: number }) {
