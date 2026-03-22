@@ -238,6 +238,8 @@ function BlocBarometer({
   partier: PartiResult[];
   isComplete: boolean;
 }) {
+  const [view, setView] = useState<"nu" | "2022">("nu");
+
   const redSeatsBase  = getBlocSeats(partier, "red");
   const blueSeatsBase = getBlocSeats(partier, "blue");
   const redSeats      = redSeatsBase + FO_GL_SEATS;
@@ -245,48 +247,95 @@ function BlocBarometer({
   const totalUsed     = redSeats + blueSeats;
   const redPct        = (redSeats  / TOTAL_SEATS) * 100;
   const bluePct       = (blueSeats / TOTAL_SEATS) * 100;
-  const majorityPct   = (MAJORITY / TOTAL_SEATS) * 100; // 50.28%
+  const majorityPct   = (MAJORITY / TOTAL_SEATS) * 100;
   const redWins       = redSeats  >= MAJORITY;
   const blueWins      = blueSeats >= MAJORITY;
+
+  // 2022 baselines
+  // Rød blok 2022: A(50)+F(15)+Ø(9)+B(7)+Å(6) = 87 + FO/GL(4) = 91
+  const RED_SEATS_2022  = RED_BLOC.reduce((s, k) => s + (PARTIES[k]?.seats2022 ?? 0), 0) + FO_GL_SEATS;
+  // Blå blok 2022: V(23)+I(14)+Æ(14)+C(10)+O(5)+M(16)+H(0) = 82
+  // NOTE: Nye Borgerlige (D) had 6 mandater in 2022 but no longer exists — excluded from baseline
+  const BLUE_SEATS_2022 = BLUE_BLOC.reduce((s, k) => s + (PARTIES[k]?.seats2022 ?? 0), 0);
+
+  const redDelta  = redSeats  - RED_SEATS_2022;
+  const blueDelta = blueSeats - BLUE_SEATS_2022;
+
+  function deltaLabel(d: number) {
+    if (d > 0) return <span className="text-green-400 font-semibold text-sm ml-1">+{d}</span>;
+    if (d < 0) return <span className="text-red-400   font-semibold text-sm ml-1">{d}</span>;
+    return <span className="text-muted-foreground font-semibold text-sm ml-1">±0</span>;
+  }
 
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Mandatbarometer</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {MAJORITY} mandater kræves for flertal · {totalUsed} af {TOTAL_SEATS} tildelt
-        </p>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <CardTitle className="text-lg">Mandatbarometer</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {MAJORITY} mandater kræves for flertal · {totalUsed} af {TOTAL_SEATS} tildelt
+            </p>
+          </div>
+          {/* Toggle */}
+          <div className="flex rounded-lg overflow-hidden border border-border text-xs font-medium">
+            <button
+              onClick={() => setView("nu")}
+              className={`px-3 py-1.5 transition-colors ${view === "nu" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Nu
+            </button>
+            <button
+              onClick={() => setView("2022")}
+              className={`px-3 py-1.5 transition-colors ${view === "2022" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Siden valget 2022
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="text-4xl font-bold" style={{ color: "#dc2626" }}>
-              {redSeats}
+            <div className="flex items-baseline gap-1">
+              <div className="text-4xl font-bold" style={{ color: "#dc2626" }}>
+                {redSeats}
+              </div>
+              {view === "2022" && deltaLabel(redDelta)}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">
               Rød blok
-              {redWins && (
-                <span className="text-green-400 font-semibold ml-1.5">FLERTAL</span>
-              )}
+              {redWins && <span className="text-green-400 font-semibold ml-1.5">FLERTAL</span>}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">
               inkl. FO/GL ({FO_GL_SEATS})
             </div>
+            {view === "2022" && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                2022: {RED_SEATS_2022} mandater
+              </div>
+            )}
           </div>
           <div className="text-center px-4">
             <div className="text-lg font-semibold text-muted-foreground">{MAJORITY}</div>
             <div className="text-xs text-muted-foreground">flertal</div>
           </div>
           <div className="text-right">
-            <div className="text-4xl font-bold" style={{ color: "#1d4ed8" }}>
-              {blueSeats}
+            <div className="flex items-baseline gap-1 justify-end">
+              {view === "2022" && deltaLabel(blueDelta)}
+              <div className="text-4xl font-bold" style={{ color: "#1d4ed8" }}>
+                {blueSeats}
+              </div>
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">
               Blå blok
-              {blueWins && (
-                <span className="text-green-400 font-semibold ml-1.5">FLERTAL</span>
-              )}
+              {blueWins && <span className="text-green-400 font-semibold ml-1.5">FLERTAL</span>}
             </div>
+            {view === "2022" && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                2022: {BLUE_SEATS_2022} mandater
+              </div>
+            )}
           </div>
         </div>
 
@@ -296,22 +345,17 @@ function BlocBarometer({
             className="h-full flex items-center justify-end pr-2 transition-all duration-700"
             style={{ width: `${redPct}%`, backgroundColor: "#dc2626" }}
           >
-            {redPct > 10 && (
-              <span className="text-white text-sm font-bold">{redSeats}</span>
-            )}
+            {redPct > 10 && <span className="text-white text-sm font-bold">{redSeats}</span>}
           </div>
           <div
             className="h-full flex items-center justify-start pl-2 transition-all duration-700"
             style={{ width: `${bluePct}%`, backgroundColor: "#1d4ed8" }}
           >
-            {bluePct > 10 && (
-              <span className="text-white text-sm font-bold">{blueSeats}</span>
-            )}
+            {bluePct > 10 && <span className="text-white text-sm font-bold">{blueSeats}</span>}
           </div>
           {totalUsed < TOTAL_SEATS && (
             <div className="h-full bg-muted/50" style={{ flex: 1 }} />
           )}
-          {/* Majority line at 90/179 = 50.28% */}
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-white/80 z-10"
             style={{ left: `${majorityPct}%` }}
@@ -321,6 +365,12 @@ function BlocBarometer({
             </div>
           </div>
         </div>
+
+        {view === "2022" && (
+          <p className="text-xs text-muted-foreground mt-3 italic">
+            Blå bloks 2022-baseline ekskluderer Nye Borgerlige (D, 6 mandater) som ikke stiller op i 2026.
+          </p>
+        )}
 
         <div className="flex flex-wrap gap-4 mt-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
