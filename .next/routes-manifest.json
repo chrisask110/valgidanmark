@@ -48,6 +48,12 @@
       "namedRegex": "^/admin/polls(?:/)?$"
     },
     {
+      "page": "/institutter",
+      "regex": "^/institutter(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/institutter(?:/)?$"
+    },
+    {
       "page": "/om-metoden",
       "regex": "^/om\\-metoden(?:/)?$",
       "routeKeys": {},
@@ -58,6 +64,12 @@
       "regex": "^/opengraph\\-image(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/opengraph\\-image(?:/)?$"
+    },
+    {
+      "page": "/prediction-markets",
+      "regex": "^/prediction\\-markets(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/prediction\\-markets(?:/)?$"
     },
     {
       "page": "/robots.txt",
@@ -88,6 +100,12 @@
       "regex": "^/statsminister(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/statsminister(?:/)?$"
+    },
+    {
+      "page": "/valgdag",
+      "regex": "^/valgdag(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/valgdag(?:/)?$"
     }
   ],
   "dataRoutes": [],

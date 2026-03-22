@@ -1,7 +1,25 @@
 User-Agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /scrape-wiki/
 Disallow: /api/
 
-Host: https://valgidanmark.dk
+User-Agent: GPTBot
+Allow: /
+
+User-Agent: ChatGPT-User
+Allow: /
+
+User-Agent: ClaudeBot
+Allow: /
+
+User-Agent: PerplexityBot
+Allow: /
+
+User-Agent: OAI-SearchBot
+Allow: /
+
+User-Agent: Google-Extended
+Allow: /
+
 Sitemap: https://valgidanmark.dk/sitemap.xml

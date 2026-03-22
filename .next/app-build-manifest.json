@@ -1,181 +1,258 @@
 {
   "pages": {
     "/_not-found/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/_not-found/page-ccc1ecbeb92b8de7.js"
-    ],
-    "/api/prediction-markets/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/prediction-markets/route-a8e3cd301baa49a6.js"
-    ],
-    "/robots.txt/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/robots.txt/route-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/_not-found/page-30dd8898de389733.js"
     ],
     "/sitemap.xml/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/sitemap.xml/route-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/sitemap.xml/route-97c5976f7919c2ff.js"
+    ],
+    "/robots.txt/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/robots.txt/route-97c5976f7919c2ff.js"
     ],
     "/layout": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/css/817ab0cf1279451a.css",
-      "static/chunks/619-f072ac750404f9da.js",
-      "static/chunks/125-4701561c6d6b4ffa.js",
-      "static/chunks/230-28fbbe62cdc8ec2c.js",
-      "static/chunks/app/layout-e2b9bbba7edda774.js"
-    ],
-    "/api/db-polls/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/db-polls/route-a8e3cd301baa49a6.js"
-    ],
-    "/api/polls/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/polls/route-a8e3cd301baa49a6.js"
-    ],
-    "/api/simulator/stats/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/simulator/stats/route-a8e3cd301baa49a6.js"
-    ],
-    "/api/polls/[id]/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/polls/[id]/route-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/css/cb69ff81ea772482.css",
+      "static/chunks/2619-04bc32f026a0d946.js",
+      "static/chunks/5889-b62a420c9d499110.js",
+      "static/chunks/4230-aebfd2d08e57dfd1.js",
+      "static/chunks/9594-77e4ef15771fda70.js",
+      "static/chunks/app/layout-36c0480d5b6de297.js"
     ],
     "/api/admin/seed/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/admin/seed/route-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/admin/seed/route-97c5976f7919c2ff.js"
     ],
-    "/api/simulator/submit/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/simulator/submit/route-a8e3cd301baa49a6.js"
+    "/api/db-polls/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/db-polls/route-97c5976f7919c2ff.js"
+    ],
+    "/api/admin/seed-2022-kommuner/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/admin/seed-2022-kommuner/route-97c5976f7919c2ff.js"
+    ],
+    "/api/election-2022-kommuner/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/election-2022-kommuner/route-97c5976f7919c2ff.js"
     ],
     "/api/cron/update-polls/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/cron/update-polls/route-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/cron/update-polls/route-97c5976f7919c2ff.js"
+    ],
+    "/api/polls/[id]/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/polls/[id]/route-97c5976f7919c2ff.js"
+    ],
+    "/api/election-2022/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/election-2022/route-97c5976f7919c2ff.js"
+    ],
+    "/api/model/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/model/route-97c5976f7919c2ff.js"
+    ],
+    "/api/simulator/stats/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/simulator/stats/route-97c5976f7919c2ff.js"
+    ],
+    "/api/simulator/submit/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/simulator/submit/route-97c5976f7919c2ff.js"
+    ],
+    "/api/polls/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/polls/route-97c5976f7919c2ff.js"
+    ],
+    "/api/valgresultater/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/valgresultater/route-97c5976f7919c2ff.js"
+    ],
+    "/api/kalshi/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/kalshi/route-97c5976f7919c2ff.js"
+    ],
+    "/api/prediction-markets/route": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/prediction-markets/route-97c5976f7919c2ff.js"
     ],
     "/api/scrape-wiki/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/api/scrape-wiki/route-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/scrape-wiki/route-97c5976f7919c2ff.js"
     ],
     "/admin/polls/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/639-0b77ae0131796670.js",
-      "static/chunks/app/admin/polls/page-38c8c5cec209283a.js"
-    ],
-    "/scrape-wiki/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/639-0b77ae0131796670.js",
-      "static/chunks/app/scrape-wiki/page-eac73ee57eeae2dd.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/4639-3a7f6880346e04c7.js",
+      "static/chunks/app/admin/polls/page-0685212df1e6b346.js"
     ],
     "/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/619-f072ac750404f9da.js",
-      "static/chunks/319-5f22805327ca7a29.js",
-      "static/chunks/125-4701561c6d6b4ffa.js",
-      "static/chunks/639-0b77ae0131796670.js",
-      "static/chunks/app/page-ed1329797f52bbb0.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/2619-04bc32f026a0d946.js",
+      "static/chunks/7892-0004a1ab76b21d4b.js",
+      "static/chunks/5889-b62a420c9d499110.js",
+      "static/chunks/8209-9737a0308c2e2dac.js",
+      "static/chunks/4639-3a7f6880346e04c7.js",
+      "static/chunks/5204-a59e19cca3307bb6.js",
+      "static/chunks/app/page-f38acfefe92d7779.js"
     ],
-    "/statsminister/layout": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/statsminister/layout-a8e3cd301baa49a6.js"
+    "/scrape-wiki/page": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/4639-3a7f6880346e04c7.js",
+      "static/chunks/app/scrape-wiki/page-9070dcffc721dc30.js"
     ],
-    "/statsminister/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/230-28fbbe62cdc8ec2c.js",
-      "static/chunks/639-0b77ae0131796670.js",
-      "static/chunks/app/statsminister/page-510067e6741a44f8.js"
+    "/valgdag/page": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/5889-b62a420c9d499110.js",
+      "static/chunks/app/valgdag/page-6dbf7992942a6696.js"
+    ],
+    "/prediction-markets/page": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/2619-04bc32f026a0d946.js",
+      "static/chunks/5239-b2fa145829d787bb.js",
+      "static/chunks/4639-3a7f6880346e04c7.js",
+      "static/chunks/5204-a59e19cca3307bb6.js",
+      "static/chunks/app/prediction-markets/page-9ff813c77f3b8241.js"
+    ],
+    "/institutter/page": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/2619-04bc32f026a0d946.js",
+      "static/chunks/7892-0004a1ab76b21d4b.js",
+      "static/chunks/8765-728f35fd0f706249.js",
+      "static/chunks/4639-3a7f6880346e04c7.js",
+      "static/chunks/app/institutter/page-a6b91f79c7a8f6f4.js"
     ],
     "/om-metoden/layout": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/om-metoden/layout-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/om-metoden/layout-97c5976f7919c2ff.js"
     ],
     "/om-metoden/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/619-f072ac750404f9da.js",
-      "static/chunks/app/om-metoden/page-eba9526a881115db.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/2619-04bc32f026a0d946.js",
+      "static/chunks/app/om-metoden/page-eae884a16b6604ce.js"
     ],
     "/spaerregraensen/layout": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/spaerregraensen/layout-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/spaerregraensen/layout-97c5976f7919c2ff.js"
     ],
     "/spaerregraensen/page": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/619-f072ac750404f9da.js",
-      "static/chunks/319-5f22805327ca7a29.js",
-      "static/chunks/639-0b77ae0131796670.js",
-      "static/chunks/app/spaerregraensen/page-153b36319fa5c29e.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/2619-04bc32f026a0d946.js",
+      "static/chunks/7892-0004a1ab76b21d4b.js",
+      "static/chunks/8209-9737a0308c2e2dac.js",
+      "static/chunks/4639-3a7f6880346e04c7.js",
+      "static/chunks/app/spaerregraensen/page-ec13866402140012.js"
+    ],
+    "/statsminister/layout": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/statsminister/layout-97c5976f7919c2ff.js"
+    ],
+    "/statsminister/page": [
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/2619-04bc32f026a0d946.js",
+      "static/chunks/4230-aebfd2d08e57dfd1.js",
+      "static/chunks/4639-3a7f6880346e04c7.js",
+      "static/chunks/app/statsminister/page-619a13f5cc9a933c.js"
     ],
     "/opengraph-image/route": [
-      "static/chunks/webpack-74ae7a605c9a7af3.js",
-      "static/chunks/4bd1b696-409494caf8c83275.js",
-      "static/chunks/255-091853b4155593e2.js",
-      "static/chunks/main-app-188b1035816cb0e1.js",
-      "static/chunks/app/opengraph-image/route-a8e3cd301baa49a6.js"
+      "static/chunks/webpack-edd2e82c511881ef.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/opengraph-image/route-97c5976f7919c2ff.js"
     ]
   }
 }
