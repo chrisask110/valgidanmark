@@ -1267,7 +1267,7 @@ export default function ValgdagPage() {
                 {/* Shared detail panel — below both maps, full width */}
                 {twoMapSelected && (() => {
                   const k2022 = election2022Kommuner[twoMapSelected.key];
-                  const partier2022 = k2022?.partier ?? [];
+                  const partier2022 = (k2022?.partier ?? []).filter((p) => p.stemmePct > 0);
                   const maxPct = Math.max(...partier2022.map((p) => p.stemmePct), 1);
                   return (
                     <div className="mt-4 pt-4 border-t border-border">
@@ -1275,8 +1275,8 @@ export default function ValgdagPage() {
                         <div>
                           <h3 className="font-semibold">{k2022?.kommune_navn ?? twoMapSelected.navn}</h3>
                           <p className="text-xs text-muted-foreground">
-                            {k2022?.storkreds}
-                            {twoMapSelected.from === "2022" ? " · Valg 2022" : " · 2026 – ingen data endnu"}
+                            {k2022?.storkreds ?? ""}
+                            {twoMapSelected.from === "2022" ? " · Valg 2022" : " · Valg 2026"}
                           </p>
                         </div>
                         <button
@@ -1286,7 +1286,12 @@ export default function ValgdagPage() {
                           ✕
                         </button>
                       </div>
-                      {partier2022.length > 0 ? (
+
+                      {twoMapSelected.from === "waiting" ? (
+                        <p className="text-sm text-muted-foreground italic">
+                          Ingen 2026-resultater tilgængeligt endnu — opdateres automatisk når optællingen begynder.
+                        </p>
+                      ) : partier2022.length > 0 ? (
                         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                           {partier2022.map((p) => {
                             const color = PARTIES[p.bogstav]?.color ?? "#888";

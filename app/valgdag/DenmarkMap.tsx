@@ -222,13 +222,14 @@ function KommuneDetailPanel({
     Object.assign(ref2022, RESULTS_2022);
   }
 
-  const topPartier = [...(data?.partier ?? [])]
+  const allPartier = [...(data?.partier ?? [])]
     .sort((a, b) => b.stemmeProcent - a.stemmeProcent)
-    .slice(0, 8);
+    .filter((p) => p.stemmeProcent > 0);
 
-  const maxPct = topPartier[0]?.stemmeProcent ?? 1;
+  const maxPct = allPartier[0]?.stemmeProcent ?? 1;
 
   const results2022Partier = Object.entries(ref2022)
+    .filter(([, pct]) => pct > 0)
     .sort(([, a], [, b]) => b - a)
     .map(([bogstav, pct]) => ({ bogstav, stemmeProcent: pct }));
   const max2022 = results2022Partier[0]?.stemmeProcent ?? 1;
@@ -284,7 +285,7 @@ function KommuneDetailPanel({
               Partiresultater (foreløbige)
             </h4>
             <div className="space-y-2">
-              {topPartier.map((p) => {
+              {allPartier.map((p) => {
                 const party = PARTIES[p.bogstav];
                 const color = party?.color ?? "#888";
                 const barW  = (p.stemmeProcent / maxPct) * 100;
@@ -311,15 +312,12 @@ function KommuneDetailPanel({
                         </span>
                         {diff !== null && (
                           <span
-                            className={`text-[10px] font-mono px-1 py-0.5 rounded ${
-                              diff > 0
-                                ? "text-green-400 bg-green-500/10"
-                                : diff < 0
-                                ? "text-red-400 bg-red-500/10"
-                                : "text-gray-500"
+                            className={`text-[10px] font-mono flex items-center gap-0.5 ${
+                              diff > 0 ? "text-green-400" : diff < 0 ? "text-red-400" : "text-gray-500"
                             }`}
                           >
-                            {diff > 0 ? "+" : ""}{diff.toFixed(1)}
+                            {diff > 0 ? "▲" : diff < 0 ? "▼" : "–"}
+                            {Math.abs(diff).toFixed(1)}
                           </span>
                         )}
                       </div>
@@ -524,7 +522,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022, mode = "l
     svg.selectAll("*").remove();
 
     const W = 600;
-    const H = 700;
+    const H = 640;
 
     svg.attr("viewBox", `0 0 ${W} ${H}`);
 
@@ -539,7 +537,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022, mode = "l
     const mainGeo = { type: "FeatureCollection", features: mainFeatures };
 
     const projection = d3.geoMercator().fitExtent(
-      [[20, 20], [W - 20, H - 20]],
+      [[5, 5], [W - 5, H - 5]],
       mainGeo as any
     );
 
@@ -787,25 +785,13 @@ export default function DenmarkMap({ perKommune, hasData, results2022, mode = "l
             <svg
               ref={svgRef}
               className="w-full"
-              style={{ maxHeight: "700px" }}
+              style={{ maxHeight: "580px" }}
             />
 
             {/* Bornholm inset */}
-            <div className="absolute bottom-10 right-4 w-24 shadow-xl rounded overflow-hidden border border-border bg-card">
+            <div className="absolute bottom-6 right-4 w-20 shadow-xl rounded overflow-hidden border border-border bg-card">
               <svg ref={insetRef} className="w-full" />
             </div>
-
-            {/* No-data badge */}
-            {mode === "waiting" && (
-              <div className="absolute top-3 left-3 bg-background/80 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 text-xs text-muted-foreground">
-                Ingen data endnu · Opdateres automatisk
-              </div>
-            )}
-            {mode === "2022" && (
-              <div className="absolute top-3 left-3 bg-background/80 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 text-xs text-muted-foreground">
-                Resultater fra Folketingsvalget 2022
-              </div>
-            )}
 
             {/* Tooltip */}
             {tooltip && (
