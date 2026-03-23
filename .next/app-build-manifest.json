@@ -19,13 +19,6 @@
       "static/chunks/9594-77e4ef15771fda70.js",
       "static/chunks/app/layout-36c0480d5b6de297.js"
     ],
-    "/sitemap.xml/route": [
-      "static/chunks/webpack-61dec3761cbab39c.js",
-      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
-      "static/chunks/1255-ad409e5887c155b0.js",
-      "static/chunks/main-app-4065ee33416b2464.js",
-      "static/chunks/app/sitemap.xml/route-97c5976f7919c2ff.js"
-    ],
     "/robots.txt/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
       "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
@@ -33,12 +26,12 @@
       "static/chunks/main-app-4065ee33416b2464.js",
       "static/chunks/app/robots.txt/route-97c5976f7919c2ff.js"
     ],
-    "/api/admin/seed/route": [
+    "/sitemap.xml/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
       "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
       "static/chunks/1255-ad409e5887c155b0.js",
       "static/chunks/main-app-4065ee33416b2464.js",
-      "static/chunks/app/api/admin/seed/route-97c5976f7919c2ff.js"
+      "static/chunks/app/sitemap.xml/route-97c5976f7919c2ff.js"
     ],
     "/api/admin/seed-2022-kommuner/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
@@ -47,12 +40,12 @@
       "static/chunks/main-app-4065ee33416b2464.js",
       "static/chunks/app/api/admin/seed-2022-kommuner/route-97c5976f7919c2ff.js"
     ],
-    "/api/db-polls/route": [
+    "/api/admin/seed/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
       "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
       "static/chunks/1255-ad409e5887c155b0.js",
       "static/chunks/main-app-4065ee33416b2464.js",
-      "static/chunks/app/api/db-polls/route-97c5976f7919c2ff.js"
+      "static/chunks/app/api/admin/seed/route-97c5976f7919c2ff.js"
     ],
     "/api/cron/update-polls/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
@@ -61,26 +54,12 @@
       "static/chunks/main-app-4065ee33416b2464.js",
       "static/chunks/app/api/cron/update-polls/route-97c5976f7919c2ff.js"
     ],
-    "/api/election-2022-kommuner/route": [
+    "/api/db-polls/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
       "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
       "static/chunks/1255-ad409e5887c155b0.js",
       "static/chunks/main-app-4065ee33416b2464.js",
-      "static/chunks/app/api/election-2022-kommuner/route-97c5976f7919c2ff.js"
-    ],
-    "/api/election-2022/route": [
-      "static/chunks/webpack-61dec3761cbab39c.js",
-      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
-      "static/chunks/1255-ad409e5887c155b0.js",
-      "static/chunks/main-app-4065ee33416b2464.js",
-      "static/chunks/app/api/election-2022/route-97c5976f7919c2ff.js"
-    ],
-    "/api/model/route": [
-      "static/chunks/webpack-61dec3761cbab39c.js",
-      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
-      "static/chunks/1255-ad409e5887c155b0.js",
-      "static/chunks/main-app-4065ee33416b2464.js",
-      "static/chunks/app/api/model/route-97c5976f7919c2ff.js"
+      "static/chunks/app/api/db-polls/route-97c5976f7919c2ff.js"
     ],
     "/api/polls/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
@@ -95,6 +74,27 @@
       "static/chunks/1255-ad409e5887c155b0.js",
       "static/chunks/main-app-4065ee33416b2464.js",
       "static/chunks/app/api/polls/[id]/route-97c5976f7919c2ff.js"
+    ],
+    "/api/model/route": [
+      "static/chunks/webpack-61dec3761cbab39c.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/model/route-97c5976f7919c2ff.js"
+    ],
+    "/api/election-2022/route": [
+      "static/chunks/webpack-61dec3761cbab39c.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/election-2022/route-97c5976f7919c2ff.js"
+    ],
+    "/api/election-2022-kommuner/route": [
+      "static/chunks/webpack-61dec3761cbab39c.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/api/election-2022-kommuner/route-97c5976f7919c2ff.js"
     ],
     "/api/simulator/stats/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
@@ -214,21 +214,6 @@
       "static/chunks/4639-3a7f6880346e04c7.js",
       "static/chunks/app/statsminister/page-619a13f5cc9a933c.js"
     ],
-    "/om-metoden/layout": [
-      "static/chunks/webpack-61dec3761cbab39c.js",
-      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
-      "static/chunks/1255-ad409e5887c155b0.js",
-      "static/chunks/main-app-4065ee33416b2464.js",
-      "static/chunks/app/om-metoden/layout-97c5976f7919c2ff.js"
-    ],
-    "/om-metoden/page": [
-      "static/chunks/webpack-61dec3761cbab39c.js",
-      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
-      "static/chunks/1255-ad409e5887c155b0.js",
-      "static/chunks/main-app-4065ee33416b2464.js",
-      "static/chunks/2619-04bc32f026a0d946.js",
-      "static/chunks/app/om-metoden/page-eae884a16b6604ce.js"
-    ],
     "/spaerregraensen/layout": [
       "static/chunks/webpack-61dec3761cbab39c.js",
       "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
@@ -246,6 +231,21 @@
       "static/chunks/8209-9737a0308c2e2dac.js",
       "static/chunks/4639-3a7f6880346e04c7.js",
       "static/chunks/app/spaerregraensen/page-ec13866402140012.js"
+    ],
+    "/om-metoden/layout": [
+      "static/chunks/webpack-61dec3761cbab39c.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/app/om-metoden/layout-97c5976f7919c2ff.js"
+    ],
+    "/om-metoden/page": [
+      "static/chunks/webpack-61dec3761cbab39c.js",
+      "static/chunks/4bd1b696-100b9d70ed4e49c1.js",
+      "static/chunks/1255-ad409e5887c155b0.js",
+      "static/chunks/main-app-4065ee33416b2464.js",
+      "static/chunks/2619-04bc32f026a0d946.js",
+      "static/chunks/app/om-metoden/page-eae884a16b6604ce.js"
     ],
     "/opengraph-image/route": [
       "static/chunks/webpack-61dec3761cbab39c.js",
