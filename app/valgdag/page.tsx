@@ -669,15 +669,29 @@ function NordatlantiskeMandater() {
   );
 }
 
-// FORECAST TABLE (pre-election state)
-function ForecastTable({ election2022 }: { election2022: Election2022Party[] }) {
+// FORECAST TABLE — bottom of page, uses live model weighted average
+function ForecastTable({
+  election2022,
+  modelPartyPct,
+  livePartier,
+}: {
+  election2022: Election2022Party[];
+  modelPartyPct: Record<string, number>;
+  livePartier?: PartiResult[];
+}) {
   const map2022: Record<string, Election2022Party> = {};
   for (const p of election2022) {
     map2022[p.bogstav] = p;
   }
 
-  const keys = Object.keys(FORECAST).sort(
-    (a, b) => (FORECAST[b] ?? 0) - (FORECAST[a] ?? 0),
+  const liveMap: Record<string, number> = {};
+  for (const p of livePartier ?? []) {
+    liveMap[p.bogstav] = p.stemmeProcent;
+  }
+  const hasLive = (livePartier?.length ?? 0) > 0;
+
+  const keys = Object.keys(modelPartyPct).sort(
+    (a, b) => (modelPartyPct[b] ?? 0) - (modelPartyPct[a] ?? 0),
   );
 
   return (
@@ -685,7 +699,7 @@ function ForecastTable({ election2022 }: { election2022: Election2022Party[] }) 
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Meningsmålinger — prognose</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Vægtet gennemsnit af seneste meningsmålinger (pr. valgdag)
+          Valgidanmarks vægtede model sammenlignet med {hasLive ? "foreløbige valgresultater" : "valget 2022"}
         </p>
       </CardHeader>
       <CardContent className="p-0">
@@ -694,7 +708,10 @@ function ForecastTable({ election2022 }: { election2022: Election2022Party[] }) 
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-2 px-4 font-medium text-muted-foreground">Parti</th>
-                <th className="text-right py-2 px-4 font-medium text-muted-foreground">Prognose %</th>
+                <th className="text-right py-2 px-4 font-medium text-muted-foreground">Model %</th>
+                {hasLive && (
+                  <th className="text-right py-2 px-4 font-medium text-muted-foreground">Valgresultat %</th>
+                )}
                 <th className="text-right py-2 px-4 font-medium text-muted-foreground hidden sm:table-cell">
                   2022 %
                 </th>
@@ -705,11 +722,14 @@ function ForecastTable({ election2022 }: { election2022: Election2022Party[] }) 
             </thead>
             <tbody>
               {keys.map((bogstav, i) => {
-                const pct    = FORECAST[bogstav] ?? 0;
-                const party  = PARTIES[bogstav];
-                const p2022  = map2022[bogstav];
-                const pct2022 = p2022?.stemmePct ?? null;
-                const diff   = pct2022 !== null ? pct - pct2022 : null;
+                const modelPct = modelPartyPct[bogstav] ?? 0;
+                const party    = PARTIES[bogstav];
+                const pct2022  = map2022[bogstav]?.stemmePct ?? null;
+                const livePct  = liveMap[bogstav] ?? null;
+                // Ændring: live vs 2022 when counting, model vs 2022 pre-election
+                const diff = hasLive
+                  ? (livePct !== null && pct2022 !== null ? livePct - pct2022 : null)
+                  : (pct2022 !== null ? modelPct - pct2022 : null);
 
                 return (
                   <tr
@@ -727,9 +747,14 @@ function ForecastTable({ election2022 }: { election2022: Election2022Party[] }) 
                         <span className="font-medium">{party?.name ?? bogstav}</span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-4 text-right font-mono font-semibold">
-                      {pct.toFixed(1)}%
+                    <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">
+                      {modelPct.toFixed(1)}%
                     </td>
+                    {hasLive && (
+                      <td className="py-2.5 px-4 text-right font-mono font-semibold">
+                        {livePct !== null ? `${livePct.toFixed(1)}%` : "—"}
+                      </td>
+                    )}
                     <td className="py-2.5 px-4 text-right text-muted-foreground hidden sm:table-cell">
                       {pct2022 !== null ? `${pct2022.toFixed(1)}%` : "—"}
                     </td>
@@ -746,6 +771,9 @@ function ForecastTable({ election2022 }: { election2022: Election2022Party[] }) 
             </tbody>
           </table>
         </div>
+        {hasLive && (
+          <p className="text-xs text-muted-foreground px-4 py-2">Ændring er ift. valget 2022</p>
+        )}
       </CardContent>
     </Card>
   );
@@ -990,6 +1018,8 @@ export default function ValgdagPage() {
   const [election2022, setElection2022] = useState<Election2022Party[]>([]);
   const [election2022Kommuner, setElection2022Kommuner] = useState<Record<string, Kommune2022Summary>>({});
   const [show2022Map, setShow2022Map] = useState(false);
+  const [modelPartyPct, setModelPartyPct] = useState<Record<string, number>>(FORECAST);
+  const [twoMapSelected, setTwoMapSelected] = useState<{ key: string; navn: string; from: "2022" | "waiting" } | null>(null);
 
   // Poll election results every 15 seconds
   useEffect(() => {
@@ -1083,6 +1113,21 @@ export default function ValgdagPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Fetch model weighted average once on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/model")
+      .then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return r.json();
+      })
+      .then((data: { partyPct: Record<string, number> }) => {
+        if (!cancelled && data.partyPct) setModelPartyPct(data.partyPct);
+      })
+      .catch(() => { /* fall back to FORECAST constant */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // ── State derivations ──
   const pollsClosed  = Date.now() >= POLLS_CLOSE.getTime();
   const hasLiveData  = results !== null && results.optalteAfstemningsomraader > 0;
@@ -1116,7 +1161,32 @@ export default function ValgdagPage() {
               </span>
             )}
           </div>
-          <p className="text-muted-foreground">Folketingsvalg · 24. marts 2026</p>
+          <p className="text-muted-foreground mb-4">Folketingsvalg · 24. marts 2026</p>
+
+          {/* Counting progress bar — always visible */}
+          <div>
+            <div className="flex justify-between text-sm mb-1.5">
+              <span className="text-muted-foreground">
+                {!hasLiveData
+                  ? "Optællingen er ikke begyndt endnu"
+                  : isComplete
+                  ? `Alle ${results!.totalAfstemningsomraader} afstemningsområder optalt`
+                  : `${results!.optalteAfstemningsomraader} af ${results!.totalAfstemningsomraader} afstemningsområder optalt`}
+              </span>
+              <span className={`font-semibold tabular-nums ${hasLiveData ? "text-foreground" : "text-muted-foreground"}`}>
+                {hasLiveData ? `${results!.optaltProcent.toFixed(1)}%` : "0%"} optalt
+              </span>
+            </div>
+            <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${hasLiveData ? Math.min(results!.optaltProcent, 100) : 0}%`,
+                  backgroundColor: isComplete ? "#22c55e" : "#3b82f6",
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Complete banner */}
@@ -1137,9 +1207,6 @@ export default function ValgdagPage() {
         {/* ── PRE-ELECTION / WAITING STATE ── */}
         {!showCounting && (
           <>
-            {/* Pre-election forecast table */}
-            <ForecastTable election2022={election2022} />
-
             {/* Map section: 2026 waiting map + optional 2022 comparison */}
             <Card className="mb-6">
               <CardHeader className="pb-3">
@@ -1177,6 +1244,7 @@ export default function ValgdagPage() {
                       hasData={false}
                       mode="waiting"
                       results2022Kommuner={election2022Kommuner}
+                      onKommuneSelect={(key, navn) => setTwoMapSelected({ key, navn, from: "waiting" })}
                     />
                   </div>
                   {show2022Map && (
@@ -1190,10 +1258,62 @@ export default function ValgdagPage() {
                         mode="2022"
                         results2022={election2022}
                         results2022Kommuner={election2022Kommuner}
+                        onKommuneSelect={(key, navn) => setTwoMapSelected({ key, navn, from: "2022" })}
                       />
                     </div>
                   )}
                 </div>
+
+                {/* Shared detail panel — below both maps, full width */}
+                {twoMapSelected && (() => {
+                  const k2022 = election2022Kommuner[twoMapSelected.key];
+                  const partier2022 = k2022?.partier ?? [];
+                  const maxPct = Math.max(...partier2022.map((p) => p.stemmePct), 1);
+                  return (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-semibold">{k2022?.kommune_navn ?? twoMapSelected.navn}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {k2022?.storkreds}
+                            {twoMapSelected.from === "2022" ? " · Valg 2022" : " · 2026 – ingen data endnu"}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setTwoMapSelected(null)}
+                          className="text-muted-foreground hover:text-foreground w-7 h-7 flex items-center justify-center rounded hover:bg-muted transition-colors text-sm"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      {partier2022.length > 0 ? (
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                          {partier2022.map((p) => {
+                            const color = PARTIES[p.bogstav]?.color ?? "#888";
+                            const barW = (p.stemmePct / maxPct) * 100;
+                            return (
+                              <div key={p.bogstav}>
+                                <div className="flex items-center justify-between text-xs mb-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <PartyDot bogstav={p.bogstav} />
+                                    <span className="font-semibold" style={{ color }}>{p.bogstav}</span>
+                                    <span className="text-muted-foreground truncate max-w-[120px]">{p.navn}</span>
+                                  </div>
+                                  <span className="font-mono font-semibold ml-2">{p.stemmePct.toFixed(1)}%</span>
+                                </div>
+                                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full" style={{ width: `${barW}%`, backgroundColor: color }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Ingen kommunedata tilgængeligt</p>
+                      )}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
 
@@ -1202,6 +1322,9 @@ export default function ValgdagPage() {
 
             {/* Prediction markets */}
             <PredictionMarkets pmData={pmData} loading={pmLoading} />
+
+            {/* Meningsmålinger-prognose — bottom of page */}
+            <ForecastTable election2022={election2022} modelPartyPct={modelPartyPct} />
           </>
         )}
 
@@ -1275,6 +1398,9 @@ export default function ValgdagPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Meningsmålinger-prognose — bottom of page */}
+            <ForecastTable election2022={election2022} modelPartyPct={modelPartyPct} livePartier={partier} />
           </>
         )}
 

@@ -52,6 +52,8 @@ interface DenmarkMapProps {
    */
   mode?: "waiting" | "2022" | "live";
   results2022Kommuner?: Record<string, Kommune2022Summary>;
+  /** When provided, clicks fire this callback instead of opening the internal detail panel */
+  onKommuneSelect?: (key: string, navn: string) => void;
 }
 
 interface TooltipState {
@@ -199,17 +201,22 @@ function KommuneDetailPanel({
   data,
   onClose,
   results2022Prop,
+  kommuneData2022Prop,
 }: {
   navn: string;
   data: KommuneData | null;
   onClose: () => void;
   results2022Prop?: Election2022Party[];
+  kommuneData2022Prop?: { bogstav: string; navn: string; stemmePct: number }[];
 }) {
   const [showAfstemning, setShowAfstemning] = useState(false);
 
-  // Build 2022 reference map
+  // Build 2022 reference map — per-kommune first, then national, then hardcoded
+  const hasKommuneRef = (kommuneData2022Prop?.length ?? 0) > 0;
   const ref2022: Record<string, number> = {};
-  if (results2022Prop && results2022Prop.length > 0) {
+  if (hasKommuneRef) {
+    kommuneData2022Prop!.forEach((p) => { ref2022[p.bogstav] = p.stemmePct; });
+  } else if (results2022Prop && results2022Prop.length > 0) {
     results2022Prop.forEach((p) => { ref2022[p.bogstav] = p.stemmePct; });
   } else {
     Object.assign(ref2022, RESULTS_2022);
@@ -265,7 +272,7 @@ function KommuneDetailPanel({
         ) : (
           <div className="flex items-center gap-2">
             <span className="bg-gray-500/20 text-gray-400 text-xs px-2.5 py-1 rounded-full font-medium">
-              Viser 2022-data
+              {hasKommuneRef ? "Kommuneresultat 2022" : "Nationale 2022-data"}
             </span>
           </div>
         )}
@@ -327,16 +334,16 @@ function KommuneDetailPanel({
                 );
               })}
             </div>
-            {results2022Prop && results2022Prop.length > 0 && (
+            {(hasKommuneRef || (results2022Prop && results2022Prop.length > 0)) && (
               <p className="text-[10px] text-gray-500 mt-2 italic">
-                +/− ift. nationalt 2022
+                +/− ift. {hasKommuneRef ? "2022 (denne kommune)" : "nationalt 2022"}
               </p>
             )}
           </div>
         ) : (
           <div>
             <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-              2022-resultater (nationale)
+              {hasKommuneRef ? "Valg 2022 – kommuneresultat" : "2022-resultater (nationale)"}
             </h4>
             <div className="space-y-2">
               {results2022Partier.map(({ bogstav, stemmeProcent }) => {
@@ -363,7 +370,9 @@ function KommuneDetailPanel({
                 );
               })}
             </div>
-            <p className="text-xs text-gray-500 mt-3 italic">Kommunedata for 2026 ikke tilgængeligt endnu</p>
+            <p className="text-xs text-gray-500 mt-3 italic">
+              {hasKommuneRef ? "2026-optælling ikke begyndt endnu" : "Kommunedata for 2026 ikke tilgængeligt endnu"}
+            </p>
           </div>
         )}
 
@@ -414,11 +423,14 @@ function KommuneDetailPanel({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function DenmarkMap({ perKommune, hasData, results2022, mode = "live", results2022Kommuner }: DenmarkMapProps) {
+export default function DenmarkMap({ perKommune, hasData, results2022, mode = "live", results2022Kommuner, onKommuneSelect }: DenmarkMapProps) {
   const svgRef       = useRef<SVGSVGElement>(null);
   const insetRef     = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const panelRef     = useRef<HTMLDivElement>(null);
+  // Stable ref so D3 click handlers always see the latest callback
+  const onKommuneSelectRef = useRef(onKommuneSelect);
+  useEffect(() => { onKommuneSelectRef.current = onKommuneSelect; });
 
   const [geojson, setGeojson]       = useState<any>(null);
   const [loadingGeo, setLoadingGeo] = useState(true);
@@ -600,12 +612,15 @@ export default function DenmarkMap({ perKommune, hasData, results2022, mode = "l
       .on("click", function (_event: MouseEvent, d: any) {
         const key = d.properties.lau_1;
         setSelectedKey(key);
-        setSelectedData(perKommune[key] ?? null);
-        setSelectedNavn(d.properties.label_dk ?? "");
-        // Scroll panel into view on mobile
-        setTimeout(() => {
-          panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }, 50);
+        if (onKommuneSelectRef.current) {
+          onKommuneSelectRef.current(key, d.properties.label_dk ?? "");
+        } else {
+          setSelectedData(perKommune[key] ?? null);
+          setSelectedNavn(d.properties.label_dk ?? "");
+          setTimeout(() => {
+            panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }, 50);
+        }
       });
 
     // Draw Bornholm inset
@@ -655,11 +670,15 @@ export default function DenmarkMap({ perKommune, hasData, results2022, mode = "l
         .style("cursor", "pointer")
         .on("click", () => {
           setSelectedKey(bKey);
-          setSelectedData(perKommune[bKey] ?? null);
-          setSelectedNavn(bornholmFeature.properties.label_dk ?? "Bornholm");
-          setTimeout(() => {
-            panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-          }, 50);
+          if (onKommuneSelectRef.current) {
+            onKommuneSelectRef.current(bKey, bornholmFeature.properties.label_dk ?? "Bornholm");
+          } else {
+            setSelectedData(perKommune[bKey] ?? null);
+            setSelectedNavn(bornholmFeature.properties.label_dk ?? "Bornholm");
+            setTimeout(() => {
+              panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }, 50);
+          }
         });
 
       insetSvg.append("text")
@@ -763,7 +782,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022, mode = "l
       {/* Map + panel flex container */}
       <div className="flex flex-col sm:flex-row gap-0 transition-all duration-300">
         {/* Map SVG container — shrinks when panel open */}
-        <div className={`transition-all duration-300 ${selectedKey ? "sm:w-3/5" : "w-full"}`}>
+        <div className={`transition-all duration-300 ${selectedKey && !onKommuneSelectRef.current ? "sm:w-3/5" : "w-full"}`}>
           <div className="relative">
             <svg
               ref={svgRef}
@@ -850,7 +869,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022, mode = "l
         </div>
 
         {/* Detail panel — slide in from right on desktop, below map on mobile */}
-        {selectedKey !== null && (
+        {selectedKey !== null && !onKommuneSelectRef.current && (
           <div
             ref={panelRef}
             className="sm:w-2/5 sm:pl-4 border-t sm:border-t-0 sm:border-l border-border mt-4 sm:mt-0 transition-all duration-300"
@@ -865,6 +884,7 @@ export default function DenmarkMap({ perKommune, hasData, results2022, mode = "l
                 setSelectedNavn("");
               }}
               results2022Prop={results2022}
+              kommuneData2022Prop={results2022Kommuner?.[selectedKey]?.partier}
             />
           </div>
         )}
